@@ -9,11 +9,13 @@ import { Link } from "@react-navigation/native";
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import Card from "react-native-paper/src/components/Card/Card";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const isFocused = useIsFocused();
+  const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
 
   // Helper functions to safely parse and format dates/numbers
@@ -67,6 +69,12 @@ export default function HomeScreen() {
     const interval = setInterval(loadHabits, 1000);
     return () => clearInterval(interval);
   }, [isFocused]);
+
+  useEffect(() => {
+    const title =
+      habits.length === 0 ? "Ready to get better?" : "Congratulations!";
+    navigation.setOptions({ headerTitle: title });
+  }, [habits, navigation]);
 
   const hasAnyHabitWithDate = habits.some((h) => h.date);
 
