@@ -16,6 +16,7 @@ export default function SettingsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const otherInputRef = React.useRef<any>(null);
 
   const hasAlcohol = habits.some((h) => h.name === "Alcohol");
   const hasTobacco = habits.some((h) => h.name === "Tobacco");
@@ -32,6 +33,9 @@ export default function SettingsScreen() {
   const handleAddHabit = (type: "Alcohol" | "Tobacco" | "Other") => {
     if (type === "Other") {
       setShowCustomInput(true);
+      setTimeout(() => {
+        otherInputRef.current?.focus();
+      }, 100);
       return;
     }
 
@@ -144,11 +148,13 @@ export default function SettingsScreen() {
             }}
           >
             <TextInput
+              ref={otherInputRef}
               label="Habit name"
               value={customHabitName}
-              onChangeText={setCustomHabitName}
               mode="outlined"
               style={{ flex: 1 }}
+              onChangeText={setCustomHabitName}
+              onBlur={() => !customHabitName && setShowCustomInput(false)}
             />
             <Button mode="contained" onPress={handleAddCustomHabit}>
               Add
@@ -249,7 +255,7 @@ export default function SettingsScreen() {
               >
                 <TextInput
                   label="Savings"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   value={habit.savings || ""}
                   keyboardType="number-pad"
                   placeholder="- - "
