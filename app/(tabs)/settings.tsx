@@ -43,7 +43,7 @@ export default function SettingsScreen() {
     addHabit(newHabit).then(() => loadHabits());
   };
 
-  const handleAddCustomHabit = () => {
+  const handleAddCustomHabit = async () => {
     if (!customHabitName.trim()) {
       Alert.alert("Error", "Please enter a habit name");
       return;
@@ -53,11 +53,16 @@ export default function SettingsScreen() {
       date: null,
       savings: null,
     };
-    addHabit(newHabit).then(() => {
+
+    try {
+      await addHabit(newHabit);
       setCustomHabitName("");
       setShowCustomInput(false);
       loadHabits();
-    });
+    } catch (error) {
+      console.error("Error adding custom habit:", error);
+      Alert.alert("Error", "Failed to add custom habit");
+    }
   };
 
   const handleDateChange = async (habitId: string, date: Date | null) => {
