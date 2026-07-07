@@ -25,7 +25,7 @@ export const addHabit = async (habit: Omit<Habit, "id">): Promise<Habit> => {
   const habits = await getHabits();
   const newHabit: Habit = {
     ...habit,
-    id: Date.now().toString(),
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
   };
   habits.push(newHabit);
   await saveHabits(habits);
