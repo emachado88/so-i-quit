@@ -6,12 +6,8 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
-import Button from "react-native-paper/src/components/Button/Button";
-import Divider from "react-native-paper/src/components/Divider";
-import TextInput from "react-native-paper/src/components/TextInput/TextInput";
+import { Button, Card, Divider, Snackbar, TextInput } from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
-import Card from "react-native-paper/src/components/Card/Card";
-import Snackbar from "react-native-paper/src/components/Snackbar";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";

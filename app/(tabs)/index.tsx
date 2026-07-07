@@ -9,8 +9,7 @@ import { useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import Card from "react-native-paper/src/components/Card/Card";
-import Snackbar from "react-native-paper/src/components/Snackbar";
+import { Card, Snackbar } from "react-native-paper";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? "light";

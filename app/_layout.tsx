@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import PaperProvider from "react-native-paper/src/core/PaperProvider";
+import { PaperProvider } from "react-native-paper";
 import { themes } from "@/constants/theme";
 import React from "react";
 
