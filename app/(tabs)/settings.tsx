@@ -78,10 +78,13 @@ export default function SettingsScreen() {
   };
 
   const handleSavingsChange = async (habitId: string, value: string) => {
-    const absValue = value.replace(/[^0-9.]/g, "");
+    const normalizedValue = value
+      .replace(/[^0-9.]/g, "")
+      .replace(/(\..*)\./g, "$1")
+      .replace(/(\.\d{2})\d+/g, "$1");
     setHabits((prevHabits) =>
       prevHabits.map((habit) =>
-        habit.id === habitId ? { ...habit, savings: absValue } : habit,
+        habit.id === habitId ? { ...habit, savings: normalizedValue } : habit,
       ),
     );
   };

@@ -48,7 +48,7 @@ export default function HomeScreen() {
 
   const parseSavings = (value: string | null) => {
     if (!value) return 0;
-    const n = parseFloat(value.replace(",", "."));
+    const n = parseFloat(value);
     return isNaN(n) ? 0 : n;
   };
 
