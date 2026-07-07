@@ -4,21 +4,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const STORAGE_KEY = "habits";
 
 export const getHabits = async (): Promise<Habit[]> => {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Error fetching habits:", error);
-    return [];
-  }
+  const data = await AsyncStorage.getItem(STORAGE_KEY);
+  return data ? JSON.parse(data) : [];
 };
 
 export const saveHabits = async (habits: Habit[]): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-  } catch (error) {
-    console.error("Error saving habits:", error);
-  }
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
 };
 
 export const addHabit = async (habit: Omit<Habit, "id">): Promise<Habit> => {

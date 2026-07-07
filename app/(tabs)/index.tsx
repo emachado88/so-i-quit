@@ -8,13 +8,15 @@ import { Link, useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import Card from "react-native-paper/src/components/Card/Card";
+import Snackbar from "react-native-paper/src/components/Snackbar";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
   // Helper functions to safely parse and format dates/numbers
   const daysSince = (isoDate: string | null) => {
@@ -61,8 +63,13 @@ export default function HomeScreen() {
   };
 
   const loadHabits = async () => {
-    const data = await getHabits();
-    setHabits(data);
+    try {
+      const data = await getHabits();
+      setHabits(data);
+    } catch (error) {
+      console.error("Error loading habits:", error);
+      setSnackbarMessage("Failed to load habits");
+    }
   };
 
   // Tick counter to trigger re-renders so breakdown() updates in real-time
@@ -198,6 +205,17 @@ export default function HomeScreen() {
           </Card>
         </View>
       ) : null}
+
+      <Snackbar
+        visible={!!snackbarMessage}
+        onDismiss={() => setSnackbarMessage(null)}
+        duration={4000}
+        action={{ label: "Dismiss", onPress: () => setSnackbarMessage(null) }}
+      >
+        <Text style={{ color: themes[colorScheme].colors.onPrimary }}>
+          {snackbarMessage}
+        </Text>
+      </Snackbar>
     </View>
   );
 }

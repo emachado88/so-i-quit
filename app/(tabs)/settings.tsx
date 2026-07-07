@@ -1,21 +1,31 @@
-import { Alert, Platform, ScrollView, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
-import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import Button from "react-native-paper/src/components/Button/Button";
 import Divider from "react-native-paper/src/components/Divider";
 import TextInput from "react-native-paper/src/components/TextInput/TextInput";
 import { Habit } from "@/constants/interfaces";
 import Card from "react-native-paper/src/components/Card/Card";
+import Snackbar from "react-native-paper/src/components/Snackbar";
 import { globalStyles } from "@/constants/styles";
+import { themes } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function SettingsScreen() {
+  const colorScheme = useColorScheme() ?? "light";
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<{ habitId: string; mode: "date" | "time" } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<{
+    habitId: string;
+    mode: "date" | "time";
+  } | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const otherInputRef = React.useRef<any>(null);
 
   const hasAlcohol = habits.some((h) => h.name === "Alcohol");
@@ -26,11 +36,16 @@ export default function SettingsScreen() {
   }, []);
 
   const loadHabits = async () => {
-    const data = await getHabits();
-    setHabits(data);
+    try {
+      const data = await getHabits();
+      setHabits(data);
+    } catch (error) {
+      console.error("Error loading habits:", error);
+      setSnackbarMessage("Failed to load habits");
+    }
   };
 
-  const handleAddHabit = (type: "Alcohol" | "Tobacco" | "Other") => {
+  const handleAddHabit = async (type: "Alcohol" | "Tobacco" | "Other") => {
     if (type === "Other") {
       setShowCustomInput(true);
       setTimeout(() => {
@@ -44,7 +59,13 @@ export default function SettingsScreen() {
       date: null,
       savings: null,
     };
-    addHabit(newHabit).then(() => loadHabits());
+    try {
+      await addHabit(newHabit);
+      await loadHabits();
+    } catch (error) {
+      console.error("Error adding habit:", error);
+      setSnackbarMessage(`Failed to add ${type}`);
+    }
   };
 
   const handleAddCustomHabit = async () => {
@@ -73,8 +94,13 @@ export default function SettingsScreen() {
   };
 
   const handleDateChange = async (habitId: string, date: Date | null) => {
-    await updateHabit(habitId, { date: date?.toISOString() ?? null });
-    loadHabits();
+    try {
+      await updateHabit(habitId, { date: date?.toISOString() ?? null });
+      await loadHabits();
+    } catch (error) {
+      console.error("Error updating date:", error);
+      setSnackbarMessage("Failed to update date");
+    }
   };
 
   const handleSavingsChange = async (habitId: string, value: string) => {
@@ -90,8 +116,13 @@ export default function SettingsScreen() {
   };
 
   const handleSavingsBlur = async (habitId: string, value: string | null) => {
-    await updateHabit(habitId, { savings: value || null });
-    loadHabits();
+    try {
+      await updateHabit(habitId, { savings: value || null });
+      await loadHabits();
+    } catch (error) {
+      console.error("Error updating savings:", error);
+      setSnackbarMessage("Failed to update savings");
+    }
   };
 
   const handleReset = (habit: Habit) => {
@@ -104,8 +135,13 @@ export default function SettingsScreen() {
           text: "Reset",
           style: "destructive",
           onPress: async () => {
-            await updateHabit(habit.id, { date: null, savings: null });
-            loadHabits();
+            try {
+              await updateHabit(habit.id, { date: null, savings: null });
+              await loadHabits();
+            } catch (error) {
+              console.error("Error resetting habit:", error);
+              setSnackbarMessage(`Failed to reset ${habit.name}`);
+            }
           },
         },
       ],
@@ -122,15 +158,24 @@ export default function SettingsScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            await deleteHabit(habit.id);
-            loadHabits();
+            try {
+              await deleteHabit(habit.id);
+              await loadHabits();
+            } catch (error) {
+              console.error("Error deleting habit:", error);
+              setSnackbarMessage(`Failed to delete ${habit.name}`);
+            }
           },
         },
       ],
     );
   };
 
-  const handleOpenPicker = (habitId: string, mode: "date" | "time", currentDate: Date) => {
+  const handleOpenPicker = (
+    habitId: string,
+    mode: "date" | "time",
+    currentDate: Date,
+  ) => {
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         mode,
@@ -318,6 +363,17 @@ export default function SettingsScreen() {
           onChange={handlePickerChange}
         />
       )}
+
+      <Snackbar
+        visible={!!snackbarMessage}
+        onDismiss={() => setSnackbarMessage(null)}
+        duration={4000}
+        action={{ label: "Dismiss", onPress: () => setSnackbarMessage(null) }}
+      >
+        <Text style={{ color: themes[colorScheme].colors.onPrimary }}>
+          {snackbarMessage}
+        </Text>
+      </Snackbar>
     </View>
   );
 }
