@@ -8,7 +8,7 @@ import { Link, useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
 
 export default function HomeScreen() {
@@ -96,7 +96,7 @@ export default function HomeScreen() {
   }, 0);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={globalStyles.flex1}>
       <View style={[globalStyles.container, globalStyles.shadow]}>
         <ThemedText type="subtitle">
           {hasAnyHabitWithDate
@@ -113,7 +113,7 @@ export default function HomeScreen() {
           </Link>
         )}
       </View>
-      <ScrollView contentContainerStyle={[globalStyles.container, { gap: 20 }]}>
+      <ScrollView contentContainerStyle={[globalStyles.container, styles.scrollContent]}>
         {habits
           .filter((h) => h.date)
           .map((habit) => {
@@ -126,39 +126,33 @@ export default function HomeScreen() {
                 <Card.Title title={`${habit.name} free for`} />
                 <Card.Content>
                   <View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        gap: 10,
-                      }}
-                    >
+                    <View style={styles.cardRow}>
                       {years ? (
-                        <View style={{ alignItems: "center" }}>
+                        <View style={styles.statColumn}>
                           <ThemedText type="title">{years}</ThemedText>
                           <ThemedText>years</ThemedText>
                         </View>
                       ) : null}
                       {months ? (
-                        <View style={{ alignItems: "center" }}>
+                        <View style={styles.statColumn}>
                           <ThemedText type="title">{months}</ThemedText>
                           <ThemedText>months</ThemedText>
                         </View>
                       ) : null}
                       {days ? (
-                        <View style={{ alignItems: "center" }}>
+                        <View style={styles.statColumn}>
                           <ThemedText type="title">{days}</ThemedText>
                           <ThemedText>days</ThemedText>
                         </View>
                       ) : null}
                       {hours ? (
-                        <View style={{ alignItems: "center" }}>
+                        <View style={styles.statColumn}>
                           <ThemedText type="title">{hours}</ThemedText>
                           <ThemedText>hours</ThemedText>
                         </View>
                       ) : null}
                       {!years && !months && !days && !hours ? (
-                        <View style={{ alignItems: "center" }}>
+                        <View style={styles.statColumn}>
                           <ThemedText>
                             You&apos;ve just started, check later
                           </ThemedText>
@@ -168,13 +162,8 @@ export default function HomeScreen() {
                   </View>
                 </Card.Content>
                 <Card.Actions>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <ThemedText style={{ marginInlineEnd: 5 }}>
+                  <View style={styles.actionsRow}>
+                    <ThemedText style={styles.savingsLabel}>
                       {totalHabitSavings > 0
                         ? formatAmount(totalHabitSavings)
                         : null}
@@ -194,7 +183,7 @@ export default function HomeScreen() {
             }}
           >
             <Card.Content>
-              <View style={{ alignItems: "flex-end" }}>
+              <View style={styles.alignItemsEnd}>
                 <ThemedText type="subtitle">Total savings</ThemedText>
                 <ThemedText type="title">
                   {formatAmount(totalSavings)}
@@ -218,3 +207,27 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+  },
+  statColumn: {
+    alignItems: "center",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  savingsLabel: {
+    marginInlineEnd: 5,
+  },
+  alignItemsEnd: {
+    alignItems: "flex-end",
+  },
+  scrollContent: {
+    gap: 20,
+  },
+});

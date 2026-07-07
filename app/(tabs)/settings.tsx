@@ -1,4 +1,4 @@
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
@@ -198,12 +198,12 @@ export default function SettingsScreen() {
     : null;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={globalStyles.flex1}>
       <View style={[globalStyles.container, globalStyles.shadow]}>
-        <ThemedText type="subtitle" style={{ marginBottom: 15 }}>
+        <ThemedText type="subtitle" style={styles.subtitle}>
           Add New Habit
         </ThemedText>
-        <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+        <View style={styles.buttonRow}>
           {!hasAlcohol && (
             <Button mode="outlined" onPress={() => handleAddHabit("Alcohol")}>
               Alcohol
@@ -220,20 +220,13 @@ export default function SettingsScreen() {
         </View>
 
         {showCustomInput && (
-          <View
-            style={{
-              marginTop: 10,
-              flexDirection: "row",
-              gap: 10,
-              alignItems: "center",
-            }}
-          >
+          <View style={styles.customInputRow}>
             <TextInput
               ref={otherInputRef}
               label="Habit name"
               value={customHabitName}
               mode="outlined"
-              style={{ flex: 1 }}
+              style={globalStyles.flex1}
               onChangeText={setCustomHabitName}
               onBlur={() => !customHabitName && setShowCustomInput(false)}
             />
@@ -246,19 +239,13 @@ export default function SettingsScreen() {
 
       <Divider />
 
-      <ScrollView contentContainerStyle={[globalStyles.container, { gap: 20 }]}>
+      <ScrollView contentContainerStyle={[globalStyles.container, styles.scrollContent]}>
         <ThemedText type="subtitle">Your Habits</ThemedText>
         {habits.length === 0 && <ThemedText>No habits added yet.</ThemedText>}
         {habits.map((habit) => (
           <Card key={habit.id}>
             <Card.Content>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <View style={styles.cardHeader}>
                 <ThemedText type="subtitle">{habit.name}</ThemedText>
                 <Button
                   compact
@@ -272,14 +259,9 @@ export default function SettingsScreen() {
               </View>
 
               <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginVertical: 10,
-                }}
+                style={styles.dateTimeRow}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={styles.dateTimeButtonContainer}>
                   <Button
                     compact
                     icon="pencil"
@@ -298,7 +280,7 @@ export default function SettingsScreen() {
                       : "--/--/----"}
                   </Button>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={styles.dateTimeButtonContainer}>
                   <Button
                     compact
                     icon="pencil"
@@ -319,13 +301,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
 
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <View style={styles.savingsRow}>
                 <TextInput
                   label="Savings"
                   inputMode="decimal"
@@ -335,7 +311,7 @@ export default function SettingsScreen() {
                   right={<TextInput.Affix text="€/day" />}
                   onChangeText={(text) => handleSavingsChange(habit.id, text)}
                   onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
-                  style={{ flex: 1 }}
+                  style={globalStyles.flex1}
                 />
                 <Button
                   compact
@@ -373,3 +349,43 @@ export default function SettingsScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  subtitle: {
+    marginBottom: 15,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  customInputRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  scrollContent: {
+    gap: 20,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dateTimeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  dateTimeButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  savingsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+});
