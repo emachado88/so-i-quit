@@ -4,9 +4,9 @@ import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getHabits } from "@/utils/habits";
+import { breakdown, daysSince, formatAmount, parseSavings } from "@/utils/format";
 import { Link, useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "expo-router";
-import dayjs from "dayjs";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
@@ -16,50 +16,6 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-
-  // Helper functions to safely parse and format dates/numbers
-  const daysSince = (isoDate: string | null) => {
-    if (!isoDate) return 0;
-    const d = dayjs(isoDate);
-    return d.isValid() ? dayjs().diff(d, "days") : 0;
-  };
-
-  const breakdown = (isoDate: string | null) => {
-    if (!isoDate) return { years: 0, months: 0, days: 0, hours: 0 };
-    const d = dayjs(isoDate);
-    if (!d.isValid()) return { years: 0, months: 0, days: 0, hours: 0 };
-
-    let current = d;
-    const now = dayjs();
-
-    const years = now.diff(current, "years");
-    current = current.add(years, "years");
-
-    const months = now.diff(current, "months");
-    current = current.add(months, "months");
-
-    const days = now.diff(current, "days");
-    current = current.add(days, "days");
-
-    const hours = now.diff(current, "hours");
-
-    return { years, months, days, hours };
-  };
-
-  const parseSavings = (value: string | null) => {
-    if (!value) return 0;
-    const n = parseFloat(value);
-    return isNaN(n) ? 0 : n;
-  };
-
-  const formatAmount = (value: number) => {
-    const roundedValue = Math.round(value * 100) / 100;
-    const formattedValue =
-      roundedValue % 1 === 0
-        ? roundedValue.toFixed(0)
-        : roundedValue.toFixed(2);
-    return `${formattedValue}€`;
-  };
 
   const loadHabits = async () => {
     try {
