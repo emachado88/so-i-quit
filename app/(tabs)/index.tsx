@@ -4,16 +4,15 @@ import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getHabits } from "@/utils/habits";
-import { useIsFocused } from "@react-navigation/core";
 import { Link, useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import Card from "react-native-paper/src/components/Card/Card";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? "light";
-  const isFocused = useIsFocused();
   const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
 
@@ -66,13 +65,16 @@ export default function HomeScreen() {
     setHabits(data);
   };
 
-  useEffect(() => {
-    if (!isFocused) return;
-    loadHabits();
+  // Tick counter to trigger re-renders so breakdown() updates in real-time
+  const [, setTick] = useState(0);
 
-    const interval = setInterval(loadHabits, 1000);
-    return () => clearInterval(interval);
-  }, [isFocused]);
+  useFocusEffect(
+    useCallback(() => {
+      loadHabits();
+      const interval = setInterval(() => setTick((t) => t + 1), 1000);
+      return () => clearInterval(interval);
+    }, []),
+  );
 
   useEffect(() => {
     const title =
