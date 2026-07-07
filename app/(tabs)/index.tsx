@@ -53,7 +53,12 @@ export default function HomeScreen() {
   };
 
   const formatAmount = (value: number) => {
-    return `${Math.round(value * 100) / 100}€`;
+    const roundedValue = Math.round(value * 100) / 100;
+    const formattedValue =
+      roundedValue % 1 === 0
+        ? roundedValue.toFixed(0)
+        : roundedValue.toFixed(2);
+    return `${formattedValue}€`;
   };
 
   const loadHabits = async () => {
