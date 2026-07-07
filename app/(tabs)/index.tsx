@@ -5,11 +5,10 @@ import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getHabits } from "@/utils/habits";
 import { useIsFocused } from "@react-navigation/core";
-import { Link } from "@react-navigation/native";
+import { Link, useNavigation } from "@react-navigation/native";
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import Card from "react-native-paper/src/components/Card/Card";
 
 export default function HomeScreen() {
