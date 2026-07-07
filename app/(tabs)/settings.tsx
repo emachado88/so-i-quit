@@ -48,12 +48,15 @@ export default function SettingsScreen() {
   };
 
   const handleAddCustomHabit = async () => {
-    if (!customHabitName.trim()) {
+    const trimmed = customHabitName.trim();
+    const normalizedHabitName =
+      trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    if (!normalizedHabitName) {
       Alert.alert("Error", "Please enter a habit name");
       return;
     }
     const newHabit = {
-      name: customHabitName.trim(),
+      name: normalizedHabitName,
       date: null,
       savings: null,
     };
