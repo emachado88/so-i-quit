@@ -79,7 +79,15 @@ export default function SettingsScreen() {
 
   const handleSavingsChange = async (habitId: string, value: string) => {
     const absValue = value.replace(/[^0-9.]/g, "");
-    await updateHabit(habitId, { savings: absValue || null });
+    setHabits((prevHabits) =>
+      prevHabits.map((habit) =>
+        habit.id === habitId ? { ...habit, savings: absValue } : habit,
+      ),
+    );
+  };
+
+  const handleSavingsBlur = async (habitId: string, value: string | null) => {
+    await updateHabit(habitId, { savings: value || null });
     loadHabits();
   };
 
@@ -260,11 +268,11 @@ export default function SettingsScreen() {
                   label="Savings"
                   inputMode="decimal"
                   value={habit.savings || ""}
-                  keyboardType="number-pad"
-                  placeholder="- - "
+                  keyboardType="numeric"
                   mode="outlined"
                   right={<TextInput.Affix text="€/day" />}
                   onChangeText={(text) => handleSavingsChange(habit.id, text)}
+                  onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
                   style={{ flex: 1 }}
                 />
                 <Button
