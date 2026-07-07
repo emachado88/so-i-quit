@@ -1,9 +1,8 @@
-import { Alert, ScrollView, View } from "react-native";
+import { Alert, Platform, ScrollView, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { DarkTheme } from "@react-navigation/native";
+import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import React, { useEffect, useState } from "react";
 import Button from "react-native-paper/src/components/Button/Button";
 import Divider from "react-native-paper/src/components/Divider";
@@ -16,6 +15,7 @@ export default function SettingsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState<{ habitId: string; mode: "date" | "time" } | null>(null);
   const otherInputRef = React.useRef<any>(null);
 
   const hasAlcohol = habits.some((h) => h.name === "Alcohol");
@@ -130,6 +130,32 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleOpenPicker = (habitId: string, mode: "date" | "time", currentDate: Date) => {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        mode,
+        value: currentDate,
+        maximumDate: new Date(),
+        onChange: (_event, date) => {
+          if (date) handleDateChange(habitId, date);
+        },
+      });
+    } else {
+      setPickerOpen({ habitId, mode });
+    }
+  };
+
+  const handlePickerChange = (_event: any, date?: Date) => {
+    if (date && pickerOpen) {
+      handleDateChange(pickerOpen.habitId, date);
+    }
+    setPickerOpen(null);
+  };
+
+  const editingHabit = pickerOpen
+    ? habits.find((h) => h.id === pickerOpen.habitId)
+    : null;
+
   return (
     <View style={{ flex: 1 }}>
       <View style={[globalStyles.container, globalStyles.shadow]}>
@@ -219,15 +245,11 @@ export default function SettingsScreen() {
                     mode="text"
                     contentStyle={{ flexDirection: "row-reverse" }}
                     onPress={() =>
-                      DateTimePickerAndroid.open({
-                        mode: "date",
-                        value: habit.date ? new Date(habit.date) : new Date(),
-                        maximumDate: new Date(),
-                        style: { backgroundColor: DarkTheme.colors.card },
-                        onChange: (_event, date) => {
-                          if (date) handleDateChange(habit.id, date);
-                        },
-                      })
+                      handleOpenPicker(
+                        habit.id,
+                        "date",
+                        habit.date ? new Date(habit.date) : new Date(),
+                      )
                     }
                   >
                     {habit.date
@@ -242,15 +264,11 @@ export default function SettingsScreen() {
                     mode="text"
                     contentStyle={{ flexDirection: "row-reverse" }}
                     onPress={() =>
-                      DateTimePickerAndroid.open({
-                        mode: "time",
-                        value: habit.date ? new Date(habit.date) : new Date(),
-                        maximumDate: new Date(),
-                        style: { backgroundColor: DarkTheme.colors.card },
-                        onChange: (_event, date) => {
-                          if (date) handleDateChange(habit.id, date);
-                        },
-                      })
+                      handleOpenPicker(
+                        habit.id,
+                        "time",
+                        habit.date ? new Date(habit.date) : new Date(),
+                      )
                     }
                   >
                     {habit.date
@@ -291,6 +309,15 @@ export default function SettingsScreen() {
           </Card>
         ))}
       </ScrollView>
+
+      {Platform.OS === "ios" && editingHabit && pickerOpen && (
+        <DateTimePicker
+          mode={pickerOpen.mode}
+          value={editingHabit.date ? new Date(editingHabit.date) : new Date()}
+          maximumDate={new Date()}
+          onChange={handlePickerChange}
+        />
+      )}
     </View>
   );
 }
