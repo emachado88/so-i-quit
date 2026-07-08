@@ -4,33 +4,28 @@
 
 ---
 
-## 1. UI Overhaul — Drop react-native-paper
+## 1. UI Overhaul — Custom MD3 Theme
 
 ### Goals
 
-- Replace react-native-paper with a minimal set of custom components
-- Implement the project's own colour palette (light + dark)
-- Reduce bundle size and remove dependency on a heavy UI library
+- Replace the stock MD3 theme tokens with a custom colour palette (light + dark)
+- Every Paper component (Button, Card, TextInput, Snackbar, Divider) inherits the new colours automatically
+- No custom component building needed — Paper does the heavy lifting
 
 ### Steps
 
-1. **Define colour palette** — user to provide light/dark colour tokens. Store in `constants/theme.ts` (replace current `MD3LightTheme`/`MD3DarkTheme` passthrough).
-2. **Identify components used from RN Paper:**
-   - `Card` — rendered cards in index.tsx + settings.tsx
-   - `Button` — add/reset/delete buttons in settings.tsx
-   - `Snackbar` — error toasts (added in 1.4)
-   - `TextInput` — savings input + custom habit name
-   - `Divider` — separator in settings
-   - `PaperProvider` — theme provider in `_layout.tsx`
-3. **Build replacement components** under `components/`:
-   - `Card` → `components/ui/card.tsx`
-   - `Button` → `components/ui/button.tsx` (variants: outlined, contained, text)
-   - `Snackbar` → `components/ui/snackbar.tsx`
-   - `TextInput` → `components/ui/text-input.tsx`
-   - `Divider` → `components/ui/divider.tsx`
-   - `ThemeProvider` → `components/ui/theme-provider.tsx` (replaces `PaperProvider`)
-4. **Swap imports** — file-by-file, remove RN Paper imports, use custom ones
-5. **Uninstall `react-native-paper`** — remove dependency + its deep type errors
+1. **Define colour palette** — user to provide light/dark colour tokens
+2. **Map tokens to MD3 colour slots** in `constants/theme.ts`:
+   - `primary`, `primaryContainer`, `onPrimary`
+   - `secondary`, `secondaryContainer`
+   - `surface`, `surfaceVariant`, `background`
+   - `error`, `errorContainer`
+   - `outline`, `outlineVariant`
+   - `inverseOnSurface`, `inversePrimary`
+   - etc.
+3. **Update `constants/theme.ts`** — replace `...MD3LightTheme` / `...MD3DarkTheme` passthrough with customised theme objects
+4. **Verify in-app** — check all screens look right in light + dark mode
+5. **Remove unused Paper imports** — only keep what the app actually uses
 
 ---
 
@@ -38,32 +33,35 @@
 
 ### Current Tab Structure
 
-| Tab | Name | Purpose |
-|---|---|---|
-| Tab 1 | Home | Counters + total savings |
+| Tab   | Name     | Purpose                                      |
+| ----- | -------- | -------------------------------------------- |
+| Tab 1 | Home     | Counters + total savings                     |
 | Tab 2 | Settings | Add/edit/delete habits + date/time + savings |
 
 ### Proposed Tab Structure
 
-| Tab | Name | Icon | Purpose |
-|---|---|---|---|
+| Tab   | Name         | Icon                            | Purpose                                                  |
+| ----- | ------------ | ------------------------------- | -------------------------------------------------------- |
 | Tab 1 | **Progress** | `chart-box-outline` or `trophy` | Updated counters, animated streak display, total savings |
-| Tab 2 | **Habits** | `pen` or `clipboard-list` | Habit list with date/time pickers + savings per habit |
-| Tab 3 | **Settings** | `cog` or `dots-horizontal` | App settings: theme, language, currency |
+| Tab 2 | **Habits**   | `pen` or `clipboard-list`       | Habit list with date/time pickers + savings per habit    |
+| Tab 3 | **Settings** | `cog` or `dots-horizontal`      | App settings: theme, language, currency                  |
 
 **Tab 1 — Progress** (current Home reimagined):
+
 - Quit counters with years/months/days/hours per habit
 - Total savings summary card
 - Milestone highlights ("3 months smoke-free!")
 - Streak visual
 
 **Tab 2 — Habits** (current Settings minus app-config settings):
+
 - List of tracked habits with their quit date + savings
 - Add/delete habits
 - Edit date/time and savings per habit
 - Reset individual habit
 
 **Tab 3 — Settings** (new):
+
 - **Theme**: System / Light / Dark toggle (persisted to AsyncStorage)
 - **Language**: i18n selector — read device locale as default, allow override
 - **Currency**: configurable symbol (€ default, $, £, etc. — persisted to AsyncStorage)
@@ -80,9 +78,9 @@
 
 ---
 
-## 3. UI/UX Improvements (3.4 + 3.6)
+## 3. UI/UX Improvements
 
-### 3.4 — Local Notifications / Streak Reminders
+### Local Notifications / Streak Reminders
 
 Integrate `expo-notifications` for engagement:
 
@@ -92,7 +90,7 @@ Integrate `expo-notifications` for engagement:
 - **Permissions flow**: Request notification permission on first launch
 - **Scheduling**: Use `expo-notifications` `scheduleNotificationAsync` with trigger conditions
 
-### 3.6 — Visual Timeline / Statistics Screen
+### Visual Timeline / Statistics Screen
 
 Enhance the Progress tab (or a sub-view) with:
 
@@ -106,16 +104,16 @@ Enhance the Progress tab (or a sub-view) with:
 
 ## 📋 Effort Overview
 
-| Item | Effort | Dependencies |
-|---|---|---|
-| 1. UI Overhaul — custom components | Large | Colour palette from user |
-| 1.1 Colour palette integration | Small | User provides tokens |
-| 2. Tab reorganisation | Medium | — |
-| 2.1 Theme toggle | Small | Light/dark palette from item 1 |
-| 2.2 i18n wiring | Medium | — |
-| 2.3 Currency config | Small | `formatAmount` in `utils/format.ts` |
-| 3.4 Notifications | Medium | `expo-notifications` install |
-| 3.6 Visual timeline | Medium | Reanimated already installed |
+| Item                              | Effort | Dependencies                        |
+| --------------------------------- | ------ | ----------------------------------- |
+| 1. UI Overhaul — custom MD3 theme | Small  | Colour palette from user            |
+| 1.1 Colour palette integration    | Small  | User provides tokens                |
+| 2. Tab reorganisation             | Medium | —                                   |
+| 2.1 Theme toggle                  | Small  | Light/dark palette from item 1      |
+| 2.2 i18n wiring                   | Medium | —                                   |
+| 2.3 Currency config               | Small  | `formatAmount` in `utils/format.ts` |
+| 3.4 Notifications                 | Medium | `expo-notifications` install        |
+| 3.6 Visual timeline               | Medium | Reanimated already installed        |
 
 ---
 
@@ -123,21 +121,21 @@ Enhance the Progress tab (or a sub-view) with:
 
 Using `@expo/vector-icons` (MaterialCommunityIcons):
 
-| Tab | Icon Name | Preview |
-|---|---|---|
+| Tab      | Icon Name                               | Preview         |
+| -------- | --------------------------------------- | --------------- |
 | Progress | `chart-box-outline` / `trophy` / `star` | `󰋺` / `󰋻` / `󰋼` |
-| Habits | `clipboard-list-outline` / `pen` | `󰃁` / `󰏜` |
-| Settings | `cog-outline` / `dots-horizontal` | `󰒓` / `󰒔` |
+| Habits   | `clipboard-list-outline` / `pen`        | `󰃁` / `󰏜`       |
+| Settings | `cog-outline` / `dots-horizontal`       | `󰒓` / `󰒔`       |
 
 ---
 
-*Start: Phase 1 — colour palette + custom components. User provides light/dark colour tokens.*
+_Start: Phase 1 — colour palette + custom components. User provides light/dark colour tokens._
 
 ---
 
-## 4. App Hardening (3.7 + 3.9 + 3.10)
+## 4. App Hardening
 
-### 4.1 — TypeScript Strictness (3.7)
+### 4.1 — TypeScript Strictness
 
 `tsconfig.json` already has `"strict": true` but there's low-hanging fruit:
 
@@ -146,7 +144,7 @@ Using `@expo/vector-icons` (MaterialCommunityIcons):
 - **Remove unused imports** — `Text` is imported in both `index.tsx` and `settings.tsx` but only `ThemedText` is used. Clean up.
 - **Strictify `useThemeColor` generics** — tighten the generic constraint so invalid colour names are caught at compile time.
 
-### 4.2 — Crash Reporting / Analytics (3.9)
+### 4.2 — Crash Reporting / Analytics
 
 Zero error tracking means crashes are invisible:
 
@@ -155,7 +153,7 @@ Zero error tracking means crashes are invisible:
 - **Alternatively** `expo-crashlytics` if Firebase is preferred — lighter integration with Expo's managed workflow.
 - **Start small**: capture unhandled promise rejections + React render errors. Expand to breadcrumbs later.
 
-### 4.3 — Accessibility Audit (3.10)
+### 4.3 — Accessibility Audit
 
 Preliminary gaps identified in the analysis:
 
@@ -167,10 +165,10 @@ Preliminary gaps identified in the analysis:
 
 ### Effort Overview
 
-| Item | Effort | Notes |
-|---|---|---|
-| 4.1 `noUnusedLocals` + fixes | Small | 5 min config change + a few import cleanups |
-| 4.1 Missing React imports | Trivial | 4 files, 1 line each |
-| 4.2 Sentry integration | Medium | Requires DSN + build config + testing |
-| 4.3 Accessibility labels | Small | 5-10 `accessibilityLabel` attributes |
-| 4.3 Colour contrast check | Small | Run palette through contrast checker |
+| Item                         | Effort  | Notes                                       |
+| ---------------------------- | ------- | ------------------------------------------- |
+| 4.1 `noUnusedLocals` + fixes | Small   | 5 min config change + a few import cleanups |
+| 4.1 Missing React imports    | Trivial | 4 files, 1 line each                        |
+| 4.2 Sentry integration       | Medium  | Requires DSN + build config + testing       |
+| 4.3 Accessibility labels     | Small   | 5-10 `accessibilityLabel` attributes        |
+| 4.3 Colour contrast check    | Small   | Run palette through contrast checker        |

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A React Native (Expo) habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. The app is currently mid-refactor: react-native-paper is being replaced with custom components (see roadmap).
+A React Native (Expo) habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. The UI uses React Native Paper components driven by custom MD3 theme tokens (light + dark).
 
 ## Tech Stack
 
@@ -90,7 +90,7 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 ### React Native Paper Deep Imports
 - Older code imported from `react-native-paper/src/...` — **do not follow this pattern**
 - Use barrel imports: `import { Card, Button } from "react-native-paper"`
-- Phase-out is in progress (see roadmap)
+- Already fixed across the codebase (ticket 2.1)
 
 ### AsyncStorage Error Handling
 - `utils/habits.ts` functions do NOT catch internally — errors propagate to callers
@@ -105,7 +105,7 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 ## Roadmap
 
 See `docs/improvements-roadmap.md` for the planned phases:
-1. Drop react-native-paper, custom colour palette
+1. Custom MD3 colour palette (light + dark)
 2. Tab reorganisation (Progress / Habits / Settings), theme/language/currency
 3. Notifications + visual timeline
 4. App hardening (TS strictness, Sentry, accessibility)

@@ -23,7 +23,7 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 | ------------- | --------------------------------------------------------------------------------- |
 | Framework     | [Expo](https://expo.dev) SDK 54 + [React Native](https://reactnative.dev) 0.81    |
 | Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v6 (file-based routing) |
-| UI            | React Native Paper (being replaced with custom components)                        |
+| UI | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens |
 | Date Handling | dayjs with Portuguese locale                                                      |
 | Storage       | AsyncStorage                                                                      |
 | Animation     | React Native Reanimated 4                                                         |
