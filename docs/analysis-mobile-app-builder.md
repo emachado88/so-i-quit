@@ -22,7 +22,7 @@ The app works. But as it stands, it has significant **technical debt from its qu
 
 ```ts
 useEffect(() => {
-  if (!isFocused) return;    // ← guard
+  if (!isFocused) return; // ← guard
   loadHabits();
   const interval = setInterval(loadHabits, 1000);
   return () => clearInterval(interval);
@@ -74,11 +74,11 @@ This file references old `soberDate` / `soberSavings` / `smokeDate` / `smokeSavi
 Multiple files import from deep paths like:
 
 ```ts
-import Card from "react-native-paper/src/components/Card/Card";         // index.tsx, settings.tsx
-import Button from "react-native-paper/src/components/Button/Button";     // settings.tsx
+import Card from "react-native-paper/src/components/Card/Card"; // index.tsx, settings.tsx
+import Button from "react-native-paper/src/components/Button/Button"; // settings.tsx
 import TextInput from "react-native-paper/src/components/TextInput/TextInput"; // settings.tsx
-import Divider from "react-native-paper/src/components/Divider";          // settings.tsx
-import PaperProvider from "react-native-paper/src/core/PaperProvider";    // _layout.tsx
+import Divider from "react-native-paper/src/components/Divider"; // settings.tsx
+import PaperProvider from "react-native-paper/src/core/PaperProvider"; // _layout.tsx
 ```
 
 These bypass the package's public API surface. This is **brittle** — any patch update of react-native-paper could break imports if internal paths change. This was likely done to work around tree-shaking or import issues (Expo's Metro bundler sometimes struggles with barrel exports), but it couples the app to library internals.
@@ -88,6 +88,7 @@ These bypass the package's public API surface. This is **brittle** — any patch
 ### 🟡 2.2 — Duplicated `useColorScheme` abstraction
 
 **Files:**
+
 - `hooks/use-color-scheme.ts` — wraps RN's hook with SSR hydration (web)
 - `hooks/use-color-scheme.web.ts` — identical pass-through to RN's hook
 - `hooks/use-theme-color.ts` — third layer that calls `useColorScheme` + looks up `Colors` map
@@ -107,6 +108,7 @@ This is a React Native anti-pattern — inline styles are recreated on every ren
 ### 🟡 2.4 — `globalStyles` is underused / misnamed
 
 `constants/styles.ts`:
+
 ```ts
 export const globalStyles = StyleSheet.create({
   container: { padding: 20 },
@@ -172,11 +174,11 @@ Since this is an expo-router project, the idiomatic approach is `import { useFoc
 useFocusEffect(
   useCallback(() => {
     loadHabits();
-  }, [])
+  }, []),
 );
 ```
 
-↳ *Bonus: add a listener for AsyncStorage changes if you want cross-tab reactivity.*
+↳ _Bonus: add a listener for AsyncStorage changes if you want cross-tab reactivity._
 
 ### 🟢 3.2 — Proper cross-platform date/time picker
 
@@ -199,14 +201,20 @@ Or use `expo-date-time-picker` if available. Without this, iOS users cannot set 
 ### 🟢 3.3 — Migrate from AsyncStorage to a proper lightweight database
 
 AsyncStorage is fine for tiny payloads, but habits with timestamps and financial savings are better served by:
+
 - **expo-sqlite** (built-in, native, fast)
 - **react-native-mmkv** (fastest key-value, synchronous)
 
 This would also enable richer queries (sort by date, filter, aggregate across periods) without loading the whole array.
 
+---
+
+## ✅ Done until here
+
 ### 🟢 3.4 — Add local notifications / streak reminders
 
 The app has no persistent engagement mechanism. Basic `expo-notifications` setup with:
+
 - Daily reminder: "Have you stuck to it today?"
 - Milestone celebrations: "1 month free of Alcohol!"
 - Nudge if no visit in 3 days
@@ -220,6 +228,7 @@ Currently respects system preference only. Users should be able to override it i
 ### 🟢 3.6 — Carousel / visual timeline on the Stats screen
 
 Instead of a flat list of cards, consider:
+
 - A big **circular progress** for the longest streak
 - An **animated counter** for total savings (spring animation on mount)
 - A **horizontal timeline** showing milestones ("First week", "1 month", "€100 saved")
@@ -229,6 +238,7 @@ React Native Reanimated is already installed — it's currently unused in the ac
 ### 🟢 3.7 — TypeScript strictness improvements
 
 `tsconfig.json` has `"strict": true` already, but:
+
 - Several components are missing React import (causing TS errors in 4 files)
 - `fetch-settings.ts` has `any` types in its callback signature
 - `useThemeColor` could have stricter generics
@@ -242,12 +252,14 @@ A `tsconfig.json` with `"noUnusedLocals": true` and `"noUnusedParameters": true`
 ### 🟢 3.9 — Analytics / crash reporting
 
 Zero error tracking. Given the iOS crash from the date picker (Issue 1.2), at minimum:
+
 - Integrate `expo-crashlytics` or Sentry
 - Log meaningful breadcrumbs on habit save/delete
 
 ### 🟢 3.10 — Accessibility audit
 
 Preliminary observations:
+
 - No `accessibilityLabel` on the delete buttons in habit cards
 - Tab bar icons have no accessibility hints
 - Color contrast should be verified against WCAG 2.1 AA
@@ -257,18 +269,18 @@ Preliminary observations:
 
 ## 📊 Priority Matrix
 
-| Category | Item | Severity | Effort |
-|---|---|---|---|
-| **Bug** | iOS crash on date picker (1.2) | 🔴 Critical | Small |
-| **Bug** | Interval leak / battery drain (1.1) | 🔴 High | Small |
-| **Bug** | Dead code fetch-settings.ts (1.5) | 🟡 Low | Trivial |
-| **Tech Debt** | Deep imports from RN Paper internals (2.1) | 🟡 Medium | Medium |
-| **Tech Debt** | Inline styles not using StyleSheet (2.3) | 🟡 Low | Medium |
-| **Tech Debt** | `Date.now()` as ID (2.6) | 🟡 Low | Trivial |
-| **Tech Debt** | Duplicated helpers (2.5) | 🟡 Low | Small |
-| **Improvement** | Event-driven refresh (3.1) | 🟢 Medium | Small |
-| **Improvement** | Notifications / streaks (3.4) | 🟢 High | Medium |
-| **Improvement** | Visual timeline / animations (3.6) | 🟢 Medium | Medium |
+| Category        | Item                                       | Severity    | Effort  |
+| --------------- | ------------------------------------------ | ----------- | ------- |
+| **Bug**         | iOS crash on date picker (1.2)             | 🔴 Critical | Small   |
+| **Bug**         | Interval leak / battery drain (1.1)        | 🔴 High     | Small   |
+| **Bug**         | Dead code fetch-settings.ts (1.5)          | 🟡 Low      | Trivial |
+| **Tech Debt**   | Deep imports from RN Paper internals (2.1) | 🟡 Medium   | Medium  |
+| **Tech Debt**   | Inline styles not using StyleSheet (2.3)   | 🟡 Low      | Medium  |
+| **Tech Debt**   | `Date.now()` as ID (2.6)                   | 🟡 Low      | Trivial |
+| **Tech Debt**   | Duplicated helpers (2.5)                   | 🟡 Low      | Small   |
+| **Improvement** | Event-driven refresh (3.1)                 | 🟢 Medium   | Small   |
+| **Improvement** | Notifications / streaks (3.4)              | 🟢 High     | Medium  |
+| **Improvement** | Visual timeline / animations (3.6)         | 🟢 Medium   | Medium  |
 
 ---
 
@@ -282,6 +294,7 @@ The app's **core concept is solid** — minimal, focused, does one thing well. T
 - Internal RN Paper imports suggest fighting with bundler configuration rather than addressing it
 
 **Recommended immediate actions:**
+
 1. Fix the iOS date picker crash — this is a **ship-blocker** for iOS
 2. Kill the 1-second interval; use `useFocusEffect`
 3. Extract shared date helpers to `utils/`
