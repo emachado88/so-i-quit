@@ -43,9 +43,10 @@ export const parseSavings = (value: string | null): number => {
 
 export const formatAmount = (value: number): string => {
   const roundedValue = Math.round(value * 100) / 100;
-  const formattedValue =
-    roundedValue % 1 === 0
-      ? roundedValue.toFixed(0)
-      : roundedValue.toFixed(2);
-  return `${formattedValue}€`;
+  const decimalsOrNot =
+    roundedValue % 1 === 0 ? roundedValue.toFixed(0) : roundedValue.toFixed(2);
+  // the formatted value should have a dot each 3 digits
+  const parts = decimalsOrNot.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${parts.join(",")} €`;
 };

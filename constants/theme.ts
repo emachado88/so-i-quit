@@ -1,9 +1,9 @@
-import { Platform } from "react-native";
-import { MD3DarkTheme, MD3LightTheme } from "react-native-paper";
+import {
+  MD3DarkTheme,
+  MD3LightTheme,
+  configureFonts,
+} from "react-native-paper";
 
-/*
- * The source of truth Color Palette
- */
 export const Colors = {
   standard: {
     primary: "#1A6B5C",
@@ -35,36 +35,33 @@ export const Colors = {
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+const fontFamilyConfig = {
+  // Inter — headings (Black for prominence, Bold for titles)
+  displayLarge: { fontFamily: "Inter-Black" },
+  displayMedium: { fontFamily: "Inter-Black" },
+  displaySmall: { fontFamily: "Inter-Bold" },
+  headlineLarge: { fontFamily: "Inter-Black" },
+  headlineMedium: { fontFamily: "Inter-Black" },
+  headlineSmall: { fontFamily: "Inter-Bold" },
+  titleLarge: { fontFamily: "Inter-Bold" },
+  titleMedium: { fontFamily: "Inter-Bold" },
+  titleSmall: { fontFamily: "Inter-Medium" },
+  // Inter — body & labels
+  bodyLarge: { fontFamily: "Inter-Regular" },
+  bodyMedium: { fontFamily: "Inter-Regular" },
+  bodySmall: { fontFamily: "Inter-Regular" },
+  labelLarge: { fontFamily: "Inter-Medium" },
+  labelMedium: { fontFamily: "Inter-Medium" },
+  labelSmall: { fontFamily: "Inter-SemiBold" },
+};
+
+const fonts = configureFonts({ config: fontFamilyConfig });
 
 export const themes = {
   light: {
     ...MD3LightTheme,
     roundness: 4,
+    fonts,
     colors: {
       // Primary — brand teal
       primary: Colors.standard.primary,
@@ -107,7 +104,7 @@ export const themes = {
       // Inverse
       inverseSurface: Colors.dark.surface,
       inverseOnSurface: Colors.dark.foreground,
-      inversePrimary: Colors.standard.primary,
+      inversePrimary: Colors.standard.hover,
 
       // Misc
       shadow: "#000000",
@@ -128,9 +125,10 @@ export const themes = {
   dark: {
     ...MD3DarkTheme,
     roundness: 4,
+    fonts,
     colors: {
       // Primary — lighter teal for dark bg visibility
-      primary: Colors.standard.primary,
+      primary: Colors.standard.hover,
       onPrimary: "#FFFFFF",
       primaryContainer: Colors.standard.depth,
       onPrimaryContainer: "#CEE8E0",

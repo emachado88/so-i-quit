@@ -1,6 +1,7 @@
-import { StyleSheet, Text, useColorScheme, type TextProps } from "react-native";
+import { StyleSheet, type TextProps } from "react-native";
 import React from "react";
-import { themes } from "@/constants/theme";
+import { Text as PaperText } from "react-native-paper";
+import type { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -8,20 +9,26 @@ export type ThemedTextProps = TextProps & {
   type?: "default" | "title" | "defaultSemiBold" | "subtitle" | "link";
 };
 
+const variantMap: Record<
+  NonNullable<ThemedTextProps["type"]>,
+  VariantProp<never>
+> = {
+  default: "bodyLarge",
+  defaultSemiBold: "bodyLarge",
+  title: "titleLarge",
+  subtitle: "titleSmall",
+  link: "bodyLarge",
+};
+
 export function ThemedText({
   style,
-  lightColor,
-  darkColor,
   type = "default",
   ...rest
 }: ThemedTextProps) {
-  const colorScheme = useColorScheme() ?? "light";
-  const color = themes[colorScheme].colors.onBackground;
-
   return (
-    <Text
+    <PaperText
+      variant={variantMap[type]}
       style={[
-        { color },
         type === "default" ? styles.default : undefined,
         type === "title" ? styles.title : undefined,
         type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,
@@ -29,7 +36,7 @@ export function ThemedText({
         type === "link" ? styles.link : undefined,
         style,
       ]}
-      {...rest}
+      {...(rest as any)}
     />
   );
 }
@@ -42,16 +49,15 @@ const styles = StyleSheet.create({
   defaultSemiBold: {
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: "600",
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontSize: 36,
     lineHeight: 42,
+    letterSpacing: 0.02,
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    lineHeight: 24,
   },
   link: {
     lineHeight: 30,

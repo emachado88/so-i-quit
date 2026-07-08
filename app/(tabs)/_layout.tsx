@@ -5,7 +5,6 @@ import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
@@ -28,8 +27,7 @@ export default function TabLayout() {
         },
         headerTitleStyle: {
           boxShadow: "none",
-          fontSize: 32,
-          color: themes[colorScheme].colors.tertiary,
+          color: themes[colorScheme].colors.primary,
         },
         tabBarStyle: {
           height: 80,

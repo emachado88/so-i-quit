@@ -15,6 +15,7 @@ import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
+import dayjs from "dayjs";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? "light";
@@ -61,7 +62,7 @@ export default function HomeScreen() {
       <View style={[globalStyles.container, globalStyles.shadow]}>
         <ThemedText type="subtitle">
           {hasAnyHabitWithDate
-            ? "You're doing great"
+            ? "You're doing great,"
             : "No data saved in settings"}
         </ThemedText>
         {!hasAnyHabitWithDate && (
@@ -86,32 +87,46 @@ export default function HomeScreen() {
 
             return (
               <Card key={habit.id} mode="contained">
-                <Card.Title title={`${habit.name} free for`} />
+                <Card.Title
+                  title={`${habit.name} free for`}
+                  titleStyle={[
+                    globalStyles.spacedUppercase,
+                    { color: themes[colorScheme].colors.secondary },
+                  ]}
+                />
                 <Card.Content>
                   <View>
                     <View style={styles.cardRow}>
                       {years ? (
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{years}</ThemedText>
-                          <ThemedText>years</ThemedText>
+                          <ThemedText style={styles.timeSubtitle}>
+                            years
+                          </ThemedText>
                         </View>
                       ) : null}
                       {months ? (
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{months}</ThemedText>
-                          <ThemedText>months</ThemedText>
+                          <ThemedText style={styles.timeSubtitle}>
+                            months
+                          </ThemedText>
                         </View>
                       ) : null}
                       {days ? (
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{days}</ThemedText>
-                          <ThemedText>days</ThemedText>
+                          <ThemedText style={styles.timeSubtitle}>
+                            days
+                          </ThemedText>
                         </View>
                       ) : null}
                       {hours ? (
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{hours}</ThemedText>
-                          <ThemedText>hours</ThemedText>
+                          <ThemedText style={styles.timeSubtitle}>
+                            hours
+                          </ThemedText>
                         </View>
                       ) : null}
                       {!years && !months && !days && !hours ? (
@@ -124,14 +139,15 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </Card.Content>
-                <Card.Actions>
-                  <View style={styles.actionsRow}>
-                    <ThemedText style={styles.savingsLabel}>
-                      {totalHabitSavings > 0
-                        ? formatAmount(totalHabitSavings)
-                        : null}
-                    </ThemedText>
-                  </View>
+                <Card.Actions style={styles.actionsRow}>
+                  <ThemedText style={styles.cardActions}>
+                    {totalHabitSavings > 0
+                      ? formatAmount(totalHabitSavings)
+                      : null}
+                  </ThemedText>
+                  <ThemedText style={styles.cardActions}>
+                    since {dayjs(habit.date).format("DD MMM YYYY")}
+                  </ThemedText>
                 </Card.Actions>
               </Card>
             );
@@ -146,10 +162,13 @@ export default function HomeScreen() {
             }}
           >
             <Card.Content>
-              <View style={styles.alignItemsEnd}>
+              <View>
                 <ThemedText
                   type="subtitle"
-                  style={{ color: themes[colorScheme].colors.onPrimary }}
+                  style={[
+                    globalStyles.spacedUppercase,
+                    { color: themes[colorScheme].colors.onPrimary },
+                  ]}
                 >
                   Total savings
                 </ThemedText>
@@ -190,17 +209,21 @@ const styles = StyleSheet.create({
   cardRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 10,
+    gap: 5,
   },
   statColumn: {
     alignItems: "center",
   },
   actionsRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    paddingInlineEnd: 15,
   },
-  savingsLabel: {
-    marginInlineEnd: 5,
+  timeSubtitle: {
+    fontSize: 13,
+  },
+  cardActions: {
+    fontSize: 12,
   },
   alignItemsEnd: {
     alignItems: "flex-end",

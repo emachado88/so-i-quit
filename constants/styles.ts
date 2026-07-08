@@ -2,7 +2,8 @@ import { StyleSheet } from "react-native";
 
 export const globalStyles = StyleSheet.create({
   container: {
-    padding: 20,
+    paddingInline: 20,
+    paddingBlock: 15,
   },
   shadow: {
     shadowColor: "#000",
@@ -13,5 +14,10 @@ export const globalStyles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
+  },
+  spacedUppercase: {
+    textTransform: "uppercase",
+    fontSize: 12,
+    letterSpacing: 1.5,
   },
 });
