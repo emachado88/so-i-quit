@@ -29,7 +29,7 @@ export default function TabLayout() {
         headerTitleStyle: {
           boxShadow: "none",
           fontSize: 32,
-          color: useThemeColor({}, "text"),
+          color: themes[colorScheme].colors.tertiary,
         },
         tabBarStyle: {
           height: 80,

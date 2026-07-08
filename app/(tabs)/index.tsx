@@ -4,11 +4,16 @@ import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getHabits } from "@/utils/habits";
-import { breakdown, daysSince, formatAmount, parseSavings } from "@/utils/format";
+import {
+  breakdown,
+  daysSince,
+  formatAmount,
+  parseSavings,
+} from "@/utils/format";
 import { Link, useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
 
 export default function HomeScreen() {
@@ -69,7 +74,9 @@ export default function HomeScreen() {
           </Link>
         )}
       </View>
-      <ScrollView contentContainerStyle={[globalStyles.container, styles.scrollContent]}>
+      <ScrollView
+        contentContainerStyle={[globalStyles.container, styles.scrollContent]}
+      >
         {habits
           .filter((h) => h.date)
           .map((habit) => {
@@ -78,7 +85,7 @@ export default function HomeScreen() {
               daysSince(habit.date) * parseSavings(habit.savings);
 
             return (
-              <Card key={habit.id}>
+              <Card key={habit.id} mode="contained">
                 <Card.Title title={`${habit.name} free for`} />
                 <Card.Content>
                   <View>
@@ -135,13 +142,21 @@ export default function HomeScreen() {
           <Card
             mode="contained"
             style={{
-              backgroundColor: themes[colorScheme].colors.primaryContainer,
+              backgroundColor: themes[colorScheme].colors.primary,
             }}
           >
             <Card.Content>
               <View style={styles.alignItemsEnd}>
-                <ThemedText type="subtitle">Total savings</ThemedText>
-                <ThemedText type="title">
+                <ThemedText
+                  type="subtitle"
+                  style={{ color: themes[colorScheme].colors.onPrimary }}
+                >
+                  Total savings
+                </ThemedText>
+                <ThemedText
+                  type="title"
+                  style={{ color: themes[colorScheme].colors.onPrimary }}
+                >
                   {formatAmount(totalSavings)}
                 </ThemedText>
               </View>
@@ -152,13 +167,20 @@ export default function HomeScreen() {
 
       <Snackbar
         visible={!!snackbarMessage}
+        duration={5000}
+        action={{
+          label: "Dismiss",
+          textColor: themes[colorScheme].colors.onPrimary,
+          onPress: () => setSnackbarMessage(null),
+        }}
+        style={{
+          backgroundColor: themes[colorScheme].colors.error,
+        }}
         onDismiss={() => setSnackbarMessage(null)}
-        duration={4000}
-        action={{ label: "Dismiss", onPress: () => setSnackbarMessage(null) }}
       >
-        <Text style={{ color: themes[colorScheme].colors.onPrimary }}>
+        <ThemedText style={{ color: themes[colorScheme].colors.onPrimary }}>
           {snackbarMessage}
-        </Text>
+        </ThemedText>
       </Snackbar>
     </View>
   );

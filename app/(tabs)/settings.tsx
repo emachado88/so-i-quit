@@ -1,4 +1,4 @@
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
@@ -239,11 +239,13 @@ export default function SettingsScreen() {
 
       <Divider />
 
-      <ScrollView contentContainerStyle={[globalStyles.container, styles.scrollContent]}>
+      <ScrollView
+        contentContainerStyle={[globalStyles.container, styles.scrollContent]}
+      >
         <ThemedText type="subtitle">Your Habits</ThemedText>
         {habits.length === 0 && <ThemedText>No habits added yet.</ThemedText>}
         {habits.map((habit) => (
-          <Card key={habit.id}>
+          <Card key={habit.id} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
                 <ThemedText type="subtitle">{habit.name}</ThemedText>
@@ -251,22 +253,19 @@ export default function SettingsScreen() {
                   compact
                   icon="delete"
                   mode="text"
-                  textColor="red"
+                  textColor={themes[colorScheme].colors.error}
                   onPress={() => handleDelete(habit)}
                 >
                   Delete
                 </Button>
               </View>
 
-              <View
-                style={styles.dateTimeRow}
-              >
+              <View style={styles.dateTimeRow}>
                 <View style={styles.dateTimeButtonContainer}>
                   <Button
                     compact
                     icon="pencil"
                     mode="text"
-                    contentStyle={{ flexDirection: "row-reverse" }}
                     onPress={() =>
                       handleOpenPicker(
                         habit.id,
@@ -285,7 +284,6 @@ export default function SettingsScreen() {
                     compact
                     icon="pencil"
                     mode="text"
-                    contentStyle={{ flexDirection: "row-reverse" }}
                     onPress={() =>
                       handleOpenPicker(
                         habit.id,
@@ -308,10 +306,10 @@ export default function SettingsScreen() {
                   value={habit.savings || ""}
                   keyboardType="numeric"
                   mode="outlined"
+                  placeholder="0.00"
                   right={<TextInput.Affix text="€/day" />}
                   onChangeText={(text) => handleSavingsChange(habit.id, text)}
                   onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
-                  style={globalStyles.flex1}
                 />
                 <Button
                   compact
@@ -338,13 +336,20 @@ export default function SettingsScreen() {
 
       <Snackbar
         visible={!!snackbarMessage}
+        duration={5000}
+        action={{
+          label: "Dismiss",
+          textColor: themes[colorScheme].colors.onPrimary,
+          onPress: () => setSnackbarMessage(null),
+        }}
+        style={{
+          backgroundColor: themes[colorScheme].colors.error,
+        }}
         onDismiss={() => setSnackbarMessage(null)}
-        duration={4000}
-        action={{ label: "Dismiss", onPress: () => setSnackbarMessage(null) }}
       >
-        <Text style={{ color: themes[colorScheme].colors.onPrimary }}>
+        <ThemedText style={{ color: themes[colorScheme].colors.onPrimary }}>
           {snackbarMessage}
-        </Text>
+        </ThemedText>
       </Snackbar>
     </View>
   );
