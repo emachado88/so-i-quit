@@ -4,7 +4,7 @@
 
 ---
 
-## 1. UI Overhaul — Custom MD3 Theme
+## 1. UI Overhaul — Custom MD3 Theme | Done ✅
 
 ### Goals
 
