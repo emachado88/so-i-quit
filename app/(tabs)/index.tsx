@@ -80,6 +80,7 @@ export default function HomeScreen() {
       >
         {habits
           .filter((h) => h.date)
+          .sort((a, b) => a.date?.localeCompare(b.date as string) as number)
           .map((habit) => {
             const { years, months, days, hours } = breakdown(habit.date);
             const totalHabitSavings =
