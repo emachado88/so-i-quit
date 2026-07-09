@@ -81,7 +81,6 @@ constants/
   theme.ts              # Light/dark colour tokens
 hooks/
   use-color-scheme.ts   # SSR-safe color scheme hook
-  use-theme-color.ts    # Theme-aware colour lookup
 utils/
   habits.ts             # AsyncStorage CRUD for habits
   format.ts             # Date/savings formatting helpers
