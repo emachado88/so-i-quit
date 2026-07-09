@@ -133,7 +133,7 @@ export default function HomeScreen() {
                       {!years && !months && !days && !hours ? (
                         <View style={styles.statColumn}>
                           <ThemedText>
-                            You&apos;ve just started, check later
+                            You&apos;ve just started, keep going
                           </ThemedText>
                         </View>
                       ) : null}
