@@ -312,6 +312,7 @@ export default function SettingsScreen() {
                     mode="outlined"
                     placeholder="0.00"
                     right={<TextInput.Affix text="€/day" />}
+                    style={{ maxWidth: "50%" }}
                     onChangeText={(text) => handleSavingsChange(habit.id, text)}
                     onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
                   />
