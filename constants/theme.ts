@@ -35,7 +35,7 @@ export const Colors = {
   },
 };
 
-const fontFamilyConfig = {
+export const fontFamilyConfig = {
   // Inter — headings (Black for prominence, Bold for titles)
   displayLarge: { fontFamily: "Inter-Black" },
   displayMedium: { fontFamily: "Inter-Black" },

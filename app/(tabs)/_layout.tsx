@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
-import { themes } from "@/constants/theme";
+import { fontFamilyConfig, themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -33,6 +33,9 @@ export default function TabLayout() {
           height: 80,
           paddingTop: 15,
           backgroundColor: themes[colorScheme].colors.inverseOnSurface,
+        },
+        tabBarLabelStyle: {
+          ...fontFamilyConfig.labelLarge,
         },
       }}
     >
