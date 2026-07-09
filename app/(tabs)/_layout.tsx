@@ -27,7 +27,7 @@ export default function TabLayout() {
         },
         headerTitleStyle: {
           boxShadow: "none",
-          color: themes[colorScheme].colors.primary,
+          color: themes[colorScheme].colors.inversePrimary,
         },
         tabBarStyle: {
           height: 80,

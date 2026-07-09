@@ -128,7 +128,7 @@ export const themes = {
     fonts,
     colors: {
       // Primary — lighter teal for dark bg visibility
-      primary: Colors.standard.hover,
+      primary: Colors.standard.primary,
       onPrimary: "#FFFFFF",
       primaryContainer: Colors.standard.depth,
       onPrimaryContainer: "#CEE8E0",
@@ -168,7 +168,7 @@ export const themes = {
       // Inverse
       inverseSurface: Colors.light.background,
       inverseOnSurface: Colors.light.foreground,
-      inversePrimary: Colors.standard.primary,
+      inversePrimary: Colors.standard.hover,
 
       // Misc
       shadow: "#000000",
