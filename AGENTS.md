@@ -14,6 +14,8 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 - **@react-native-async-storage/async-storage** — persistence
 - **react-native-reanimated v4** — animations
 - **@react-native-community/datetimepicker** — native date/time pickers
+- **expo-font** + **@expo-google-fonts/inter** — Inter font family (Black, Bold, SemiBold, Medium, Regular)
+- **expo-build-properties** — native build configuration
 
 ## Project Structure
 
@@ -21,9 +23,9 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 app/                     # Expo Router pages (file-based)
   (tabs)/
     _layout.tsx          # Tab bar (2 tabs: index, settings)
-    index.tsx            # Home — live counters, savings summary
-    settings.tsx         # Habit CRUD — date/time pickers, savings input
-  _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale
+    index.tsx            # Home — live counters, savings summary, sorted oldest-first
+    settings.tsx         # Habit CRUD — date/time pickers, savings input (max 50%)
+  _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts
 components/
   themed-text.tsx        # ThemedText component (title/subtitle/default/link)
   haptic-tab.tsx         # Tab button with haptic feedback
@@ -33,11 +35,10 @@ components/
   external-link.tsx      # External link helper (template boilerplate)
 constants/
   interfaces.ts          # Habit { id, name, date, savings }
-  styles.ts              # globalStyles: container, shadow, flex1
-  theme.ts               # Colors (light/dark), themes (MD3LightTheme/MD3DarkTheme)
+  styles.ts              # globalStyles: container, shadow, flex1, flexWrap, flexRow, spacedUppercase
+  theme.ts               # Colors (standard/light/dark), themes (MD3LightTheme/MD3DarkTheme), fontFamilyConfig
 hooks/
   use-color-scheme.ts    # SSR-safe re-export of RN's useColorScheme
-  use-theme-color.ts     # Resolves {light,dark} colour from Colors map
 utils/
   habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
   format.ts              # daysSince, breakdown, parseSavings, formatAmount
@@ -60,7 +61,7 @@ assets/
 ### Styles
 - `StyleSheet.create({...})` for static styles at module bottom
 - Inline styles `style={{ color: themes[colorScheme].colors.X }}` only for **dynamic theme colours**
-- Shared styles in `constants/styles.ts` (`globalStyles.container`, `globalStyles.flex1`)
+- Shared styles in `constants/styles.ts` (`globalStyles.container`, `globalStyles.flex1`, `globalStyles.flexRow`, `globalStyles.flexWrap`, `globalStyles.spacedUppercase`)
 - No `StyleSheet.flatten` — use array syntax: `style={[base, custom]}`
 
 ### State & Effects
@@ -72,6 +73,22 @@ assets/
 - Errors propagate from `utils/habits.ts` — screens catch and show Snackbar
 - IDs: timestamp + random suffix: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
 - AsyncStorage key: `"habits"` (JSON array of Habit objects)
+
+## Theme & Fonts
+
+### Colour Tokens
+`Colors` in `constants/theme.ts` has three tiers:
+- **`Colors.standard`** — shared accent colours (primary, hover, depth, accent, subtleFill, vitality, success, danger)
+- **`Colors.light`** / **`Colors.dark`** — surface/background tones (background, surface, card, border, muted, foreground, text)
+
+### MD3 Theme Mapping
+`themes.light` / `themes.dark` spread `MD3LightTheme`/`MD3DarkTheme` and override `colors` with the custom tokens plus `configureFonts` for the Inter family. Access via `themes[colorScheme].colors.X`.
+
+### Inter Font Family
+Loaded in `app/_layout.tsx` via `useFonts` from `expo-font` with PostScript names:
+- `Inter-Black` (900), `Inter-Bold` (700), `Inter-SemiBold` (600), `Inter-Medium` (500), `Inter-Regular` (400)
+- Headings use Black/Bold, body uses Regular/Medium/SemiBold
+- Configured via `fontFamilyConfig` + `configureFonts` in `constants/theme.ts`
 
 ## Linting & Type Checking
 
@@ -102,10 +119,15 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 - Solution: lightweight `setInterval(() => setTick(t => t + 1), 1000)` inside `useFocusEffect`
 - Re-render only — no storage I/O on ticks (the quit date is cached in state)
 
+### Inter Font Loading
+- Use PostScript names as `useFonts` keys (e.g. `Inter_400Regular` → `"Inter-Regular"`)
+- Underscore names (`Inter_400Regular`) don't resolve on iOS — always map to PostScript form
+- Fonts load synchronously; `app/_layout.tsx` returns `null` until `fontsLoaded` is true
+
 ## Roadmap
 
 See `docs/improvements-roadmap.md` for the planned phases:
-1. Custom MD3 colour palette (light + dark)
+1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. Tab reorganisation (Progress / Habits / Settings), theme/language/currency
 3. Notifications + visual timeline
 4. App hardening (TS strictness, Sentry, accessibility)
@@ -114,7 +136,9 @@ See `docs/improvements-roadmap.md` for the planned phases:
 
 | Token | Value |
 |---|---|
-| Primary (splash bg) | `#0D4A3F` |
-| Accent (graph stroke) | `#2A8A77` |
+| Primary | `#1A6B5C` |
+| Hover | `#2A8F7A` |
+| Depth | `#12504A` |
+| Accent | `#D4922A` |
 | App name | So I Quit |
 | Scheme | `soiquit` |
