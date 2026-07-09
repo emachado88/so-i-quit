@@ -43,7 +43,13 @@
         {
           "android": {
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResources": true
+            "enableShrinkResources": true,
+            "gradleProperties": {
+              "org.gradle.jvmargs": "-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError",
+              "org.gradle.workers.max": "4",
+              "org.gradle.parallel": "true",
+              "org.gradle.caching": "true"
+            }
           }
         }
       ]
