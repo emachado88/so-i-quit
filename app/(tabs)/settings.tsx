@@ -1,4 +1,11 @@
-import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
@@ -237,97 +244,103 @@ export default function SettingsScreen() {
 
       <Divider />
 
-      <ScrollView
-        contentContainerStyle={[globalStyles.container, styles.scrollContent]}
+      <KeyboardAvoidingView
+        style={globalStyles.flex1}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={100}
       >
-        {habits.length === 0 && <ThemedText>No habits added yet.</ThemedText>}
-        {habits.toReversed().map((habit) => (
-          <Card
-            key={habit.id}
-            mode="contained"
-            style={{ backgroundColor: themes[colorScheme].colors.surface }}
-          >
-            <Card.Content>
-              <View style={[styles.cardHeader, globalStyles.flexWrap]}>
-                <ThemedText>{habit.name}</ThemedText>
+        <ScrollView
+          contentContainerStyle={[globalStyles.container, styles.scrollContent]}
+        >
+          {habits.length === 0 && <ThemedText>No habits added yet.</ThemedText>}
+          {habits.toReversed().map((habit) => (
+            <Card
+              key={habit.id}
+              mode="contained"
+              style={{ backgroundColor: themes[colorScheme].colors.surface }}
+            >
+              <Card.Content>
+                <View style={[styles.cardHeader, globalStyles.flexWrap]}>
+                  <ThemedText>{habit.name}</ThemedText>
 
-                <View style={globalStyles.flexRow}>
-                  <View style={styles.dateTimeButtonContainer}>
-                    <Button
-                      compact
-                      icon="pencil"
-                      mode="text"
-                      onPress={() =>
-                        handleOpenPicker(
-                          habit.id,
-                          "date",
-                          habit.date ? new Date(habit.date) : new Date(),
-                        )
-                      }
-                    >
-                      {habit.date
-                        ? new Date(habit.date).toLocaleDateString()
-                        : "Set Date"}
-                    </Button>
+                  <View style={globalStyles.flexRow}>
+                    <View style={styles.dateTimeButtonContainer}>
+                      <Button
+                        compact
+                        icon="pencil"
+                        mode="text"
+                        onPress={() =>
+                          handleOpenPicker(
+                            habit.id,
+                            "date",
+                            habit.date ? new Date(habit.date) : new Date(),
+                          )
+                        }
+                      >
+                        {habit.date
+                          ? new Date(habit.date).toLocaleDateString()
+                          : "Set Date"}
+                      </Button>
+                    </View>
+                    <View style={styles.dateTimeButtonContainer}>
+                      <Button
+                        compact
+                        icon="pencil"
+                        mode="text"
+                        onPress={() =>
+                          handleOpenPicker(
+                            habit.id,
+                            "time",
+                            habit.date ? new Date(habit.date) : new Date(),
+                          )
+                        }
+                      >
+                        {habit.date
+                          ? new Date(habit.date).toLocaleTimeString()
+                          : "Set Time"}
+                      </Button>
+                    </View>
                   </View>
-                  <View style={styles.dateTimeButtonContainer}>
+                </View>
+
+                <View style={[styles.savingsRow, globalStyles.flexWrap]}>
+                  <TextInput
+                    label="Savings"
+                    inputMode="decimal"
+                    value={habit.savings || ""}
+                    keyboardType="numeric"
+                    mode="outlined"
+                    placeholder="0.00"
+                    right={<TextInput.Affix text="€/day" />}
+                    onChangeText={(text) => handleSavingsChange(habit.id, text)}
+                    onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
+                  />
+
+                  <View style={globalStyles.flexRow}>
                     <Button
                       compact
-                      icon="pencil"
-                      mode="text"
-                      onPress={() =>
-                        handleOpenPicker(
-                          habit.id,
-                          "time",
-                          habit.date ? new Date(habit.date) : new Date(),
-                        )
-                      }
+                      icon="refresh"
+                      contentStyle={{ flexDirection: "row-reverse" }}
+                      onPress={() => handleReset(habit)}
                     >
-                      {habit.date
-                        ? new Date(habit.date).toLocaleTimeString()
-                        : "Set Time"}
+                      Reset
+                    </Button>
+                    <Button
+                      compact
+                      icon="delete"
+                      mode="text"
+                      textColor={themes[colorScheme].colors.error}
+                      onPress={() => handleDelete(habit)}
+                    >
+                      Delete
                     </Button>
                   </View>
                 </View>
-              </View>
-
-              <View style={[styles.savingsRow, globalStyles.flexWrap]}>
-                <TextInput
-                  label="Savings"
-                  inputMode="decimal"
-                  value={habit.savings || ""}
-                  keyboardType="numeric"
-                  mode="outlined"
-                  placeholder="0.00"
-                  right={<TextInput.Affix text="€/day" />}
-                  onChangeText={(text) => handleSavingsChange(habit.id, text)}
-                  onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
-                />
-
-                <View style={globalStyles.flexRow}>
-                  <Button
-                    compact
-                    icon="refresh"
-                    contentStyle={{ flexDirection: "row-reverse" }}
-                    onPress={() => handleReset(habit)}
-                  >
-                    Reset
-                  </Button>
-                  <Button
-                    compact
-                    icon="delete"
-                    mode="text"
-                    textColor={themes[colorScheme].colors.error}
-                    onPress={() => handleDelete(habit)}
-                  >
-                    Delete
-                  </Button>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
-      </ScrollView>
+              </Card.Content>
+            </Card>
+          ))}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {Platform.OS === "ios" && editingHabit && pickerOpen && (
         <DateTimePicker
