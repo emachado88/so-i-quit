@@ -15,6 +15,12 @@ export const globalStyles = StyleSheet.create({
   flex1: {
     flex: 1,
   },
+  flexWrap: {
+    flexWrap: "wrap",
+  },
+  flexRow: {
+    flexDirection: "row",
+  },
   spacedUppercase: {
     textTransform: "uppercase",
     fontSize: 12,
