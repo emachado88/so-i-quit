@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { getHabits, addHabit, updateHabit, deleteHabit } from "@/utils/habits";
+import { getHabits, addHabit, updateHabit, deleteHabit } from "@/data/habits";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";

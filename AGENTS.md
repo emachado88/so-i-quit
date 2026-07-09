@@ -71,7 +71,7 @@ assets/
 - `const [, setTick] = useState(0)` for re-render triggers (no storage reads on tick)
 
 ### Data Layer
-- Errors propagate from `utils/habits.ts` — screens catch and show Snackbar
+- Errors propagate from `data/habits.ts` — screens catch and show Snackbar
 - IDs: timestamp + random suffix: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
 - AsyncStorage key: `"habits"` (JSON array of Habit objects)
 

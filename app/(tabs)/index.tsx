@@ -3,13 +3,13 @@ import { Habit } from "@/constants/interfaces";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getHabits } from "@/utils/habits";
+import { getHabits } from "@/data/habits";
 import {
   breakdown,
   daysSince,
   formatAmount,
   parseSavings,
-} from "@/utils/format";
+} from "@/utils/utils";
 import { Link, useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
