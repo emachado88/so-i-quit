@@ -22,9 +22,10 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 ```
 app/                     # Expo Router pages (file-based)
   (tabs)/
-    _layout.tsx          # Tab bar (2 tabs: index, settings)
-    index.tsx            # Home — live counters, savings summary, sorted oldest-first
-    settings.tsx         # Habit CRUD — date/time pickers, savings input (max 50%)
+    _layout.tsx          # Tab bar (3 tabs: Progress, Habits, Settings)
+    index.tsx            # Progress — live counters, savings summary, sorted oldest-first
+    habits.tsx           # Habits — CRUD, date/time pickers, savings input (max 50%)
+    settings.tsx         # Settings — app config (theme, language, currency)
   _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts
 components/
   themed-text.tsx        # ThemedText component (title/subtitle/default/link)

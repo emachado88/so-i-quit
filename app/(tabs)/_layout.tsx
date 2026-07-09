@@ -2,9 +2,9 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { themes } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
@@ -26,7 +26,6 @@ export default function TabLayout() {
           marginHorizontal: 0,
         },
         headerTitleStyle: {
-          boxShadow: "none",
           color: themes[colorScheme].colors.inversePrimary,
         },
         tabBarStyle: {
@@ -39,10 +38,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Stats",
+          title: "Progress",
           headerTitle: "Congratulations!",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="trophy.fill" color={color} />
+            <MaterialCommunityIcons
+              color={color}
+              size={28}
+              name="chart-box-outline"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="habits"
+        options={{
+          title: "Habits",
+          headerTitle: "Habits",
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons
+              color={color}
+              size={28}
+              name="clipboard-list"
+            />
           ),
         }}
       />
@@ -50,8 +67,9 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Settings",
+          headerTitle: "Settings",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gear" color={color} />
+            <MaterialIcons color={color} size={28} name="settings" />
           ),
         }}
       />
