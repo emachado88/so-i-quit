@@ -40,7 +40,13 @@ export default function RootLayout() {
 
   return (
     <PaperProvider theme={themes[colorScheme]}>
-      <Stack>
+      <Stack
+        screenOptions={{
+          contentStyle: {
+            backgroundColor: themes[colorScheme].colors.background,
+          },
+        }}
+      >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />

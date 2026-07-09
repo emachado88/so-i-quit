@@ -12,6 +12,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        animation: "fade",
         tabBarActiveTintColor: themes[colorScheme].colors.primary,
         tabBarButton: HapticTab,
         sceneStyle: {
