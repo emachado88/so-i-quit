@@ -1,18 +1,18 @@
 # So I Quit
 
-> **Track your vices. Celebrate your progress. Save your money.**
+> **Track your vices. Celebrate your progress.**
 
-<img src="./assets/images/icon.png" width="150" height="150" alt="So I Quit icon">
+<img src="./assets/images/icon.png" width="150" height="150" alt="So I Quit icon" />
 
 ---
 
-So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, tobacco, or anything else you choose. Set a quit date, log your daily savings, and watch the counters tick. No accounts, no cloud sync, no nonsense.
+So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, tobacco, or anything else you set yourself to overcome. Set a quit date, log your daily savings, and watch the counters tick. No accounts, no cloud sync, no nonsense.
 
 ## Features
 
 - **⏱ Live Counters** — Track years, months, days, and hours since you quit each habit
 - **💰 Savings Calculator** — Enter how much you spend per day and see your total savings grow in real time
-- **📱 Cross-platform** — iOS, Android, and Web from a single codebase
+- **📱 Cross-platform** — Android and iOS (tested on Android only)
 - **🌙 Dark Mode** — Follows your system theme automatically
 - **💾 Local Only** — All data stays on-device via AsyncStorage (no account needed)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, and custom habits simultaneously
@@ -23,7 +23,7 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 | ------------- | --------------------------------------------------------------------------------- |
 | Framework     | [Expo](https://expo.dev) SDK 54 + [React Native](https://reactnative.dev) 0.81    |
 | Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v6 (file-based routing) |
-| UI | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens |
+| UI            | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens   |
 | Date Handling | dayjs with Portuguese locale                                                      |
 | Storage       | AsyncStorage                                                                      |
 | Animation     | React Native Reanimated 4                                                         |
@@ -91,17 +91,9 @@ docs/
   improvements-roadmap.md          # Next-phase roadmap
 ```
 
-## Conventions
-
-- **Arrow functions** for components and hooks (`const fn = () => {}`)
-- **StyleSheet.create** for static styles, inline for dynamic theme colours
-- **Named exports** for utility functions, default exports for screens
-- **Path aliases** `@/` maps to project root
-- **Strict TypeScript** enabled — fix errors at compile time, not runtime
-
 ## Roadmap
 
-See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phase: UI overhaul (dropping react-native-paper), tab reorganisation, notifications, analytics, and accessibility.
+See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phase: UI overhaul, tab reorganisation, notifications, analytics, and accessibility.
 
 ## License
 
