@@ -67,11 +67,11 @@ export default function HomeScreen() {
         </ThemedText>
         {!hasAnyHabitWithDate && (
           <Link
-            screen="settings"
+            screen="habits"
             style={{ color: themes[colorScheme].colors.primary }}
             params={{}}
           >
-            Go to settings
+            Go to habits
           </Link>
         )}
       </View>
