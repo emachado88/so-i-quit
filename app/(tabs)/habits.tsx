@@ -52,15 +52,28 @@ export default function HabitsScreen() {
     if (!habitId) return;
     const habit = habits.find((h) => h.id === habitId);
     if (!habit) return;
+
+    const raw = habit.savings?.trim() || null;
+    let normalized: string | null = null;
+    if (raw) {
+      const num = parseFloat(raw);
+      if (!isNaN(num)) {
+        normalized =
+          num % 1 === 0 ? String(num) : num.toFixed(2);
+      }
+    }
+
     try {
-      await updateHabit(habitId, { savings: habit.savings || null });
-      await loadHabits();
+      await updateHabit(habitId, { savings: normalized });
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? { ...h, savings: normalized } : h)),
+      );
     } catch (error) {
       console.error("Error updating savings:", error);
       setSnackbarMessage("Failed to update savings");
     }
     focusedHabitRef.current = null;
-  }, [habits, loadHabits]);
+  }, [habits]);
 
   const flushCustomInputBlur = useCallback(() => {
     setShowCustomInput(false);
