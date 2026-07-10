@@ -1,5 +1,6 @@
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,7 +13,7 @@ import { getHabits, addHabit, updateHabit, deleteHabit } from "@/data/habits";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Card, Divider, Snackbar, TextInput } from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
 import { globalStyles } from "@/constants/styles";
@@ -29,16 +30,14 @@ export default function HabitsScreen() {
     mode: "date" | "time";
   } | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-  const otherInputRef = React.useRef<any>(null);
+  const otherInputRef = useRef<any>(null);
+  const focusedHabitRef = useRef<string | null>(null);
+  const customInputFocusedRef = useRef(false);
 
   const hasAlcohol = habits.some((h) => h.name === "Alcohol");
   const hasTobacco = habits.some((h) => h.name === "Tobacco");
 
-  useEffect(() => {
-    loadHabits();
-  }, []);
-
-  const loadHabits = async () => {
+  const loadHabits = useCallback(async () => {
     try {
       const data = await getHabits();
       setHabits(data);
@@ -46,7 +45,47 @@ export default function HabitsScreen() {
       console.error("Error loading habits:", error);
       setSnackbarMessage("Failed to load habits");
     }
-  };
+  }, []);
+
+  const storeSavings = useCallback(async () => {
+    const habitId = focusedHabitRef.current;
+    if (!habitId) return;
+    const habit = habits.find((h) => h.id === habitId);
+    if (!habit) return;
+    try {
+      await updateHabit(habitId, { savings: habit.savings || null });
+      await loadHabits();
+    } catch (error) {
+      console.error("Error updating savings:", error);
+      setSnackbarMessage("Failed to update savings");
+    }
+    focusedHabitRef.current = null;
+  }, [habits, loadHabits]);
+
+  const flushCustomInputBlur = useCallback(() => {
+    setShowCustomInput(false);
+    customInputFocusedRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    loadHabits();
+  }, [loadHabits]);
+
+  useEffect(() => {
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      storeSavings();
+      flushCustomInputBlur();
+    });
+    return () => {
+      hideSubscription.remove();
+    };
+  }, [
+    habits,
+    showCustomInput,
+    customHabitName,
+    storeSavings,
+    flushCustomInputBlur,
+  ]);
 
   const handleAddHabit = async (type: "Alcohol" | "Tobacco" | "Other") => {
     if (type === "Other") {
@@ -118,14 +157,14 @@ export default function HabitsScreen() {
     );
   };
 
-  const handleSavingsBlur = async (habitId: string, value: string | null) => {
-    try {
-      await updateHabit(habitId, { savings: value || null });
-      await loadHabits();
-    } catch (error) {
-      console.error("Error updating savings:", error);
-      setSnackbarMessage("Failed to update savings");
-    }
+  const handleSavingsBlur = (habitId: string) => {
+    focusedHabitRef.current = habitId;
+    storeSavings();
+  };
+
+  const handleCustomInputBlur = () => {
+    customInputFocusedRef.current = false;
+    flushCustomInputBlur();
   };
 
   const handleReset = (habit: Habit) => {
@@ -233,7 +272,10 @@ export default function HabitsScreen() {
               mode="outlined"
               style={globalStyles.flex1}
               onChangeText={setCustomHabitName}
-              onBlur={() => !customHabitName && setShowCustomInput(false)}
+              onFocus={() => {
+                customInputFocusedRef.current = true;
+              }}
+              onBlur={handleCustomInputBlur}
             />
             <Button mode="contained" onPress={handleAddCustomHabit}>
               Add
@@ -314,7 +356,10 @@ export default function HabitsScreen() {
                     right={<TextInput.Affix text="€/day" />}
                     style={{ maxWidth: "50%" }}
                     onChangeText={(text) => handleSavingsChange(habit.id, text)}
-                    onBlur={() => handleSavingsBlur(habit.id, habit.savings)}
+                    onFocus={() => {
+                      focusedHabitRef.current = habit.id;
+                    }}
+                    onBlur={() => handleSavingsBlur(habit.id)}
                   />
 
                   <View style={globalStyles.flexRow}>
