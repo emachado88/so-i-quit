@@ -18,10 +18,10 @@ import { Button, Card, Divider, Snackbar, TextInput } from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/contexts/theme-context";
 
 export default function HabitsScreen() {
-  const colorScheme = useColorScheme() ?? "light";
+  const { scheme } = useAppTheme();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -312,7 +312,7 @@ export default function HabitsScreen() {
             <Card
               key={habit.id}
               mode="contained"
-              style={{ backgroundColor: themes[colorScheme].colors.surface }}
+              style={{ backgroundColor: themes[scheme].colors.surface }}
             >
               <Card.Content>
                 <View style={[styles.cardHeader, globalStyles.flexWrap]}>
@@ -388,7 +388,7 @@ export default function HabitsScreen() {
                       compact
                       icon="delete"
                       mode="text"
-                      textColor={themes[colorScheme].colors.error}
+                      textColor={themes[scheme].colors.error}
                       onPress={() => handleDelete(habit)}
                     >
                       Delete
@@ -415,15 +415,15 @@ export default function HabitsScreen() {
         duration={5000}
         action={{
           label: "Dismiss",
-          textColor: themes[colorScheme].colors.onPrimary,
+          textColor: themes[scheme].colors.onPrimary,
           onPress: () => setSnackbarMessage(null),
         }}
         style={{
-          backgroundColor: themes[colorScheme].colors.error,
+          backgroundColor: themes[scheme].colors.error,
         }}
         onDismiss={() => setSnackbarMessage(null)}
       >
-        <ThemedText style={{ color: themes[colorScheme].colors.onPrimary }}>
+        <ThemedText style={{ color: themes[scheme].colors.onPrimary }}>
           {snackbarMessage}
         </ThemedText>
       </Snackbar>

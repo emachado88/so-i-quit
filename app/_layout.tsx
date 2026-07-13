@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { getLocales } from "expo-localization";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useColorScheme } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { themes } from "@/constants/theme";
 import {
@@ -23,7 +23,13 @@ import {
   Inter_900Black,
 } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { getTheme, saveTheme } from "@/data/settings";
+import type { Theme } from "@/constants/interfaces";
+import {
+  AppThemeContext,
+  type AppThemeValue,
+} from "@/contexts/theme-context";
 
 /**
  * Map of region codes to dayjs locale names.
@@ -77,8 +83,6 @@ function initDayjsLocale() {
 initDayjsLocale();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme() ?? "light";
-
   const [fontsLoaded] = useFonts({
     "Inter-Regular": Inter_400Regular,
     "Inter-Medium": Inter_500Medium,
@@ -87,22 +91,41 @@ export default function RootLayout() {
     "Inter-Black": Inter_900Black,
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  const deviceScheme = useColorScheme() ?? "light";
+  const [storedTheme, setStoredTheme] = useState<Theme | null>(null);
+
+  // Starts in parallel with font loading — both block rendering together
+  useEffect(() => {
+    getTheme().then(setStoredTheme);
+  }, []);
+
+  const setTheme = useCallback(async (theme: Theme) => {
+    await saveTheme(theme);
+    setStoredTheme(theme);
+  }, []);
+
+  // Block until both fonts AND persisted theme are ready — no flicker
+  if (!fontsLoaded || storedTheme === null) return null;
+
+  const scheme: "light" | "dark" =
+    storedTheme === "system" ? deviceScheme : storedTheme;
+
+  const contextValue: AppThemeValue = { scheme, storedTheme, setTheme };
 
   return (
-    <PaperProvider theme={themes[colorScheme]}>
-      <Stack
-        screenOptions={{
-          contentStyle: {
-            backgroundColor: themes[colorScheme].colors.background,
-          },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </PaperProvider>
+    <AppThemeContext.Provider value={contextValue}>
+      <PaperProvider theme={themes[scheme]}>
+        <Stack
+          screenOptions={{
+            contentStyle: {
+              backgroundColor: themes[scheme].colors.background,
+            },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </PaperProvider>
+    </AppThemeContext.Provider>
   );
 }

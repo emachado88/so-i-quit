@@ -3,36 +3,36 @@ import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { fontFamilyConfig, themes } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/contexts/theme-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme() ?? "light";
+  const { scheme } = useAppTheme();
 
   return (
     <Tabs
       screenOptions={{
         animation: "fade",
-        tabBarActiveTintColor: themes[colorScheme].colors.primary,
+        tabBarActiveTintColor: themes[scheme].colors.primary,
         tabBarButton: HapticTab,
         sceneStyle: {
-          backgroundColor: themes[colorScheme].colors.background,
+          backgroundColor: themes[scheme].colors.background,
         },
         headerShadowVisible: false,
         headerStyle: {
-          backgroundColor: themes[colorScheme].colors.background,
+          backgroundColor: themes[scheme].colors.background,
         },
         headerTitleContainerStyle: {
           paddingHorizontal: 20,
           marginHorizontal: 0,
         },
         headerTitleStyle: {
-          color: themes[colorScheme].colors.inversePrimary,
+          color: themes[scheme].colors.inversePrimary,
         },
         tabBarStyle: {
           height: 80,
           paddingTop: 15,
-          backgroundColor: themes[colorScheme].colors.inverseOnSurface,
+          backgroundColor: themes[scheme].colors.inverseOnSurface,
         },
         tabBarLabelStyle: {
           ...fontFamilyConfig.labelLarge,
