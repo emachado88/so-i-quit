@@ -1,34 +1,37 @@
 # So I Quit
 
-> **Track your vices. Celebrate your progress.**
+> **Track vices. Celebrate progress.**
 
 <img src="./assets/images/icon.png" width="150" height="150" alt="So I Quit icon" />
 
 ---
 
-So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, tobacco, or anything else you set yourself to overcome. Set a quit date, log your daily savings, and watch the counters tick. No accounts, no cloud sync, no nonsense.
+So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, tobacco, or anything else you set yourself to overcome. Set a quit date, log daily savings, and watch the counters tick. No accounts, no cloud sync, no nonsense.
 
 ## Features
 
-- **⏱ Live Counters** — Track years, months, days, and hours since you quit each habit
-- **💰 Savings Calculator** — Enter how much you spend per day and see your total savings grow in real time
-- **📱 Cross-platform** — Android and iOS (tested on Android only)
-- **🌙 Dark Mode** — Follows your system theme automatically
+- **⏱ Live Counters** — Track years, months, days, hours since quitting each habit
+- **💰 Savings Calculator** — Enter how much you spend per day and see total savings grow in real time
+- **🎨 Theme Override** — Choose System, Light, or Dark mode (persisted)
+- **💱 Currency Picker** — Searchable currency selector with locale-based auto-detection on first run
+- **🌍 Locale-aware** — Dayjs locale matches device region; currency formatting uses Intl.NumberFormat
+- **📱 Cross-platform** — Android + iOS (tested on Android only)
 - **💾 Local Only** — All data stays on-device via AsyncStorage (no account needed)
-- **🎯 Multiple Habits** — Track alcohol, tobacco, and custom habits simultaneously
+- **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
 
 ## Tech Stack
 
-| Layer         | Technology                                                                        |
-| ------------- | --------------------------------------------------------------------------------- |
-| Framework     | [Expo](https://expo.dev) SDK 54 + [React Native](https://reactnative.dev) 0.81    |
-| Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v6 (file-based routing) |
-| UI            | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens   |
-| Date Handling | dayjs with Portuguese locale                                                      |
-| Storage       | AsyncStorage                                                                      |
-| Animation     | React Native Reanimated 4                                                         |
-| Language      | TypeScript 5.9 (strict mode)                                                      |
-| Linting       | ESLint 9 + expo config                                                            |
+| Layer         | Technology                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| Framework     | [Expo](https://expo.dev) SDK 54 + [React Native](https://reactnative.dev) 0.81           |
+| Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v6 (file-based routing)        |
+| UI            | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens          |
+| Date Handling | dayjs with Portuguese locale                                                             |
+| Storage       | AsyncStorage                                                                             |
+| Localization  | expo-localization (region, locale, currencyCode detection)                               |
+| Animation     | React Native Reanimated 4                                                                |
+| Language      | TypeScript 5.9 (strict mode)                                                             |
+| Linting       | ESLint 9 with expo config                                                                |
 
 ## Getting Started
 
@@ -67,32 +70,38 @@ npx eas build --platform ios
 ```
 app/                     # Expo Router pages
   (tabs)/                # Tab navigator screens
-    _layout.tsx          # Tab bar configuration
-    index.tsx            # Home screen — counters + savings
-    settings.tsx         # Habit management — dates, savings, CRUD
-  _layout.tsx            # Root layout — theme provider
+    _layout.tsx          # Tab bar (3 tabs: Progress, Habits, Settings)
+    index.tsx            # Progress — live counters, savings summary
+    habits.tsx           # Habits — CRUD, date/time pickers, savings input
+    settings.tsx         # Settings — app config (theme, language, currency)
+  _layout.tsx            # Root layout — theme provider, locale, fonts, context
 components/
   ui/                   # Reusable UI components
-  haptic-tab.tsx        # Haptic feedback tab button
-  themed-text.tsx       # Themed text component (title, subtitle, etc.)
+  haptic-tab.tsx         # Haptic feedback tab button
+  themed-text.tsx        # Themed text component (title, subtitle, etc.)
 constants/
-  interfaces.ts         # TypeScript interfaces (Habit, etc.)
-  styles.ts             # Global styles (container, shadow, flex1)
-  theme.ts              # Light/dark colour tokens
+  interfaces.ts          # TypeScript interfaces (Habit, Theme, AppSettings)
+  styles.ts              # Global styles (container, shadow, flex1)
+  theme.ts               # Light/dark MD3 colour tokens + Inter font config
+  currencies.ts          # Currency symbols + region-to-currency maps
+contexts/
+  settings-context.tsx   # AppSettings context (theme, currency, scheme)
+data/
+  habits.ts              # AsyncStorage CRUD for habits
+  settings.ts            # AsyncStorage persistence for settings + locale detection
 hooks/
-  use-color-scheme.ts   # SSR-safe color scheme hook
+  use-color-scheme.ts    # SSR-safe color scheme hook
 utils/
-  habits.ts             # AsyncStorage CRUD for habits
-  format.ts             # Date/savings formatting helpers
+  utils.ts               # Date/savings formatting helpers (Intl-based)
 assets/
-  images/               # App icon, splash, favicon
+  images/                # App icon, splash, favicon
 docs/
   improvements-roadmap.md          # Next-phase roadmap
 ```
 
 ## Roadmap
 
-See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phase: UI overhaul, tab reorganisation, notifications, analytics, and accessibility.
+See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, visual timeline, analytics, accessibility.
 
 ## License
 

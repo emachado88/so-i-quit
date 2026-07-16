@@ -69,12 +69,12 @@
 
 ### Implementation Order
 
-1. Restructure tabs in `app/(tabs)/_layout.tsx` (add 3rd tab, rename existing)
-2. Split `settings.tsx` — move habit management to a new `habits.tsx` screen
-3. Strip down `settings.tsx` to just app config (theme, language, currency)
-4. Implement theme override + persistence
-5. Implement i18n wiring + locale detection
-6. Implement currency config + format integration
+1. Restructure tabs in `app/(tabs)/_layout.tsx` (add 3rd tab, rename existing) ✅
+2. Split `settings.tsx` — move habit management to a new `habits.tsx` screen ✅
+3. Strip down `settings.tsx` to just app config (theme, language, currency) ✅
+4. Implement theme override + persistence ✅
+5. Implement currency config + format integration ✅
+6. Implement i18n wiring + locale detection
 
 ---
 

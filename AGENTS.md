@@ -15,6 +15,7 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 - **react-native-reanimated v4** — animations
 - **@react-native-community/datetimepicker** — native date/time pickers
 - **expo-font** + **@expo-google-fonts/inter** — Inter font family (Black, Bold, SemiBold, Medium, Regular)
+- **expo-localization** — locale/region detection (device timezone, currency, language)
 - **expo-build-properties** — native build configuration
 
 ## Project Structure
@@ -26,7 +27,7 @@ app/                     # Expo Router pages (file-based)
     index.tsx            # Progress — live counters, savings summary, sorted oldest-first
     habits.tsx           # Habits — CRUD, date/time pickers, savings input (max 50%)
     settings.tsx         # Settings — app config (theme, language, currency)
-  _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts
+  _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts, settings context
 components/
   themed-text.tsx        # ThemedText component (title/subtitle/default/link)
   haptic-tab.tsx         # Tab button with haptic feedback
@@ -35,14 +36,19 @@ components/
     icon-symbol.ios.tsx  # iOS-specific SF Symbols
   external-link.tsx      # External link helper (template boilerplate)
 constants/
-  interfaces.ts          # Habit { id, name, date, savings }
+  interfaces.ts          # Habit { id, name, date, savings }, Theme, AppSettings types
   styles.ts              # globalStyles: container, shadow, flex1, flexWrap, flexRow, spacedUppercase
   theme.ts               # Colors (standard/light/dark), themes (MD3LightTheme/MD3DarkTheme), fontFamilyConfig
+  currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY maps
+contexts/
+  settings-context.tsx   # AppSettingsContext: theme, currency, scheme resolution
+data/
+  habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
+  settings.ts            # AsyncStorage persistence for theme, language, currency + locale-based detection
 hooks/
   use-color-scheme.ts    # SSR-safe re-export of RN's useColorScheme
 utils/
-  habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
-  format.ts              # daysSince, breakdown, parseSavings, formatAmount
+  utils.ts               # daysSince, breakdown, parseSavings, formatAmount (Intl-based)
 assets/
   images/                # icon.png, splash-icon.png, favicon.png, etc.
 ```
@@ -129,7 +135,7 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 
 See `docs/improvements-roadmap.md` for the planned phases:
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
-2. Tab reorganisation (Progress / Habits / Settings), theme/language/currency
+2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
 3. Notifications + visual timeline
 4. App hardening (TS strictness, Sentry, accessibility)
 
