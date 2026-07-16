@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Habit } from "@/constants/interfaces";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
-import { useAppTheme } from "@/contexts/theme-context";
+import { useAppSettings } from "@/contexts/settings-context";
 import { getHabits } from "@/data/habits";
 import {
   breakdown,
@@ -18,7 +18,7 @@ import { Card, Snackbar } from "react-native-paper";
 import dayjs from "dayjs";
 
 export default function HomeScreen() {
-  const { scheme } = useAppTheme();
+  const { scheme, currency } = useAppSettings();
   const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
@@ -143,7 +143,7 @@ export default function HomeScreen() {
                 <Card.Actions style={styles.actionsRow}>
                   <ThemedText style={styles.cardActions}>
                     {totalHabitSavings > 0
-                      ? formatAmount(totalHabitSavings)
+                      ? formatAmount(totalHabitSavings, currency)
                       : null}
                   </ThemedText>
                   <ThemedText style={styles.cardActions}>
@@ -177,7 +177,7 @@ export default function HomeScreen() {
                   type="title"
                   style={{ color: themes[scheme].colors.onPrimary }}
                 >
-                  {formatAmount(totalSavings)}
+                {formatAmount(totalSavings, currency)}
                 </ThemedText>
               </View>
             </Card.Content>

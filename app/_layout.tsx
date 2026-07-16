@@ -24,17 +24,17 @@ import {
 } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
 import React, { useCallback, useEffect, useState } from "react";
-import { getTheme, saveTheme } from "@/data/settings";
+import { getTheme, saveTheme, getCurrency, saveCurrency } from "@/data/settings";
 import type { Theme } from "@/constants/interfaces";
 import {
-  AppThemeContext,
-  type AppThemeValue,
-} from "@/contexts/theme-context";
+  AppSettingsContext,
+  type AppSettingsValue,
+} from "@/contexts/settings-context";
 
 /**
- * Map of region codes to dayjs locale names.
+ * Map region codes to dayjs locale names.
  * Most European regions (PT→pt, FR→fr, DE→de, ES→es, IT→it, NL→nl, etc.)
- * happen to match by lowercasing the code, but we enumerate explicitly for clarity
+ * happen to match the lowercased code, but we enumerate explicitly for clarity
  * and to handle exceptions (US→en, GB→en-gb, BR→pt-br, etc.).
  *
  * All referenced locale files are statically imported above because Metro
@@ -57,17 +57,16 @@ const REGION_TO_LOCALE: Record<string, string> = {
   KR: "ko",
 };
 
-/** Set the dayjs locale based on the device's region (date/time format), not language. */
-function initDayjsLocale() {
+/** Set dayjs locale based on device's region (date/time format), not language. */
+const initDayjsLocale = (): void => {
   const locale = getLocales()[0];
   if (!locale) {
     dayjs.locale("en");
     return;
   }
+  const regionCode = locale.regionCode;
+  const languageCode = locale.languageCode;
 
-  const { regionCode, languageCode } = locale;
-
-  // Region controls date/time/number formatting — prefer it over language
   if (regionCode) {
     const mapped = REGION_TO_LOCALE[regionCode.toUpperCase()];
     if (mapped) {
@@ -76,13 +75,12 @@ function initDayjsLocale() {
     }
   }
 
-  // Fall back to the language code
   dayjs.locale((languageCode ?? "en").toLowerCase());
-}
+};
 
 initDayjsLocale();
 
-export default function RootLayout() {
+const RootLayout = (): React.JSX.Element | null => {
   const [fontsLoaded] = useFonts({
     "Inter-Regular": Inter_400Regular,
     "Inter-Medium": Inter_500Medium,
@@ -93,27 +91,42 @@ export default function RootLayout() {
 
   const deviceScheme = useColorScheme() ?? "light";
   const [storedTheme, setStoredTheme] = useState<Theme | null>(null);
+  const [currency, setCurrencyState] = useState<string | null>(null);
 
-  // Starts in parallel with font loading — both block rendering together
   useEffect(() => {
-    getTheme().then(setStoredTheme);
+    Promise.all([
+      getTheme().then(setStoredTheme),
+      getCurrency().then(setCurrencyState),
+    ]);
   }, []);
 
-  const setTheme = useCallback(async (theme: Theme) => {
+  const setTheme = useCallback(async (theme: Theme): Promise<void> => {
     await saveTheme(theme);
     setStoredTheme(theme);
   }, []);
 
-  // Block until both fonts AND persisted theme are ready — no flicker
-  if (!fontsLoaded || storedTheme === null) return null;
+  const setCurrency = useCallback(async (code: string): Promise<void> => {
+    await saveCurrency(code);
+    setCurrencyState(code);
+  }, []);
+
+  if (!fontsLoaded || storedTheme === null || currency === null) {
+    return null;
+  }
 
   const scheme: "light" | "dark" =
     storedTheme === "system" ? deviceScheme : storedTheme;
 
-  const contextValue: AppThemeValue = { scheme, storedTheme, setTheme };
+  const contextValue: AppSettingsValue = {
+    scheme,
+    storedTheme,
+    setTheme,
+    currency,
+    setCurrency,
+  };
 
   return (
-    <AppThemeContext.Provider value={contextValue}>
+    <AppSettingsContext.Provider value={contextValue}>
       <PaperProvider theme={themes[scheme]}>
         <Stack
           screenOptions={{
@@ -126,6 +139,8 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </PaperProvider>
-    </AppThemeContext.Provider>
+    </AppSettingsContext.Provider>
   );
-}
+};
+
+export default RootLayout;

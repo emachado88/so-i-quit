@@ -3,11 +3,11 @@ import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { fontFamilyConfig, themes } from "@/constants/theme";
-import { useAppTheme } from "@/contexts/theme-context";
+import { useAppSettings } from "@/contexts/settings-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const { scheme } = useAppTheme();
+  const { scheme } = useAppSettings();
 
   return (
     <Tabs

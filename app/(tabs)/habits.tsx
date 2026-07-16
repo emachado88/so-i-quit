@@ -16,12 +16,13 @@ import DateTimePicker, {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Card, Divider, Snackbar, TextInput } from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
+import { CURRENCY_SYMBOLS } from "@/constants/currencies";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
-import { useAppTheme } from "@/contexts/theme-context";
+import { useAppSettings } from "@/contexts/settings-context";
 
 export default function HabitsScreen() {
-  const { scheme } = useAppTheme();
+  const { scheme, currency } = useAppSettings();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -58,8 +59,7 @@ export default function HabitsScreen() {
     if (raw) {
       const num = parseFloat(raw);
       if (!isNaN(num)) {
-        normalized =
-          num % 1 === 0 ? String(num) : num.toFixed(2);
+        normalized = num % 1 === 0 ? String(num) : num.toFixed(2);
       }
     }
 
@@ -366,7 +366,7 @@ export default function HabitsScreen() {
                     keyboardType="numeric"
                     mode="outlined"
                     placeholder="0.00"
-                    right={<TextInput.Affix text="€/day" />}
+                    right={<TextInput.Affix text={`${CURRENCY_SYMBOLS[currency] ?? currency}/day`} />}
                     style={{ maxWidth: "50%" }}
                     onChangeText={(text) => handleSavingsChange(habit.id, text)}
                     onFocus={() => {

@@ -1,4 +1,9 @@
+import { getLocales } from "expo-localization";
 import dayjs from "dayjs";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface Breakdown {
   years: number;
@@ -6,6 +11,10 @@ export interface Breakdown {
   days: number;
   hours: number;
 }
+
+// ---------------------------------------------------------------------------
+// Time helpers
+// ---------------------------------------------------------------------------
 
 export const daysSince = (isoDate: string | null): number => {
   if (!isoDate) return 0;
@@ -35,18 +44,51 @@ export const breakdown = (isoDate: string | null): Breakdown => {
   return { years, months, days, hours };
 };
 
+// ---------------------------------------------------------------------------
+// Savings helpers
+// ---------------------------------------------------------------------------
+
 export const parseSavings = (value: string | null): number => {
   if (!value) return 0;
   const n = parseFloat(value);
   return isNaN(n) ? 0 : n;
 };
 
-export const formatAmount = (value: number): string => {
-  const roundedValue = Math.round(value * 100) / 100;
-  const decimalsOrNot =
-    roundedValue % 1 === 0 ? roundedValue.toFixed(0) : roundedValue.toFixed(2);
-  // the formatted value should have a dot each 3 digits
-  const parts = decimalsOrNot.split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${parts.join(",")} €`;
+/** Clean a potentially prefixed currency symbol (e.g. "US$" → "$", "A$" → "$"). */
+const cleanSymbol = (raw: string): string => {
+  // Match pattern like "US$", "CA$", "A$", "HK$", "MX$", "R$" etc.
+  // One or more letters followed by a single non-alphanumeric symbol.
+  const match = raw.match(/^[A-Za-z]+([^\w\s])$/);
+  return match ? match[1] : raw;
+};
+
+/**
+ * Format a numeric value as a locale-aware currency string.
+ *
+ * Uses Intl.NumberFormat with the user's device locale so that symbol
+ * placement, decimal separators, and grouping are all correct for the
+ * current region (e.g. €1,234.57 en-US, 1.234,57 € pt-PT, 1 234,57 €
+ * fr-FR). Strips country disambiguators (e.g. "US$" → "$") so the
+ * output always uses a clean symbol.
+ *
+ * Falls back when Intl is unavailable (shouldn't happen on RN 0.81+).
+ */
+export const formatAmount = (
+  value: number,
+  currencyCode: string = "EUR",
+): string => {
+  try {
+    const locale = getLocales()[0]?.languageTag ?? "en-US";
+    const parts = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currencyCode,
+    }).formatToParts(value);
+
+    return parts
+      .map((p) => (p.type === "currency" ? cleanSymbol(p.value) : p.value))
+      .join("");
+  } catch {
+    const rounded = Math.round(value * 100) / 100;
+    return `${rounded.toFixed(2)} ${currencyCode}`;
+  }
 };
