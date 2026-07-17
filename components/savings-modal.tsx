@@ -4,7 +4,7 @@ import { CURRENCY_SYMBOLS } from "@/constants/currencies";
 import { useAppSettings } from "@/contexts/settings-context";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { themes } from "@/constants/theme";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 interface SavingsModalProps {
   visible: boolean;
@@ -27,12 +27,6 @@ export default function SavingsModal({
 }: SavingsModalProps) {
   const { t } = useAppSettings();
   const [localValue, setLocalValue] = useState(value ?? "");
-
-  useEffect(() => {
-    if (visible) {
-      setLocalValue(value ?? "");
-    }
-  }, [visible, value]);
 
   const normalize = (raw: string): string | null => {
     const trimmed = raw.trim();

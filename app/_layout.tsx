@@ -133,7 +133,9 @@ const RootLayout = (): React.JSX.Element | null => {
   }
 
   const scheme: "light" | "dark" =
-    storedTheme === "system" ? deviceScheme : storedTheme;
+    storedTheme === "system"
+      ? (deviceScheme === "unspecified" ? "light" : deviceScheme)
+      : storedTheme;
 
   const contextValue: AppSettingsValue = {
     scheme,

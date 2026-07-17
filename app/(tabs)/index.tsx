@@ -10,8 +10,7 @@ import {
   formatAmount,
   parseSavings,
 } from "@/utils/utils";
-import { Link, useNavigation } from "@react-navigation/native";
-import { useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, useNavigation } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
@@ -68,11 +67,7 @@ export default function HomeScreen() {
             : t("progress.noData")}
         </ThemedText>
         {!hasAnyHabitWithDate && (
-          <Link
-            screen="habits"
-            style={{ color: themes[scheme].colors.primary }}
-            params={{}}
-          >
+          <Link href="/habits" style={{ color: themes[scheme].colors.primary }}>
             {t("progress.goToHabits")}
           </Link>
         )}

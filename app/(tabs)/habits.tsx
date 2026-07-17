@@ -15,6 +15,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   Button,
   Card,
@@ -265,7 +266,9 @@ export default function HabitsScreen() {
               await loadHabits();
             } catch (error) {
               console.error("Error deleting habit:", error);
-              setSnackbarMessage(t("habits.failedToDelete", { name: habit.name }));
+              setSnackbarMessage(
+                t("habits.failedToDelete", { name: habit.name }),
+              );
             }
           },
         },
@@ -275,9 +278,11 @@ export default function HabitsScreen() {
 
   // ── Effects ──
 
-  useEffect(() => {
-    loadHabits();
-  }, [loadHabits]);
+  useFocusEffect(
+    useCallback(() => {
+      loadHabits();
+    }, [loadHabits]),
+  );
 
   // Dismiss custom input when keyboard hides
   useEffect(() => {
@@ -527,7 +532,9 @@ export default function HabitsScreen() {
         <ScrollView
           contentContainerStyle={[globalStyles.container, styles.scrollContent]}
         >
-          {habits.length === 0 && <ThemedText>{t("habits.noHabits")}</ThemedText>}
+          {habits.length === 0 && (
+            <ThemedText>{t("habits.noHabits")}</ThemedText>
+          )}
           {habits.toReversed().map((habit) => (
             <Card
               key={habit.id}
@@ -643,7 +650,7 @@ export default function HabitsScreen() {
                   : new Date()
           }
           maximumDate={new Date()}
-          onChange={handleIosPickerChange}
+          onValueChange={handleIosPickerChange}
         />
       )}
 
@@ -662,7 +669,7 @@ export default function HabitsScreen() {
                   : new Date()
             }
             maximumDate={new Date()}
-            onChange={handleIosEditPickerChange}
+            onValueChange={handleIosEditPickerChange}
           />
         )}
 
