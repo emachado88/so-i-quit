@@ -23,25 +23,25 @@ export default function HomeScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
-  const loadHabits = async () => {
-    try {
-      const data = await getHabits();
-      setHabits(data);
-    } catch (error) {
-      console.error("Error loading habits:", error);
-      setSnackbarMessage(t("progress.failedToLoad"));
-    }
-  };
-
   // Tick counter to trigger re-renders so breakdown() updates in real-time
   const [, setTick] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
+      const loadHabits = async () => {
+        try {
+          const data = await getHabits();
+          setHabits(data);
+        } catch (error) {
+          console.error("Error loading habits:", error);
+          setSnackbarMessage(t("progress.failedToLoad"));
+        }
+      };
+
       loadHabits();
       const interval = setInterval(() => setTick((t) => t + 1), 1000);
       return () => clearInterval(interval);
-    }, []),
+    }, [t]),
   );
 
   useEffect(() => {
