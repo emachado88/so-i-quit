@@ -147,7 +147,7 @@ export default function HomeScreen() {
                       : null}
                   </ThemedText>
                   <ThemedText style={styles.cardActions}>
-                    since {dayjs(habit.date).format("DD MMM YYYY")}
+                    since {dayjs(habit.date).format("D MMM YYYY")}
                   </ThemedText>
                 </Card.Actions>
               </Card>
@@ -177,7 +177,7 @@ export default function HomeScreen() {
                   type="title"
                   style={{ color: themes[scheme].colors.onPrimary }}
                 >
-                {formatAmount(totalSavings, currency)}
+                  {formatAmount(totalSavings, currency)}
                 </ThemedText>
               </View>
             </Card.Content>
