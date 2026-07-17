@@ -1,19 +1,25 @@
 import { getLocales } from "expo-localization";
 import { useCallback, useMemo } from "react";
-import en, { type TranslationKey } from "./en";
-import type { Translations } from "./en";
+import en, { type TranslationKey, type Translations } from "./en";
+import pt from "./pt";
+import fr from "./fr";
+import es from "./es";
+import it from "./it";
+import zh from "./zh";
+import de from "./de";
+import nl from "./nl";
 
 // ── Available languages ──
 
 const translations: Record<string, Translations> = {
-  en: require("./en").default,
-  pt: require("./pt").default,
-  fr: require("./fr").default,
-  es: require("./es").default,
-  it: require("./it").default,
-  zh: require("./zh").default,
-  de: require("./de").default,
-  nl: require("./nl").default,
+  en,
+  pt,
+  fr,
+  es,
+  it,
+  zh,
+  de,
+  nl,
 };
 
 /** Supported language codes for the settings picker. */
@@ -75,9 +81,15 @@ export const detectLanguage = (): string => {
  * Replace `{{key}}` placeholders in a translation string.
  * Example: interpolate("Hello {{name}}!", { name: "World" }) → "Hello World!"
  */
-const interpolate = (template: string, params?: Record<string, string>): string => {
+const interpolate = (
+  template: string,
+  params?: Record<string, string>,
+): string => {
   if (!params) return template;
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => params[key] ?? `{{${key}}}`);
+  return template.replace(
+    /\{\{(\w+)\}\}/g,
+    (_, key) => params[key] ?? `{{${key}}}`,
+  );
 };
 
 // ── Hook ──
@@ -92,7 +104,10 @@ export interface UseTranslationReturn {
  * Falls back to English for missing keys.
  */
 export const useTranslation = (language: string): UseTranslationReturn => {
-  const dict = useMemo(() => translations[language] ?? translations.en, [language]);
+  const dict = useMemo(
+    () => translations[language] ?? translations.en,
+    [language],
+  );
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string>): string => {
