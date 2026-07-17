@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pickerButtonLabel: {
-    fontSize: 17,
+    fontSize: 14,
   },
   hint: {
     fontSize: 13,
