@@ -60,7 +60,7 @@ const fonts = configureFonts({ config: fontFamilyConfig });
 export const themes = {
   light: {
     ...MD3LightTheme,
-    roundness: 4,
+    roundness: 1,
     fonts,
     colors: {
       // Primary — brand teal
@@ -124,7 +124,7 @@ export const themes = {
   },
   dark: {
     ...MD3DarkTheme,
-    roundness: 4,
+    roundness: 1,
     fonts,
     colors: {
       // Primary — lighter teal for dark bg visibility
