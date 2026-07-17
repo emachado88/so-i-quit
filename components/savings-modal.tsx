@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { CURRENCY_SYMBOLS } from "@/constants/currencies";
+import { useAppSettings } from "@/contexts/settings-context";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { themes } from "@/constants/theme";
 import React, { useState, useEffect } from "react";
@@ -24,6 +25,7 @@ export default function SavingsModal({
   onDismiss,
   optional = false,
 }: SavingsModalProps) {
+  const { t } = useAppSettings();
   const [localValue, setLocalValue] = useState(value ?? "");
 
   useEffect(() => {
@@ -59,14 +61,14 @@ export default function SavingsModal({
         ]}
       >
         <ThemedText style={styles.title}>
-          {optional ? "Daily Savings (optional)" : "Daily Savings"}
+          {optional ? t("savings.titleOptional") : t("savings.title")}
         </ThemedText>
         <ThemedText style={styles.subtitle}>
-          How much do you save per day by quitting?
+          {t("savings.subtitle")}
         </ThemedText>
 
         <TextInput
-          label="Amount"
+          label={t("savings.amount")}
           value={localValue}
           inputMode="decimal"
           keyboardType="numeric"
@@ -74,7 +76,7 @@ export default function SavingsModal({
           placeholder="0.00"
           right={
             <TextInput.Affix
-              text={`${CURRENCY_SYMBOLS[currency] ?? currency}/day`}
+              text={`${CURRENCY_SYMBOLS[currency] ?? currency}${t("common.perDay")}`}
             />
           }
           onChangeText={(text) =>
@@ -91,7 +93,7 @@ export default function SavingsModal({
         <View style={styles.buttons}>
           {optional && (
             <Button mode="text" onPress={handleSkip}>
-              Skip
+              {t("savings.skip")}
             </Button>
           )}
           <Button
@@ -99,7 +101,7 @@ export default function SavingsModal({
             disabled={optional && !localValue}
             onPress={handleSave}
           >
-            {optional ? "Save" : "Confirm"}
+            {optional ? t("savings.save") : t("savings.confirm")}
           </Button>
         </View>
       </Modal>

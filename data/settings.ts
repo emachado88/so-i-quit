@@ -2,6 +2,7 @@ import { getLocales } from "expo-localization";
 
 import type { AppSettings, Theme } from "@/constants/interfaces";
 import { REGION_TO_CURRENCY } from "@/constants/currencies";
+import { detectLanguage } from "@/i18n";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ---------------------------------------------------------------------------
@@ -66,10 +67,13 @@ export const getTheme = async (): Promise<Theme> => {
 
 export const getLanguage = async (): Promise<string> => {
   try {
-    const value = await AsyncStorage.getItem(STORAGE_KEY_LANGUAGE);
-    return value ?? DEFAULT_SETTINGS.language;
+    const stored = await AsyncStorage.getItem(STORAGE_KEY_LANGUAGE);
+    if (stored) return stored;
+    const detected = detectLanguage();
+    await AsyncStorage.setItem(STORAGE_KEY_LANGUAGE, detected);
+    return detected;
   } catch {
-    return DEFAULT_SETTINGS.language;
+    return DEFAULT_SETTINGS.language || "en";
   }
 };
 
@@ -98,7 +102,7 @@ export const getSettings = async (): Promise<AppSettings> => {
       rawTheme === "light" || rawTheme === "dark" || rawTheme === "system"
         ? (rawTheme as Theme)
         : DEFAULT_SETTINGS.theme;
-    const language = entries[1][1] ?? DEFAULT_SETTINGS.language;
+    const language = entries[1][1] ?? detectLanguage();
     const currency = entries[2][1] ?? DEFAULT_SETTINGS.currency;
     return { theme, language, currency };
   } catch {

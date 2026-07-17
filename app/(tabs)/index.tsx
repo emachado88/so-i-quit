@@ -18,7 +18,7 @@ import { Card, Snackbar } from "react-native-paper";
 import dayjs from "dayjs";
 
 export default function HomeScreen() {
-  const { scheme, currency } = useAppSettings();
+  const { scheme, currency, t } = useAppSettings();
   const navigation = useNavigation();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function HomeScreen() {
       setHabits(data);
     } catch (error) {
       console.error("Error loading habits:", error);
-      setSnackbarMessage("Failed to load habits");
+      setSnackbarMessage(t("progress.failedToLoad"));
     }
   };
 
@@ -46,9 +46,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const title =
-      habits.length === 0 ? "Ready to get better?" : "Congratulations!";
+      habits.length === 0
+        ? t("progress.readyToGetBetter")
+        : t("progress.congratulations");
     navigation.setOptions({ headerTitle: title });
-  }, [habits, navigation]);
+  }, [habits, navigation, t]);
 
   const hasAnyHabitWithDate = habits.some((h) => h.date);
 
@@ -62,8 +64,8 @@ export default function HomeScreen() {
       <View style={[globalStyles.container, globalStyles.shadow]}>
         <ThemedText type="subtitle">
           {hasAnyHabitWithDate
-            ? "You're doing great,"
-            : "No data saved in settings"}
+            ? t("progress.doingGreat")
+            : t("progress.noData")}
         </ThemedText>
         {!hasAnyHabitWithDate && (
           <Link
@@ -71,7 +73,7 @@ export default function HomeScreen() {
             style={{ color: themes[scheme].colors.primary }}
             params={{}}
           >
-            Go to habits
+            {t("progress.goToHabits")}
           </Link>
         )}
       </View>
@@ -89,7 +91,7 @@ export default function HomeScreen() {
             return (
               <Card key={habit.id} mode="contained">
                 <Card.Title
-                  title={`${habit.name} free for`}
+                  title={t("progress.freeFor", { name: habit.name })}
                   titleStyle={[
                     globalStyles.spacedUppercase,
                     { color: themes[scheme].colors.secondary },
@@ -102,7 +104,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{years}</ThemedText>
                           <ThemedText style={styles.timeSubtitle}>
-                            years
+                            {t("progress.years")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -110,7 +112,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{months}</ThemedText>
                           <ThemedText style={styles.timeSubtitle}>
-                            months
+                            {t("progress.months")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -118,7 +120,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{days}</ThemedText>
                           <ThemedText style={styles.timeSubtitle}>
-                            days
+                            {t("progress.days")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -126,15 +128,13 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <ThemedText type="title">{hours}</ThemedText>
                           <ThemedText style={styles.timeSubtitle}>
-                            hours
+                            {t("progress.hours")}
                           </ThemedText>
                         </View>
                       ) : null}
                       {!years && !months && !days && !hours ? (
                         <View style={styles.statColumn}>
-                          <ThemedText>
-                            You&apos;ve just started, keep going
-                          </ThemedText>
+                          <ThemedText>{t("progress.justStarted")}</ThemedText>
                         </View>
                       ) : null}
                     </View>
@@ -147,7 +147,9 @@ export default function HomeScreen() {
                       : null}
                   </ThemedText>
                   <ThemedText style={styles.cardActions}>
-                    since {dayjs(habit.date).format("D MMM YYYY")}
+                    {t("progress.since", {
+                      date: dayjs(habit.date).format("D MMM YYYY"),
+                    })}
                   </ThemedText>
                 </Card.Actions>
               </Card>
@@ -171,7 +173,7 @@ export default function HomeScreen() {
                     { color: themes[scheme].colors.onPrimary },
                   ]}
                 >
-                  Total savings
+                  {t("progress.totalSavings")}
                 </ThemedText>
                 <ThemedText
                   type="title"
@@ -189,7 +191,7 @@ export default function HomeScreen() {
         visible={!!snackbarMessage}
         duration={5000}
         action={{
-          label: "Dismiss",
+          label: t("common.dismiss"),
           textColor: themes[scheme].colors.onPrimary,
           onPress: () => setSnackbarMessage(null),
         }}

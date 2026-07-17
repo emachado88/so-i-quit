@@ -57,7 +57,7 @@ type EditPicker =
   | { type: "savings"; habitId: string; currentValue: string | null };
 
 export default function HabitsScreen() {
-  const { scheme, currency } = useAppSettings();
+  const { scheme, currency, t } = useAppSettings();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -89,9 +89,9 @@ export default function HabitsScreen() {
       setHabits(data);
     } catch (error) {
       console.error("Error loading habits:", error);
-      setSnackbarMessage("Failed to load habits");
+      setSnackbarMessage(t("habits.failedToLoad"));
     }
-  }, []);
+  }, [t]);
 
   // ── Wizard cancellation (Android picker dismissed) ──
 
@@ -153,11 +153,11 @@ export default function HabitsScreen() {
         await loadHabits();
       } catch (error) {
         console.error("Error completing wizard:", error);
-        setSnackbarMessage("Failed to save");
+        setSnackbarMessage(t("habits.failedToSave"));
       }
       setWizard(null);
     },
-    [wizard, loadHabits],
+    [wizard, loadHabits, t],
   );
 
   // ── Menu: Edit date (date → time picker) ──
@@ -169,11 +169,11 @@ export default function HabitsScreen() {
         await loadHabits();
       } catch (error) {
         console.error("Error updating date:", error);
-        setSnackbarMessage("Failed to update date");
+        setSnackbarMessage(t("habits.failedToUpdateDate"));
       }
       setEditPicker(null);
     },
-    [loadHabits],
+    [loadHabits, t],
   );
 
   // ── Menu: Edit savings (modal only) ──
@@ -185,11 +185,11 @@ export default function HabitsScreen() {
         await loadHabits();
       } catch (error) {
         console.error("Error updating savings:", error);
-        setSnackbarMessage("Failed to update savings");
+        setSnackbarMessage(t("habits.failedToUpdateSavings"));
       }
       setEditPicker(null);
     },
-    [loadHabits],
+    [loadHabits, t],
   );
 
   // ── Menu actions ──
@@ -252,12 +252,12 @@ export default function HabitsScreen() {
 
   const handleDelete = (habit: Habit) => {
     Alert.alert(
-      `Delete ${habit.name}`,
-      `Are you sure you want to delete ${habit.name}?`,
+      t("habits.deleteTitle", { name: habit.name }),
+      t("habits.deleteConfirm", { name: habit.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("habits.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -265,7 +265,7 @@ export default function HabitsScreen() {
               await loadHabits();
             } catch (error) {
               console.error("Error deleting habit:", error);
-              setSnackbarMessage(`Failed to delete ${habit.name}`);
+              setSnackbarMessage(t("habits.failedToDelete", { name: habit.name }));
             }
           },
         },
@@ -309,7 +309,7 @@ export default function HabitsScreen() {
       startWizard("new", created.id, null);
     } catch (error) {
       console.error("Error adding habit:", error);
-      setSnackbarMessage(`Failed to add ${type}`);
+      setSnackbarMessage(t("habits.failedToAdd", { name: type }));
     }
   };
 
@@ -318,7 +318,7 @@ export default function HabitsScreen() {
     const normalizedHabitName =
       trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     if (!normalizedHabitName) {
-      Alert.alert("Error", "Please enter a habit name");
+      Alert.alert(t("habits.errorTitle"), t("habits.enterName"));
       return;
     }
 
@@ -331,7 +331,7 @@ export default function HabitsScreen() {
       startWizard("new", created.id, null);
     } catch (error) {
       console.error("Error adding custom habit:", error);
-      setSnackbarMessage("Failed to add custom habit");
+      setSnackbarMessage(t("habits.failedToAddCustom"));
     }
   };
 
@@ -476,16 +476,16 @@ export default function HabitsScreen() {
   return (
     <View style={globalStyles.flex1}>
       <View style={[globalStyles.container, globalStyles.shadow]}>
-        <ThemedText style={styles.subtitle}>Add New Habit</ThemedText>
+        <ThemedText style={styles.subtitle}>{t("habits.addNew")}</ThemedText>
         <View style={styles.buttonRow}>
           {!hasAlcohol && (
             <Button mode="outlined" onPress={() => handleAddHabit("Alcohol")}>
-              Alcohol
+              {t("habits.alcohol")}
             </Button>
           )}
           {!hasTobacco && (
             <Button mode="outlined" onPress={() => handleAddHabit("Tobacco")}>
-              Tobacco
+              {t("habits.tobacco")}
             </Button>
           )}
           <Button mode="outlined" onPress={() => handleAddHabit("Other")}>
@@ -497,7 +497,7 @@ export default function HabitsScreen() {
           <View style={styles.customInputRow}>
             <TextInput
               ref={otherInputRef}
-              label="Habit name"
+              label={t("habits.habitName")}
               value={customHabitName}
               mode="outlined"
               style={globalStyles.flex1}
@@ -511,7 +511,7 @@ export default function HabitsScreen() {
               }}
             />
             <Button mode="contained" onPress={handleAddCustomHabit}>
-              Add
+              {t("habits.add")}
             </Button>
           </View>
         )}
@@ -527,7 +527,7 @@ export default function HabitsScreen() {
         <ScrollView
           contentContainerStyle={[globalStyles.container, styles.scrollContent]}
         >
-          {habits.length === 0 && <ThemedText>No habits added yet.</ThemedText>}
+          {habits.length === 0 && <ThemedText>{t("habits.noHabits")}</ThemedText>}
           {habits.toReversed().map((habit) => (
             <Card
               key={habit.id}
@@ -564,7 +564,7 @@ export default function HabitsScreen() {
                           setMenuVisibleId(null);
                           handleMenuEditDate(habit);
                         }}
-                        title="Edit date"
+                        title={t("habits.editDate")}
                       />
                       <Menu.Item
                         leadingIcon="cash-edit"
@@ -572,7 +572,7 @@ export default function HabitsScreen() {
                           setMenuVisibleId(null);
                           handleMenuEditSavings(habit);
                         }}
-                        title="Edit savings"
+                        title={t("habits.editSavings")}
                       />
                       <Menu.Item
                         leadingIcon="delete"
@@ -581,7 +581,7 @@ export default function HabitsScreen() {
                           setMenuVisibleId(null);
                           handleDelete(habit);
                         }}
-                        title="Delete"
+                        title={t("habits.delete")}
                       />
                     </Menu>
                   </View>
@@ -603,7 +603,7 @@ export default function HabitsScreen() {
 
                       <ThemedText>
                         {habit.savings &&
-                          `${formatAmount(Number(habit.savings), currency)}/day`}
+                          `${formatAmount(Number(habit.savings), currency)}${t("common.perDay")}`}
                       </ThemedText>
                     </View>
                   </>
@@ -621,7 +621,7 @@ export default function HabitsScreen() {
                   ]}
                   onPress={() => handleReset(habit)}
                 >
-                  Reset
+                  {t("habits.reset")}
                 </Button>
               </Card.Content>
             </Card>
@@ -704,7 +704,7 @@ export default function HabitsScreen() {
         visible={!!snackbarMessage}
         duration={5000}
         action={{
-          label: "Dismiss",
+          label: t("common.dismiss"),
           textColor: themes[scheme].colors.onPrimary,
           onPress: () => setSnackbarMessage(null),
         }}

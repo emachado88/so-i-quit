@@ -41,7 +41,13 @@ constants/
   theme.ts               # Colors (standard/light/dark), themes (MD3LightTheme/MD3DarkTheme), fontFamilyConfig
   currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY maps
 contexts/
-  settings-context.tsx   # AppSettingsContext: theme, currency, scheme resolution
+  settings-context.tsx   # AppSettingsContext: theme, currency, language, scheme, t() function
+i18n/
+  en.ts                  # English translations (base — defines shape for all languages)
+  pt.ts, fr.ts, es.ts,   # Translations: Portuguese, French, Spanish, Italian
+  it.ts, zh.ts, de.ts,   #   Chinese (Simplified), German, Dutch
+  nl.ts
+  index.ts               # useTranslation hook, detectLanguage(), SUPPORTED_LANGUAGES, interpolation
 data/
   habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
   settings.ts            # AsyncStorage persistence for theme, language, currency + locale-based detection
@@ -80,6 +86,19 @@ assets/
 - Errors propagate from `data/habits.ts` — screens catch and show Snackbar
 - IDs: timestamp + random suffix: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
 - AsyncStorage key: `"habits"` (JSON array of Habit objects)
+
+### i18n (Internationalization)
+- **Zero-dependency** custom solution using `expo-localization` (already installed)
+- Translation files in `i18n/{lang}.ts` — English (`en.ts`) is the base and defines the type shape
+- All other languages satisfy `Record<TranslationKey, string>` (enforced by TypeScript)
+- Access translations via `const { t } = useAppSettings()` — never import translation files directly
+- Interpolation: `t("progress.freeFor", { name: habit.name })` → replaces `{{name}}` placeholders
+- Flat dot-separated keys: `t("habits.failedToDelete")`, not nested objects
+- Auto-detect on first run: `detectLanguage()` reads `getLocales()[0]`, maps to supported code, persists to AsyncStorage
+- Fallback chain: requested language → English → raw key
+- Language picker in settings screen uses `SUPPORTED_LANGUAGES` from `i18n/index.ts`
+- Adding a new language: create `i18n/{code}.ts`, add to `translations` map in `i18n/index.ts`, add to `SUPPORTED_LANGUAGES`
+- dayjs locale imports are in `app/_layout.tsx` — add new locale import there when adding languages
 
 ## Theme & Fonts
 

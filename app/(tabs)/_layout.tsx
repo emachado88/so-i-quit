@@ -7,7 +7,7 @@ import { useAppSettings } from "@/contexts/settings-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const { scheme } = useAppSettings();
+  const { scheme, t } = useAppSettings();
 
   return (
     <Tabs
@@ -42,8 +42,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Progress",
-          headerTitle: "Congratulations!",
+          title: t("tabs.progress"),
+          headerTitle: t("progress.congratulations"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons
               color={color}
@@ -56,8 +56,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="habits"
         options={{
-          title: "Habits",
-          headerTitle: "Habits",
+          title: t("tabs.habits"),
+          headerTitle: t("habits.title"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons
               color={color}
@@ -70,8 +70,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          headerTitle: "Settings",
+          title: t("tabs.settings"),
+          headerTitle: t("settings.title"),
           tabBarIcon: ({ color }) => (
             <MaterialIcons color={color} size={28} name="settings" />
           ),

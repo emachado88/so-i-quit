@@ -7,6 +7,7 @@ import "dayjs/locale/nl";
 import "dayjs/locale/pt";
 import "dayjs/locale/pt-br";
 import "dayjs/locale/en-gb";
+import "dayjs/locale/zh-cn";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { getLocales } from "expo-localization";
@@ -24,12 +25,20 @@ import {
 } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
 import React, { useCallback, useEffect, useState } from "react";
-import { getTheme, saveTheme, getCurrency, saveCurrency } from "@/data/settings";
+import {
+  getTheme,
+  saveTheme,
+  getCurrency,
+  saveCurrency,
+  getLanguage,
+  saveLanguage,
+} from "@/data/settings";
 import type { Theme } from "@/constants/interfaces";
 import {
   AppSettingsContext,
   type AppSettingsValue,
 } from "@/contexts/settings-context";
+import { useTranslation } from "@/i18n";
 
 /**
  * Map region codes to dayjs locale names.
@@ -51,8 +60,8 @@ const REGION_TO_LOCALE: Record<string, string> = {
   GB: "en-gb",
   US: "en",
   CN: "zh-cn",
-  TW: "zh-tw",
-  HK: "zh-hk",
+  TW: "zh-cn",
+  HK: "zh-cn",
   JP: "ja",
   KR: "ko",
 };
@@ -92,11 +101,15 @@ const RootLayout = (): React.JSX.Element | null => {
   const deviceScheme = useColorScheme() ?? "light";
   const [storedTheme, setStoredTheme] = useState<Theme | null>(null);
   const [currency, setCurrencyState] = useState<string | null>(null);
+  const [language, setLanguageState] = useState<string | null>(null);
+
+  const { t } = useTranslation(language ?? "en");
 
   useEffect(() => {
     Promise.all([
       getTheme().then(setStoredTheme),
       getCurrency().then(setCurrencyState),
+      getLanguage().then(setLanguageState),
     ]);
   }, []);
 
@@ -110,7 +123,12 @@ const RootLayout = (): React.JSX.Element | null => {
     setCurrencyState(code);
   }, []);
 
-  if (!fontsLoaded || storedTheme === null || currency === null) {
+  const setLanguage = useCallback(async (code: string): Promise<void> => {
+    await saveLanguage(code);
+    setLanguageState(code);
+  }, []);
+
+  if (!fontsLoaded || storedTheme === null || currency === null || language === null) {
     return null;
   }
 
@@ -123,6 +141,9 @@ const RootLayout = (): React.JSX.Element | null => {
     setTheme,
     currency,
     setCurrency,
+    language,
+    setLanguage,
+    t,
   };
 
   return (

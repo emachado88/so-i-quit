@@ -14,45 +14,39 @@ import { globalStyles } from "@/constants/styles";
 import { useAppSettings } from "@/contexts/settings-context";
 import type { Theme } from "@/constants/interfaces";
 import { themes } from "@/constants/theme";
-
-const THEME_OPTIONS: { value: Theme; label: string }[] = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
-
-interface CurrencyOption {
-  code: string;
-  name: string;
-}
-
-/** Build the currency picker list from Intl APIs with a fallback. */
-const useCurrencyOptions = (): CurrencyOption[] =>
-  useMemo(() => {
-    try {
-      const codes = Intl.supportedValuesOf("currency") as string[];
-      return codes
-        .filter((c) => CURRENCY_SYMBOLS[c])
-        .sort()
-        .map((code) => ({
-          code,
-          name:
-            new Intl.DisplayNames("en", { type: "currency" }).of(code) ?? code,
-        }));
-    } catch {
-      return Object.keys(CURRENCY_SYMBOLS)
-        .sort()
-        .map((code) => ({ code, name: code }));
-    }
-  }, []);
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 export default function SettingsScreen(): React.JSX.Element {
-  const { storedTheme, scheme, setTheme, currency, setCurrency } =
-    useAppSettings();
+  const {
+    storedTheme,
+    scheme,
+    setTheme,
+    currency,
+    setCurrency,
+    language,
+    setLanguage,
+    t,
+  } = useAppSettings();
   const options = useCurrencyOptions();
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
+
+  const themeOptions = useMemo(
+    () => [
+      { value: "system" as Theme, label: t("settings.system") },
+      { value: "light" as Theme, label: t("settings.light") },
+      { value: "dark" as Theme, label: t("settings.dark") },
+    ],
+    [t],
+  );
+
+  const currentLangLabel = useMemo(
+    () =>
+      SUPPORTED_LANGUAGES.find((l) => l.code === language)?.label ?? language,
+    [language],
+  );
 
   const filtered = useMemo(() => {
     if (!search) return options;
@@ -65,20 +59,23 @@ export default function SettingsScreen(): React.JSX.Element {
 
   const handleThemeChange = useCallback(
     (value: string): void => {
-      setTheme(value as Theme).catch(() =>
-        setError("Failed to save theme preference"),
-      );
+      setTheme(value as Theme).catch(() => setError(t("settings.failedTheme")));
     },
-    [setTheme],
+    [setTheme, t],
+  );
+
+  const handleLanguageChange = useCallback(
+    (value: string): void => {
+      setLanguage(value).catch(() => setError(t("settings.failedLanguage")));
+    },
+    [setLanguage, t],
   );
 
   const handleCurrencyChange = useCallback(
     (code: string): void => {
-      setCurrency(code).catch(() =>
-        setError("Failed to save currency preference"),
-      );
+      setCurrency(code).catch(() => setError(t("settings.failedCurrency")));
     },
-    [setCurrency],
+    [setCurrency, t],
   );
 
   const openPicker = useCallback(() => setPickerOpen(true), []);
@@ -103,17 +100,36 @@ export default function SettingsScreen(): React.JSX.Element {
         contentContainerStyle={[globalStyles.container, styles.container]}
       >
         {/* ── Appearance ── */}
-        <ThemedText>Appearance</ThemedText>
+        <ThemedText>{t("settings.appearance")}</ThemedText>
         <SegmentedButtons
           value={storedTheme}
-          buttons={THEME_OPTIONS}
+          buttons={themeOptions}
           onValueChange={handleThemeChange}
         />
 
         <Divider />
 
+        {/* ── Language ── */}
+        <ThemedText>{t("settings.language")}</ThemedText>
+        <Pressable
+          onPress={() => setLangPickerOpen(true)}
+          style={[
+            styles.pickerButton,
+            { backgroundColor: themes[scheme].colors.surfaceVariant },
+          ]}
+        >
+          <View style={styles.pickerButtonContent}>
+            <ThemedText style={styles.pickerButtonLabel}>
+              {currentLangLabel}
+            </ThemedText>
+            <IconButton icon="chevron-down" style={{ margin: 0 }} />
+          </View>
+        </Pressable>
+
+        <Divider />
+
         {/* ── Currency ── */}
-        <ThemedText>Currency</ThemedText>
+        <ThemedText>{t("settings.currency")}</ThemedText>
         <Pressable
           onPress={openPicker}
           style={[
@@ -129,6 +145,73 @@ export default function SettingsScreen(): React.JSX.Element {
           </View>
         </Pressable>
       </ScrollView>
+
+      {/* ── Language picker modal ── */}
+      <Modal
+        visible={langPickerOpen}
+        onRequestClose={() => setLangPickerOpen(false)}
+        animationType="fade"
+        transparent
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setLangPickerOpen(false)}
+        >
+          <Pressable
+            style={[
+              globalStyles.container,
+              styles.modalContent,
+              { backgroundColor: themes[scheme].colors.surface },
+            ]}
+            onPress={() => {}}
+          >
+            <ScrollView style={styles.modalList}>
+              {SUPPORTED_LANGUAGES.map((l) => {
+                const isActive = l.code === language;
+                return (
+                  <Pressable
+                    key={l.code}
+                    onPress={() => {
+                      handleLanguageChange(l.code);
+                      setLangPickerOpen(false);
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.optionRow,
+                        isActive && {
+                          backgroundColor:
+                            themes[scheme].colors.primaryContainer,
+                        },
+                      ]}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.optionText,
+                          isActive && {
+                            color: themes[scheme].colors.onPrimaryContainer,
+                          },
+                        ]}
+                      >
+                        {l.label}
+                      </ThemedText>
+                      {isActive && (
+                        <ThemedText
+                          style={{
+                            color: themes[scheme].colors.onPrimaryContainer,
+                          }}
+                        >
+                          ✓
+                        </ThemedText>
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* ── Searchable currency picker modal ── */}
       <Modal
@@ -147,7 +230,7 @@ export default function SettingsScreen(): React.JSX.Element {
             onPress={() => {}} /* prevent tap-through to backdrop */
           >
             <Searchbar
-              placeholder="Search currency…"
+              placeholder={t("settings.searchCurrency")}
               onChangeText={setSearch}
               value={search}
               autoFocus
@@ -205,7 +288,7 @@ export default function SettingsScreen(): React.JSX.Element {
         visible={!!error}
         duration={5000}
         action={{
-          label: "Dismiss",
+          label: t("common.dismiss"),
           textColor: themes[scheme].colors.onPrimary,
           onPress: () => setError(null),
         }}
@@ -220,12 +303,37 @@ export default function SettingsScreen(): React.JSX.Element {
   );
 }
 
+interface CurrencyOption {
+  code: string;
+  name: string;
+}
+
+/** Build the currency picker list from Intl APIs with a fallback. */
+const useCurrencyOptions = (): CurrencyOption[] =>
+  useMemo(() => {
+    try {
+      const codes = Intl.supportedValuesOf("currency") as string[];
+      return codes
+        .filter((c) => CURRENCY_SYMBOLS[c])
+        .sort()
+        .map((code) => ({
+          code,
+          name:
+            new Intl.DisplayNames("en", { type: "currency" }).of(code) ?? code,
+        }));
+    } catch {
+      return Object.keys(CURRENCY_SYMBOLS)
+        .sort()
+        .map((code) => ({ code, name: code }));
+    }
+  }, []);
+
 const styles = StyleSheet.create({
   container: { gap: 16 },
   pickerButton: {
-    borderRadius: 8,
+    borderRadius: 4,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 5,
   },
   pickerButtonContent: {
     flexDirection: "row",
@@ -260,7 +368,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 4,
   },
   optionText: {
     fontSize: 15,

@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Theme } from "@/constants/interfaces";
+import type { TranslationKey } from "@/i18n/en";
 
 type EffectiveScheme = "light" | "dark";
 
@@ -14,6 +15,12 @@ export interface AppSettingsValue {
   currency: string;
   /** Persist a new currency code. */
   setCurrency: (code: string) => Promise<void>;
+  /** Current language code (e.g. "en", "pt", "fr"). */
+  language: string;
+  /** Persist a new language code. */
+  setLanguage: (code: string) => Promise<void>;
+  /** Translate a key with optional interpolation params. */
+  t: (key: TranslationKey, params?: Record<string, string>) => string;
 }
 
 export const AppSettingsContext = createContext<AppSettingsValue | null>(null);
