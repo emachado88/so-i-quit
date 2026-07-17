@@ -3,40 +3,85 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
-
 import { ThemedText } from "@/components/themed-text";
+import SavingsModal from "@/components/savings-modal";
 import { getHabits, addHabit, updateHabit, deleteHabit } from "@/data/habits";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Card, Divider, Snackbar, TextInput } from "react-native-paper";
+import {
+  Button,
+  Card,
+  Divider,
+  IconButton,
+  Menu,
+  Snackbar,
+  TextInput,
+} from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
-import { CURRENCY_SYMBOLS } from "@/constants/currencies";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useAppSettings } from "@/contexts/settings-context";
+import dayjs from "dayjs";
+import { formatAmount } from "@/utils/utils";
+
+// ── Wizard flow: date → time → (optional) savings ──
+type WizardFlow = "new" | "reset";
+
+interface WizardState {
+  flow: WizardFlow;
+  habitId: string;
+  step: "date" | "time" | "savings";
+  /** Date portion selected during the wizard (time is 00:00). */
+  selectedDate: Date | null;
+  /** Habit savings to pre-fill (from previous value). */
+  initialSavings: string | null;
+  /** Whether the savings step is allowed (always true for new, true for reset if prev savings existed). */
+  allowSavings: boolean;
+}
+
+// ── Edit picker: triggered from menu for existing habits ──
+type EditPicker =
+  | {
+      type: "date";
+      habitId: string;
+      step: "date" | "time";
+      selectedDate: Date | null;
+    }
+  | { type: "savings"; habitId: string; currentValue: string | null };
 
 export default function HabitsScreen() {
   const { scheme, currency } = useAppSettings();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState<{
-    habitId: string;
-    mode: "date" | "time";
-  } | null>(null);
+  const [wizard, setWizard] = useState<WizardState | null>(null);
+  const [editPicker, setEditPicker] = useState<EditPicker | null>(null);
+  const [menuVisibleId, setMenuVisibleId] = useState<string | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
   const otherInputRef = useRef<any>(null);
-  const focusedHabitRef = useRef<string | null>(null);
   const customInputFocusedRef = useRef(false);
+  // iOS: skip the auto-fired onChange when DateTimePicker mounts
+  const pickerAutoFireSkipRef = useRef(false);
+  // Track whether wizard finish was explicit (prevents onDismiss from cancelling a completed flow)
+  const wizardFinishedRef = useRef(false);
+
+  // Track whether an iOS DateTimePicker step is active (derived from wizard state)
+  const iosPickerActive =
+    Platform.OS === "ios" &&
+    wizard !== null &&
+    (wizard.step === "date" || wizard.step === "time");
 
   const hasAlcohol = habits.some((h) => h.name === "Alcohol");
   const hasTobacco = habits.some((h) => h.name === "Tobacco");
+
+  // ── Data loading ──
 
   const loadHabits = useCallback(async () => {
     try {
@@ -48,165 +93,167 @@ export default function HabitsScreen() {
     }
   }, []);
 
-  const storeSavings = useCallback(async () => {
-    const habitId = focusedHabitRef.current;
-    if (!habitId) return;
-    const habit = habits.find((h) => h.id === habitId);
-    if (!habit) return;
+  // ── Wizard cancellation (Android picker dismissed) ──
 
-    const raw = habit.savings?.trim() || null;
-    let normalized: string | null = null;
-    if (raw) {
-      const num = parseFloat(raw);
-      if (!isNaN(num)) {
-        normalized = num % 1 === 0 ? String(num) : num.toFixed(2);
+  const handleWizardCancel = useCallback(
+    (habitId: string, flow: WizardFlow) => {
+      if (flow === "new") {
+        deleteHabit(habitId).catch(() => {});
       }
-    }
+      setWizard(null);
+      wizardFinishedRef.current = false;
+    },
+    [],
+  );
 
-    try {
-      await updateHabit(habitId, { savings: normalized });
-      setHabits((prev) =>
-        prev.map((h) => (h.id === habitId ? { ...h, savings: normalized } : h)),
-      );
-    } catch (error) {
-      console.error("Error updating savings:", error);
-      setSnackbarMessage("Failed to update savings");
-    }
-    focusedHabitRef.current = null;
-  }, [habits]);
+  // ── Wizard: advance after date selected (Android) ──
 
-  const flushCustomInputBlur = useCallback(() => {
-    setShowCustomInput(false);
-    customInputFocusedRef.current = false;
-  }, []);
+  const handleWizardDateSelected = useCallback(
+    (habitId: string, date: Date, flow: WizardFlow) => {
+      // Next picker will auto-fire on iOS; skip it
+      pickerAutoFireSkipRef.current = true;
+      // Open time picker next
+      DateTimePickerAndroid.open({
+        mode: "time",
+        value: date,
+        maximumDate: new Date(),
+        onChange: (_timeEvent, timeDate) => {
+          if (timeDate) {
+            // Merge date + time into full ISO datetime
+            const merged = new Date(date);
+            merged.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
 
-  useEffect(() => {
-    loadHabits();
-  }, [loadHabits]);
-
-  useEffect(() => {
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-      storeSavings();
-      flushCustomInputBlur();
-    });
-    return () => {
-      hideSubscription.remove();
-    };
-  }, [
-    habits,
-    showCustomInput,
-    customHabitName,
-    storeSavings,
-    flushCustomInputBlur,
-  ]);
-
-  const handleAddHabit = async (type: "Alcohol" | "Tobacco" | "Other") => {
-    if (type === "Other") {
-      setShowCustomInput(true);
-      setTimeout(() => {
-        otherInputRef.current?.focus();
-      }, 100);
-      return;
-    }
-
-    const newHabit = {
-      name: type,
-      date: null,
-      savings: null,
-    };
-    try {
-      await addHabit(newHabit);
-      await loadHabits();
-    } catch (error) {
-      console.error("Error adding habit:", error);
-      setSnackbarMessage(`Failed to add ${type}`);
-    }
-  };
-
-  const handleAddCustomHabit = async () => {
-    const trimmed = customHabitName.trim();
-    const normalizedHabitName =
-      trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-    if (!normalizedHabitName) {
-      Alert.alert("Error", "Please enter a habit name");
-      return;
-    }
-    const newHabit = {
-      name: normalizedHabitName,
-      date: null,
-      savings: null,
-    };
-
-    try {
-      await addHabit(newHabit);
-      setCustomHabitName("");
-      setShowCustomInput(false);
-      loadHabits();
-    } catch (error) {
-      console.error("Error adding custom habit:", error);
-      Alert.alert("Error", "Failed to add custom habit");
-    }
-  };
-
-  const handleDateChange = async (habitId: string, date: Date | null) => {
-    try {
-      await updateHabit(habitId, { date: date?.toISOString() ?? null });
-      await loadHabits();
-    } catch (error) {
-      console.error("Error updating date:", error);
-      setSnackbarMessage("Failed to update date");
-    }
-  };
-
-  const handleSavingsChange = async (habitId: string, value: string) => {
-    const normalizedValue = value
-      .replace(/[^0-9.]/g, "")
-      .replace(/(\..*)\./g, "$1")
-      .replace(/(\.\d{2})\d+/g, "$1");
-    setHabits((prevHabits) =>
-      prevHabits.map((habit) =>
-        habit.id === habitId ? { ...habit, savings: normalizedValue } : habit,
-      ),
-    );
-  };
-
-  const handleSavingsBlur = (habitId: string) => {
-    focusedHabitRef.current = habitId;
-    storeSavings();
-  };
-
-  const handleCustomInputBlur = () => {
-    customInputFocusedRef.current = false;
-    flushCustomInputBlur();
-  };
-
-  const handleReset = (habit: Habit) => {
-    Alert.alert(
-      `Reset ${habit.name}`,
-      `Are you sure you want to reset ${habit.name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await updateHabit(habit.id, { date: null, savings: null });
-              await loadHabits();
-            } catch (error) {
-              console.error("Error resetting habit:", error);
-              setSnackbarMessage(`Failed to reset ${habit.name}`);
-            }
-          },
+            // Update wizard with selectedDate and move to savings
+            setWizard((prev) => {
+              if (!prev) return null;
+              return { ...prev, selectedDate: merged, step: "savings" };
+            });
+          } else {
+            // Time picker cancelled → abort entire flow
+            handleWizardCancel(habitId, flow);
+          }
         },
-      ],
-    );
+      });
+    },
+    [handleWizardCancel],
+  );
+
+  // ── Wizard: finish (after savings or skip savings) ──
+
+  const handleWizardFinish = useCallback(
+    async (savings: string | null) => {
+      const current = wizard;
+      if (!current || !current.selectedDate) return;
+      wizardFinishedRef.current = true;
+      try {
+        await updateHabit(current.habitId, {
+          date: current.selectedDate.toISOString(),
+          savings,
+        });
+        await loadHabits();
+      } catch (error) {
+        console.error("Error completing wizard:", error);
+        setSnackbarMessage("Failed to save");
+      }
+      setWizard(null);
+    },
+    [wizard, loadHabits],
+  );
+
+  // ── Menu: Edit date (date → time picker) ──
+
+  const handleEditDateSelected = useCallback(
+    async (habitId: string, date: Date) => {
+      try {
+        await updateHabit(habitId, { date: date.toISOString() });
+        await loadHabits();
+      } catch (error) {
+        console.error("Error updating date:", error);
+        setSnackbarMessage("Failed to update date");
+      }
+      setEditPicker(null);
+    },
+    [loadHabits],
+  );
+
+  // ── Menu: Edit savings (modal only) ──
+
+  const handleEditSavingsSave = useCallback(
+    async (habitId: string, savings: string | null) => {
+      try {
+        await updateHabit(habitId, { savings });
+        await loadHabits();
+      } catch (error) {
+        console.error("Error updating savings:", error);
+        setSnackbarMessage("Failed to update savings");
+      }
+      setEditPicker(null);
+    },
+    [loadHabits],
+  );
+
+  // ── Menu actions ──
+
+  const handleMenuEditDate = (habit: Habit) => {
+    setEditPicker({
+      type: "date",
+      habitId: habit.id,
+      step: "date",
+      selectedDate: null,
+    });
+
+    if (Platform.OS === "ios") {
+      pickerAutoFireSkipRef.current = true;
+    }
+
+    if (Platform.OS === "android") {
+      const currentDate = habit.date ? new Date(habit.date) : new Date();
+
+      DateTimePickerAndroid.open({
+        mode: "date",
+        value: currentDate,
+        maximumDate: new Date(),
+        onChange: (_dateEvent, dateVal) => {
+          if (dateVal) {
+            DateTimePickerAndroid.open({
+              mode: "time",
+              value: dateVal,
+              maximumDate: new Date(),
+              onChange: (_timeEvent, timeVal) => {
+                if (timeVal) {
+                  const merged = new Date(dateVal);
+                  merged.setHours(
+                    timeVal.getHours(),
+                    timeVal.getMinutes(),
+                    0,
+                    0,
+                  );
+                  handleEditDateSelected(habit.id, merged);
+                } else {
+                  setEditPicker(null);
+                }
+              },
+            });
+          } else {
+            setEditPicker(null);
+          }
+        },
+      });
+    }
+  };
+
+  const handleMenuEditSavings = (habit: Habit) => {
+    setEditPicker({
+      type: "savings",
+      habitId: habit.id,
+      currentValue: habit.savings,
+    });
   };
 
   const handleDelete = (habit: Habit) => {
     Alert.alert(
       `Delete ${habit.name}`,
-      `Are you sure you want to delete ${habit.name} data?`,
+      `Are you sure you want to delete ${habit.name}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -226,35 +273,205 @@ export default function HabitsScreen() {
     );
   };
 
-  const handleOpenPicker = (
+  // ── Effects ──
+
+  useEffect(() => {
+    loadHabits();
+  }, [loadHabits]);
+
+  // Dismiss custom input when keyboard hides
+  useEffect(() => {
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setShowCustomInput(false);
+      customInputFocusedRef.current = false;
+    });
+    return () => {
+      hideSubscription.remove();
+    };
+  }, []);
+
+  // ── Add / Custom habit ──
+
+  const handleAddHabit = async (type: "Alcohol" | "Tobacco" | "Other") => {
+    if (type === "Other") {
+      setShowCustomInput(true);
+      setTimeout(() => {
+        otherInputRef.current?.focus();
+      }, 100);
+      return;
+    }
+
+    // Create the habit, then immediately start the wizard
+    const newHabit = { name: type, date: null, savings: null };
+    try {
+      const created = await addHabit(newHabit);
+      await loadHabits();
+      startWizard("new", created.id, null);
+    } catch (error) {
+      console.error("Error adding habit:", error);
+      setSnackbarMessage(`Failed to add ${type}`);
+    }
+  };
+
+  const handleAddCustomHabit = async () => {
+    const trimmed = customHabitName.trim();
+    const normalizedHabitName =
+      trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    if (!normalizedHabitName) {
+      Alert.alert("Error", "Please enter a habit name");
+      return;
+    }
+
+    const newHabit = { name: normalizedHabitName, date: null, savings: null };
+    try {
+      const created = await addHabit(newHabit);
+      setCustomHabitName("");
+      setShowCustomInput(false);
+      await loadHabits();
+      startWizard("new", created.id, null);
+    } catch (error) {
+      console.error("Error adding custom habit:", error);
+      setSnackbarMessage("Failed to add custom habit");
+    }
+  };
+
+  // ── Wizard launcher ──
+
+  const startWizard = (
+    flow: WizardFlow,
     habitId: string,
-    mode: "date" | "time",
-    currentDate: Date,
+    initialSavings: string | null,
   ) => {
+    const state: WizardState = {
+      flow,
+      habitId,
+      step: "date",
+      selectedDate: null,
+      initialSavings,
+      allowSavings: true,
+    };
+    setWizard(state);
+
+    if (Platform.OS === "ios") {
+      // iOS DateTimePicker auto-fires onChange on mount — skip it
+      pickerAutoFireSkipRef.current = true;
+    }
+
     if (Platform.OS === "android") {
+      const currentDate = flow === "reset" ? new Date() : new Date();
+
       DateTimePickerAndroid.open({
-        mode,
+        mode: "date",
         value: currentDate,
         maximumDate: new Date(),
-        onChange: (_event, date) => {
-          if (date) handleDateChange(habitId, date);
+        onChange: (_dateEvent, dateVal) => {
+          if (dateVal) {
+            handleWizardDateSelected(habitId, dateVal, flow);
+          } else {
+            handleWizardCancel(habitId, flow);
+          }
         },
       });
-    } else {
-      setPickerOpen({ habitId, mode });
+    }
+    // iOS: picker is rendered via JSX (iosPickerActive)
+  };
+
+  // ── Reset ──
+
+  const handleReset = (habit: Habit) => {
+    startWizard("reset", habit.id, habit.savings);
+  };
+
+  // ── iOS DateTimePicker handlers ──
+
+  const handleIosPickerChange = (_event: any, date?: Date) => {
+    if (!wizard) return;
+
+    // iOS auto-fires onChange when DateTimePicker mounts — skip that first event
+    if (pickerAutoFireSkipRef.current) {
+      pickerAutoFireSkipRef.current = false;
+      return;
+    }
+
+    if (!date) {
+      // User dismissed → cancel wizard
+      handleWizardCancel(wizard.habitId, wizard.flow);
+      return;
+    }
+
+    if (wizard.step === "date") {
+      // Store date portion, advance to time step
+      pickerAutoFireSkipRef.current = true; // next picker will auto-fire
+      const withTime = new Date(date);
+      setWizard((prev) =>
+        prev ? { ...prev, selectedDate: withTime, step: "time" } : null,
+      );
+    } else if (wizard.step === "time") {
+      // Merge time into the stored date
+      const merged = wizard.selectedDate
+        ? new Date(wizard.selectedDate)
+        : new Date();
+      merged.setHours(date.getHours(), date.getMinutes(), 0, 0);
+      setWizard((prev) =>
+        prev ? { ...prev, selectedDate: merged, step: "savings" } : null,
+      );
     }
   };
 
-  const handlePickerChange = (_event: any, date?: Date) => {
-    if (date && pickerOpen) {
-      handleDateChange(pickerOpen.habitId, date);
+  // ── iOS Edit date picker handler ──
+
+  const handleIosEditPickerChange = (_event: any, date?: Date) => {
+    if (!editPicker || editPicker.type !== "date") return;
+
+    // iOS auto-fires onChange when DateTimePicker mounts — skip that first event
+    if (pickerAutoFireSkipRef.current) {
+      pickerAutoFireSkipRef.current = false;
+      return;
     }
-    setPickerOpen(null);
+
+    if (!date) {
+      setEditPicker(null);
+      return;
+    }
+
+    if (editPicker.step === "date") {
+      // Store date, advance to time step
+      pickerAutoFireSkipRef.current = true; // next picker will auto-fire
+      setEditPicker({
+        type: "date",
+        habitId: editPicker.habitId,
+        step: "time",
+        selectedDate: date,
+      });
+    } else if (editPicker.step === "time") {
+      // Merge time into stored date, save
+      const merged = editPicker.selectedDate
+        ? new Date(editPicker.selectedDate)
+        : new Date();
+      merged.setHours(date.getHours(), date.getMinutes(), 0, 0);
+      handleEditDateSelected(editPicker.habitId, merged);
+    }
   };
 
-  const editingHabit = pickerOpen
-    ? habits.find((h) => h.id === pickerOpen.habitId)
-    : null;
+  // ── Rendering helpers ──
+
+  const editingHabit =
+    wizard !== null
+      ? (habits.find((h) => h.id === wizard.habitId) ?? null)
+      : null;
+
+  const editPickerHabit =
+    editPicker !== null
+      ? (habits.find((h) => h.id === editPicker.habitId) ?? null)
+      : null;
+
+  const savingsModalVisible =
+    wizard !== null &&
+    wizard.step === "savings" &&
+    wizard.selectedDate !== null;
+
+  const editSavingsModalVisible =
+    editPicker !== null && editPicker.type === "savings";
 
   return (
     <View style={globalStyles.flex1}>
@@ -272,7 +489,7 @@ export default function HabitsScreen() {
             </Button>
           )}
           <Button mode="outlined" onPress={() => handleAddHabit("Other")}>
-            Other
+            +
           </Button>
         </View>
 
@@ -288,7 +505,10 @@ export default function HabitsScreen() {
               onFocus={() => {
                 customInputFocusedRef.current = true;
               }}
-              onBlur={handleCustomInputBlur}
+              onBlur={() => {
+                customInputFocusedRef.current = false;
+                setShowCustomInput(false);
+              }}
             />
             <Button mode="contained" onPress={handleAddCustomHabit}>
               Add
@@ -315,98 +535,168 @@ export default function HabitsScreen() {
               style={{ backgroundColor: themes[scheme].colors.surface }}
             >
               <Card.Content>
-                <View style={[styles.cardHeader, globalStyles.flexWrap]}>
-                  <ThemedText>{habit.name}</ThemedText>
+                <View style={styles.cardHeader}>
+                  <ThemedText
+                    style={[
+                      globalStyles.spacedUppercase,
+                      { color: themes[scheme].colors.secondary },
+                    ]}
+                  >
+                    {habit.name}
+                  </ThemedText>
 
                   <View style={globalStyles.flexRow}>
-                    <View style={styles.dateTimeButtonContainer}>
-                      <Button
-                        compact
-                        icon="pencil"
-                        mode="text"
-                        onPress={() =>
-                          handleOpenPicker(
-                            habit.id,
-                            "date",
-                            habit.date ? new Date(habit.date) : new Date(),
-                          )
-                        }
-                      >
-                        {habit.date
-                          ? new Date(habit.date).toLocaleDateString()
-                          : "Set Date"}
-                      </Button>
-                    </View>
-                    <View style={styles.dateTimeButtonContainer}>
-                      <Button
-                        compact
-                        icon="pencil"
-                        mode="text"
-                        onPress={() =>
-                          handleOpenPicker(
-                            habit.id,
-                            "time",
-                            habit.date ? new Date(habit.date) : new Date(),
-                          )
-                        }
-                      >
-                        {habit.date
-                          ? new Date(habit.date).toLocaleTimeString()
-                          : "Set Time"}
-                      </Button>
-                    </View>
+                    <Menu
+                      visible={menuVisibleId === habit.id}
+                      onDismiss={() => setMenuVisibleId(null)}
+                      anchor={
+                        <Pressable onPress={() => setMenuVisibleId(habit.id)}>
+                          <IconButton
+                            icon="dots-horizontal"
+                            style={{ margin: 0 }}
+                          />
+                        </Pressable>
+                      }
+                    >
+                      <Menu.Item
+                        leadingIcon="clock-time-ten-outline"
+                        onPress={() => {
+                          setMenuVisibleId(null);
+                          handleMenuEditDate(habit);
+                        }}
+                        title="Edit date"
+                      />
+                      <Menu.Item
+                        leadingIcon="cash-edit"
+                        onPress={() => {
+                          setMenuVisibleId(null);
+                          handleMenuEditSavings(habit);
+                        }}
+                        title="Edit savings"
+                      />
+                      <Menu.Item
+                        leadingIcon="delete"
+                        titleStyle={{ color: themes[scheme].colors.error }}
+                        onPress={() => {
+                          setMenuVisibleId(null);
+                          handleDelete(habit);
+                        }}
+                        title="Delete"
+                      />
+                    </Menu>
                   </View>
                 </View>
 
-                <View style={[styles.savingsRow, globalStyles.flexWrap]}>
-                  <TextInput
-                    label="Savings"
-                    inputMode="decimal"
-                    value={habit.savings || ""}
-                    keyboardType="numeric"
-                    mode="outlined"
-                    placeholder="0.00"
-                    right={<TextInput.Affix text={`${CURRENCY_SYMBOLS[currency] ?? currency}/day`} />}
-                    style={{ maxWidth: "50%" }}
-                    onChangeText={(text) => handleSavingsChange(habit.id, text)}
-                    onFocus={() => {
-                      focusedHabitRef.current = habit.id;
-                    }}
-                    onBlur={() => handleSavingsBlur(habit.id)}
-                  />
+                {(habit.date || habit.savings) && (
+                  <>
+                    <Divider style={globalStyles.divider} />
+                    <View
+                      style={[
+                        globalStyles.flexRow,
+                        globalStyles.justifyBetween,
+                      ]}
+                    >
+                      <ThemedText>
+                        {habit.date &&
+                          dayjs(habit.date).format("D MMM YYYY, HH:mm")}
+                      </ThemedText>
 
-                  <View style={globalStyles.flexRow}>
-                    <Button
-                      compact
-                      icon="refresh"
-                      contentStyle={{ flexDirection: "row-reverse" }}
-                      onPress={() => handleReset(habit)}
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      compact
-                      icon="delete"
-                      mode="text"
-                      textColor={themes[scheme].colors.error}
-                      onPress={() => handleDelete(habit)}
-                    >
-                      Delete
-                    </Button>
-                  </View>
-                </View>
+                      <ThemedText>
+                        {habit.savings &&
+                          `${formatAmount(Number(habit.savings), currency)}/day`}
+                      </ThemedText>
+                    </View>
+                  </>
+                )}
+
+                <Divider style={globalStyles.divider} />
+
+                <Button
+                  mode="contained"
+                  icon="sign-caution"
+                  textColor={themes[scheme].colors.onSecondary}
+                  style={[
+                    globalStyles.flex1,
+                    { backgroundColor: themes[scheme].colors.secondary },
+                  ]}
+                  onPress={() => handleReset(habit)}
+                >
+                  Reset
+                </Button>
               </Card.Content>
             </Card>
           ))}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {Platform.OS === "ios" && editingHabit && pickerOpen && (
+      {/* ── iOS date/time picker (wizard flow) ── */}
+      {iosPickerActive && editingHabit && (
         <DateTimePicker
-          mode={pickerOpen.mode}
-          value={editingHabit.date ? new Date(editingHabit.date) : new Date()}
+          mode={wizard!.step === "date" ? "date" : "time"}
+          value={
+            wizard!.step === "time" && wizard!.selectedDate
+              ? wizard!.selectedDate
+              : wizard!.flow === "reset"
+                ? new Date()
+                : editingHabit.date
+                  ? new Date(editingHabit.date)
+                  : new Date()
+          }
           maximumDate={new Date()}
-          onChange={handlePickerChange}
+          onChange={handleIosPickerChange}
+        />
+      )}
+
+      {/* ── iOS date picker (edit date menu) ── */}
+      {Platform.OS === "ios" &&
+        editPicker !== null &&
+        editPicker.type === "date" &&
+        editPickerHabit && (
+          <DateTimePicker
+            mode={editPicker.step === "date" ? "date" : "time"}
+            value={
+              editPicker.step === "time" && editPicker.selectedDate
+                ? editPicker.selectedDate
+                : editPickerHabit.date
+                  ? new Date(editPickerHabit.date)
+                  : new Date()
+            }
+            maximumDate={new Date()}
+            onChange={handleIosEditPickerChange}
+          />
+        )}
+
+      {/* ── Savings modal (wizard flow) ── */}
+      {wizard !== null && wizard.step === "savings" && (
+        <SavingsModal
+          visible={savingsModalVisible}
+          value={wizard.initialSavings}
+          currency={currency}
+          scheme={scheme}
+          optional
+          onSave={(savings) => handleWizardFinish(savings)}
+          onDismiss={() => {
+            if (wizardFinishedRef.current) {
+              wizardFinishedRef.current = false;
+              return;
+            }
+            handleWizardCancel(wizard.habitId, wizard.flow);
+          }}
+        />
+      )}
+
+      {/* ── Savings modal (edit menu) ── */}
+      {editPicker !== null && editPicker.type === "savings" && (
+        <SavingsModal
+          visible={editSavingsModalVisible}
+          value={editPicker.currentValue}
+          currency={currency}
+          scheme={scheme}
+          optional={false}
+          onSave={(savings) =>
+            handleEditSavingsSave(editPicker.habitId, savings)
+          }
+          onDismiss={() => setEditPicker(null)}
         />
       )}
 
@@ -453,20 +743,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  dateTimeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  dateTimeButtonContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  savingsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
   },
 });

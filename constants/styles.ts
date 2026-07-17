@@ -21,9 +21,18 @@ export const globalStyles = StyleSheet.create({
   flexRow: {
     flexDirection: "row",
   },
+  justifyBetween: {
+    justifyContent: "space-between",
+  },
+  alignCenter: {
+    alignItems: "center",
+  },
   spacedUppercase: {
     textTransform: "uppercase",
     fontSize: 12,
     letterSpacing: 1.5,
+  },
+  divider: {
+    marginVertical: 15,
   },
 });
