@@ -1,4 +1,5 @@
 import { ThemedText } from "@/components/themed-text";
+import { CounterText, TimeValue } from "@/components/animated-counters";
 import { Habit } from "@/constants/interfaces";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
@@ -98,7 +99,7 @@ export default function HomeScreen() {
                     <View style={styles.cardRow}>
                       {years ? (
                         <View style={styles.statColumn}>
-                          <ThemedText type="title">{years}</ThemedText>
+                          <TimeValue value={years} />
                           <ThemedText style={styles.timeSubtitle}>
                             {t("progress.years")}
                           </ThemedText>
@@ -106,7 +107,7 @@ export default function HomeScreen() {
                       ) : null}
                       {months ? (
                         <View style={styles.statColumn}>
-                          <ThemedText type="title">{months}</ThemedText>
+                          <TimeValue value={months} />
                           <ThemedText style={styles.timeSubtitle}>
                             {t("progress.months")}
                           </ThemedText>
@@ -114,7 +115,7 @@ export default function HomeScreen() {
                       ) : null}
                       {days ? (
                         <View style={styles.statColumn}>
-                          <ThemedText type="title">{days}</ThemedText>
+                          <TimeValue value={days} />
                           <ThemedText style={styles.timeSubtitle}>
                             {t("progress.days")}
                           </ThemedText>
@@ -122,7 +123,7 @@ export default function HomeScreen() {
                       ) : null}
                       {hours ? (
                         <View style={styles.statColumn}>
-                          <ThemedText type="title">{hours}</ThemedText>
+                          <TimeValue value={hours} />
                           <ThemedText style={styles.timeSubtitle}>
                             {t("progress.hours")}
                           </ThemedText>
@@ -171,12 +172,10 @@ export default function HomeScreen() {
                 >
                   {t("progress.totalSavings")}
                 </ThemedText>
-                <ThemedText
-                  type="title"
+                <CounterText
+                  value={totalSavings}
                   style={{ color: themes[scheme].colors.onPrimary }}
-                >
-                  {formatAmount(totalSavings, currency)}
-                </ThemedText>
+                />
               </View>
             </Card.Content>
           </Card>
