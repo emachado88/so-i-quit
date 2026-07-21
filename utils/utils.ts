@@ -1,5 +1,7 @@
 import { getLocales } from "expo-localization";
 import dayjs from "dayjs";
+import type { Habit } from "@/constants/interfaces";
+import type { TranslationKey } from "@/i18n/en";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -11,6 +13,16 @@ export interface Breakdown {
   days: number;
   hours: number;
 }
+
+// ---------------------------------------------------------------------------
+// Habit helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve the display name for a habit — translated for standard, raw for custom. */
+export const getHabitName = (
+  habit: Habit,
+  t: (key: TranslationKey, params?: Record<string, string>) => string,
+): string => (habit.key ? t(habit.key as TranslationKey) : habit.name);
 
 // ---------------------------------------------------------------------------
 // Time helpers

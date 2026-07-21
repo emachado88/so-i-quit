@@ -26,11 +26,12 @@ import {
   TextInput,
 } from "react-native-paper";
 import { Habit } from "@/constants/interfaces";
+import type { TranslationKey } from "@/i18n/en";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useAppSettings } from "@/contexts/settings-context";
 import dayjs from "dayjs";
-import { formatAmount } from "@/utils/utils";
+import { formatAmount, getHabitName } from "@/utils/utils";
 
 // ── Wizard flow: date → time → (optional) savings ──
 type WizardFlow = "new" | "reset";
@@ -79,8 +80,8 @@ export default function HabitsScreen() {
     wizard !== null &&
     (wizard.step === "date" || wizard.step === "time");
 
-  const hasAlcohol = habits.some((h) => h.name === "Alcohol");
-  const hasTobacco = habits.some((h) => h.name === "Tobacco");
+  const hasAlcohol = habits.some((h) => h.key === "habits.alcohol");
+  const hasTobacco = habits.some((h) => h.key === "habits.tobacco");
 
   // ── Data loading ──
 
@@ -252,9 +253,10 @@ export default function HabitsScreen() {
   };
 
   const handleDelete = (habit: Habit) => {
+    const displayName = getHabitName(habit, t);
     Alert.alert(
-      t("habits.deleteTitle", { name: habit.name }),
-      t("habits.deleteConfirm", { name: habit.name }),
+      t("habits.deleteTitle", { name: displayName }),
+      t("habits.deleteConfirm", { name: displayName }),
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -267,7 +269,7 @@ export default function HabitsScreen() {
             } catch (error) {
               console.error("Error deleting habit:", error);
               setSnackbarMessage(
-                t("habits.failedToDelete", { name: habit.name }),
+                t("habits.failedToDelete", { name: displayName }),
               );
             }
           },
@@ -297,7 +299,7 @@ export default function HabitsScreen() {
 
   // ── Add / Custom habit ──
 
-  const handleAddHabit = async (type: "Alcohol" | "Tobacco" | "Other") => {
+  const handleAddHabit = async (type: "alcohol" | "tobacco" | "Other") => {
     if (type === "Other") {
       setShowCustomInput(true);
       setTimeout(() => {
@@ -306,15 +308,15 @@ export default function HabitsScreen() {
       return;
     }
 
-    // Create the habit, then immediately start the wizard
-    const newHabit = { name: type, date: null, savings: null };
+    const key = type === "alcohol" ? "habits.alcohol" : "habits.tobacco";
+    const newHabit = { key, name: "", date: null, savings: null };
     try {
       const created = await addHabit(newHabit);
       await loadHabits();
       startWizard("new", created.id, null);
     } catch (error) {
       console.error("Error adding habit:", error);
-      setSnackbarMessage(t("habits.failedToAdd", { name: type }));
+      setSnackbarMessage(t("habits.failedToAdd", { name: t(key as TranslationKey) }));
     }
   };
 
@@ -484,12 +486,12 @@ export default function HabitsScreen() {
         <ThemedText style={styles.subtitle}>{t("habits.addNew")}</ThemedText>
         <View style={styles.buttonRow}>
           {!hasAlcohol && (
-            <Button mode="outlined" onPress={() => handleAddHabit("Alcohol")}>
+            <Button mode="outlined" onPress={() => handleAddHabit("alcohol")}>
               {t("habits.alcohol")}
             </Button>
           )}
           {!hasTobacco && (
-            <Button mode="outlined" onPress={() => handleAddHabit("Tobacco")}>
+            <Button mode="outlined" onPress={() => handleAddHabit("tobacco")}>
               {t("habits.tobacco")}
             </Button>
           )}
@@ -549,7 +551,7 @@ export default function HabitsScreen() {
                       { color: themes[scheme].colors.secondary },
                     ]}
                   >
-                    {habit.name}
+                    {getHabitName(habit, t)}
                   </ThemedText>
 
                   <View style={globalStyles.flexRow}>

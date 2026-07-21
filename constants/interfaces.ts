@@ -1,6 +1,7 @@
 export interface Habit {
   id: string;
-  name: string;
+  key?: string; // i18n key for standard habits (e.g. "habits.alcohol")
+  name: string; // display name for custom habits, empty string for standard
   date: string | null;
   savings: string | null;
 }

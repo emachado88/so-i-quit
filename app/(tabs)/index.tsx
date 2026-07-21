@@ -8,6 +8,7 @@ import {
   breakdown,
   daysSince,
   formatAmount,
+  getHabitName,
   parseSavings,
 } from "@/utils/utils";
 import { Link, useFocusEffect, useNavigation } from "expo-router";
@@ -86,7 +87,7 @@ export default function HomeScreen() {
             return (
               <Card key={habit.id} mode="contained">
                 <Card.Title
-                  title={t("progress.freeFor", { name: habit.name })}
+                  title={t("progress.freeFor", { name: getHabitName(habit, t) })}
                   titleStyle={[
                     globalStyles.spacedUppercase,
                     { color: themes[scheme].colors.secondary },
