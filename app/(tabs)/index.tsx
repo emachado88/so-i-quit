@@ -101,7 +101,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={years} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t("progress.years")}
+                            {t(years === 1 ? "progress.year" : "progress.years")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -109,7 +109,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={months} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t("progress.months")}
+                            {t(months === 1 ? "progress.month" : "progress.months")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -117,7 +117,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={days} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t("progress.days")}
+                            {t(days === 1 ? "progress.day" : "progress.days")}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -125,7 +125,7 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={hours} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t("progress.hours")}
+                            {t(hours === 1 ? "progress.hour" : "progress.hours")}
                           </ThemedText>
                         </View>
                       ) : null}
