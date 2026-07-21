@@ -151,6 +151,7 @@ export default function SettingsScreen(): React.JSX.Element {
         visible={langPickerOpen}
         onRequestClose={() => setLangPickerOpen(false)}
         animationType="fade"
+        renderToHardwareTextureAndroid={true}
         transparent
       >
         <Pressable
@@ -218,6 +219,7 @@ export default function SettingsScreen(): React.JSX.Element {
         visible={pickerOpen}
         onRequestClose={closePicker}
         animationType="fade"
+        renderToHardwareTextureAndroid={true}
         transparent
       >
         <Pressable style={styles.modalOverlay} onPress={closePicker}>
