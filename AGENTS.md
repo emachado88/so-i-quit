@@ -6,9 +6,9 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 
 ## Tech Stack
 
-- **Expo SDK 54** + **React Native 0.81** (new architecture enabled)
-- **Expo Router v6** — file-based routing under `app/`
-- **TypeScript 5.9** — strict mode
+- **Expo SDK 57** + **React Native 0.86** (new architecture enabled)
+- **Expo Router v57** — file-based routing under `app/`
+- **TypeScript 6.0** — strict mode
 - **react-native-paper** (being phased out) — Card, Button, TextInput, Snackbar, Divider
 - **dayjs** — date manipulation (locale: pt)
 - **@react-native-async-storage/async-storage** — persistence
@@ -29,14 +29,13 @@ app/                     # Expo Router pages (file-based)
     settings.tsx         # Settings — app config (theme, language, currency)
   _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts, settings context
 components/
-  themed-text.tsx        # ThemedText component (title/subtitle/default/link)
+  animated-counters.tsx  # Animated TimeValue + MoneyValue counters (Reanimated spring bump)
   haptic-tab.tsx         # Tab button with haptic feedback
-  ui/
-    icon-symbol.tsx      # SF Symbols wrapper (iOS) / fallback
-    icon-symbol.ios.tsx  # iOS-specific SF Symbols
-  external-link.tsx      # External link helper (template boilerplate)
+  savings-modal.tsx      # Modal for editing per-habit savings amount
+  themed-text.tsx        # ThemedText component (title/subtitle/default/link)
+  external-link.tsx      # External link helper
 constants/
-  interfaces.ts          # Habit { id, name, date, savings }, Theme, AppSettings types
+  interfaces.ts          # Habit { id, key?, name, date, savings }, Theme, AppSettings types
   styles.ts              # globalStyles: container, shadow, flex1, flexWrap, flexRow, spacedUppercase
   theme.ts               # Colors (standard/light/dark), themes (MD3LightTheme/MD3DarkTheme), fontFamilyConfig
   currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY maps
@@ -52,7 +51,7 @@ data/
   habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
   settings.ts            # AsyncStorage persistence for theme, language, currency + locale-based detection
 hooks/
-  use-color-scheme.ts    # SSR-safe re-export of RN's useColorScheme
+  use-bump-value.ts      # useBumpValue hook — scale-bump animation on value change (Reanimated)
 utils/
   utils.ts               # daysSince, breakdown, parseSavings, formatAmount (Intl-based)
 assets/
@@ -86,6 +85,7 @@ assets/
 - Errors propagate from `data/habits.ts` — screens catch and show Snackbar
 - IDs: timestamp + random suffix: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
 - AsyncStorage key: `"habits"` (JSON array of Habit objects)
+- Habit interface includes optional `key` field for i18n standard habit names (e.g. `"habits.alcohol"`); custom habits use `name` directly
 
 ### i18n (Internationalization)
 - **Zero-dependency** custom solution using `expo-localization` (already installed)
@@ -155,7 +155,7 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 See `docs/improvements-roadmap.md` for the planned phases:
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
-3. Notifications + visual timeline
+3. ~~Notifications +~~ visual timeline — animated counters done ✅, notifications pending
 4. App hardening (TS strictness, Sentry, accessibility)
 
 ## Brand

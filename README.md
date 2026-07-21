@@ -23,14 +23,14 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 
 | Layer         | Technology                                                                               |
 | ------------- | ---------------------------------------------------------------------------------------- |
-| Framework     | [Expo](https://expo.dev) SDK 54 + [React Native](https://reactnative.dev) 0.81           |
-| Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v6 (file-based routing)        |
+| Framework     | [Expo](https://expo.dev) SDK 57 + [React Native](https://reactnative.dev) 0.86           |
+| Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v57 (file-based routing)       |
 | UI            | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens          |
 | Date Handling | dayjs with Portuguese locale                                                             |
 | Storage       | AsyncStorage                                                                             |
 | Localization  | expo-localization (region, locale, currencyCode detection)                               |
 | Animation     | React Native Reanimated 4                                                                |
-| Language      | TypeScript 5.9 (strict mode)                                                             |
+| Language      | TypeScript 6.0 (strict mode)                                                             |
 | Linting       | ESLint 9 with expo config                                                                |
 
 ## Getting Started
@@ -76,8 +76,9 @@ app/                     # Expo Router pages
     settings.tsx         # Settings — app config (theme, language, currency)
   _layout.tsx            # Root layout — theme provider, locale, fonts, context
 components/
-  ui/                   # Reusable UI components
+  animated-counters.tsx  # Animated TimeValue + MoneyValue counters (Reanimated spring)
   haptic-tab.tsx         # Haptic feedback tab button
+  savings-modal.tsx      # Modal for editing per-habit savings
   themed-text.tsx        # Themed text component (title, subtitle, etc.)
 constants/
   interfaces.ts          # TypeScript interfaces (Habit, Theme, AppSettings)
@@ -90,7 +91,7 @@ data/
   habits.ts              # AsyncStorage CRUD for habits
   settings.ts            # AsyncStorage persistence for settings + locale detection
 hooks/
-  use-color-scheme.ts    # SSR-safe color scheme hook
+  use-bump-value.ts      # Scale-bump animation hook (Reanimated)
 utils/
   utils.ts               # Date/savings formatting helpers (Intl-based)
 assets/
@@ -101,7 +102,7 @@ docs/
 
 ## Roadmap
 
-See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, visual timeline, analytics, accessibility.
+See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, accessibility.
 
 ## License
 
