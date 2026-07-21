@@ -98,14 +98,19 @@ export default function HabitsScreen() {
   // ── Wizard cancellation (Android picker dismissed) ──
 
   const handleWizardCancel = useCallback(
-    (habitId: string, flow: WizardFlow) => {
+    async (habitId: string, flow: WizardFlow) => {
       if (flow === "new") {
-        deleteHabit(habitId).catch(() => {});
+        try {
+          await deleteHabit(habitId);
+          await loadHabits();
+        } catch {
+          // ignore — habit may already be gone
+        }
       }
       setWizard(null);
       wizardFinishedRef.current = false;
     },
-    [],
+    [loadHabits],
   );
 
   // ── Wizard: advance after date selected (Android) ──
@@ -119,7 +124,7 @@ export default function HabitsScreen() {
         mode: "time",
         value: date,
         maximumDate: new Date(),
-        onChange: (_timeEvent, timeDate) => {
+        onValueChange: (_timeEvent, timeDate) => {
           if (timeDate) {
             // Merge date + time into full ISO datetime
             const merged = new Date(date);
@@ -135,6 +140,7 @@ export default function HabitsScreen() {
             handleWizardCancel(habitId, flow);
           }
         },
+        onDismiss: () => handleWizardCancel(habitId, flow),
       });
     },
     [handleWizardCancel],
@@ -215,13 +221,13 @@ export default function HabitsScreen() {
         mode: "date",
         value: currentDate,
         maximumDate: new Date(),
-        onChange: (_dateEvent, dateVal) => {
+        onValueChange: (_dateEvent, dateVal) => {
           if (dateVal) {
             DateTimePickerAndroid.open({
               mode: "time",
               value: dateVal,
               maximumDate: new Date(),
-              onChange: (_timeEvent, timeVal) => {
+              onValueChange: (_timeEvent, timeVal) => {
                 if (timeVal) {
                   const merged = new Date(dateVal);
                   merged.setHours(
@@ -235,11 +241,13 @@ export default function HabitsScreen() {
                   setEditPicker(null);
                 }
               },
+              onDismiss: () => setEditPicker(null),
             });
           } else {
             setEditPicker(null);
           }
         },
+        onDismiss: () => setEditPicker(null),
       });
     }
   };
@@ -316,7 +324,9 @@ export default function HabitsScreen() {
       startWizard("new", created.id, null);
     } catch (error) {
       console.error("Error adding habit:", error);
-      setSnackbarMessage(t("habits.failedToAdd", { name: t(key as TranslationKey) }));
+      setSnackbarMessage(
+        t("habits.failedToAdd", { name: t(key as TranslationKey) }),
+      );
     }
   };
 
@@ -371,13 +381,14 @@ export default function HabitsScreen() {
         mode: "date",
         value: currentDate,
         maximumDate: new Date(),
-        onChange: (_dateEvent, dateVal) => {
+        onValueChange: (_dateEvent, dateVal) => {
           if (dateVal) {
             handleWizardDateSelected(habitId, dateVal, flow);
           } else {
             handleWizardCancel(habitId, flow);
           }
         },
+        onDismiss: () => handleWizardCancel(habitId, flow),
       });
     }
     // iOS: picker is rendered via JSX (iosPickerActive)
