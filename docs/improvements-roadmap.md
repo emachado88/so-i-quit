@@ -29,7 +29,7 @@
 
 ---
 
-## 2. Settings & Tab Reorganisation
+## 2. Settings & Tab Reorganisation ✅
 
 ### Current Tab Structure
 
@@ -74,7 +74,7 @@
 3. Strip down `settings.tsx` to just app config (theme, language, currency) ✅
 4. Implement theme override + persistence ✅
 5. Implement currency config + format integration ✅
-6. Implement i18n wiring + locale detection
+6. Implement i18n wiring + locale detection ✅
 
 ---
 
