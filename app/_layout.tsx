@@ -108,6 +108,14 @@ const RootLayout = (): React.JSX.Element | null => {
 
   const { t } = useTranslation(language ?? "en");
 
+  // Keep dayjs locale in sync with the app language setting
+  useEffect(() => {
+    if (language) {
+      const dayjsMap: Record<string, string> = { zh: "zh-cn" };
+      dayjs.locale(dayjsMap[language] ?? language);
+    }
+  }, [language]);
+
   useEffect(() => {
     Promise.all([
       getTheme().then(setStoredTheme),
