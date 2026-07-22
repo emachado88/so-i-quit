@@ -39,7 +39,7 @@ export const CounterText = ({
 }) => {
   const { currency } = useAppSettings();
   const [display, setDisplay] = useState(0);
-  const prevValueRef = useRef<number | undefined>(undefined);
+  const displayRef = useRef(0);
   const rafRef = useRef<number>(0);
   const focused = useIsFocused();
 
@@ -49,8 +49,7 @@ export const CounterText = ({
       return;
     }
 
-    const from = prevValueRef.current ?? 0;
-    prevValueRef.current = value;
+    const from = displayRef.current;
 
     if (from === value) return;
 
@@ -62,7 +61,9 @@ export const CounterText = ({
     const tick = () => {
       const progress = Math.min((Date.now() - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(from + (to - from) * eased);
+      const current = from + (to - from) * eased;
+      displayRef.current = current;
+      setDisplay(current);
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       }
