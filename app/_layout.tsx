@@ -12,7 +12,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { getLocales } from "expo-localization";
 import "react-native-reanimated";
-
+import * as Sentry from "@sentry/react-native";
+import { initSentry } from "@/lib/sentry";
 import { useColorScheme } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { themes } from "@/constants/theme";
@@ -39,6 +40,8 @@ import {
   type AppSettingsValue,
 } from "@/contexts/settings-context";
 import { useTranslation } from "@/i18n";
+
+initSentry();
 
 /**
  * Map region codes to dayjs locale names.
@@ -166,4 +169,4 @@ const RootLayout = (): React.JSX.Element | null => {
   );
 };
 
-export default RootLayout;
+export default Sentry.wrap(RootLayout);

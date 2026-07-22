@@ -51,7 +51,16 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "note": "Use SENTRY_AUTH_TOKEN env to authenticate with Sentry.",
+          "project": "so-i-quit",
+          "organization": "emachado"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

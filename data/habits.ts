@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native";
 import { Habit } from "@/constants/interfaces";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -20,6 +21,12 @@ export const addHabit = async (habit: Omit<Habit, "id">): Promise<Habit> => {
   };
   habits.push(newHabit);
   await saveHabits(habits);
+  Sentry.addBreadcrumb({
+    category: "habits",
+    message: `Added habit: ${habit.name}`,
+    level: "info",
+    data: { habitId: newHabit.id },
+  });
   return newHabit;
 };
 
@@ -32,11 +39,24 @@ export const updateHabit = async (
   if (index !== -1) {
     habits[index] = { ...habits[index], ...updates };
     await saveHabits(habits);
+    Sentry.addBreadcrumb({
+      category: "habits",
+      message: `Updated habit: ${habits[index].name}`,
+      level: "info",
+      data: { habitId: id, updatedFields: Object.keys(updates) },
+    });
   }
 };
 
 export const deleteHabit = async (id: string): Promise<void> => {
   const habits = await getHabits();
+  const target = habits.find((h) => h.id === id);
   const filtered = habits.filter((h) => h.id !== id);
   await saveHabits(filtered);
+  Sentry.addBreadcrumb({
+    category: "habits",
+    message: `Deleted habit: ${target?.name ?? id}`,
+    level: "info",
+    data: { habitId: id },
+  });
 };
