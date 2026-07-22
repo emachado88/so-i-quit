@@ -121,6 +121,8 @@ export default function SettingsScreen(): React.JSX.Element {
         <ThemedText>{t("settings.language")}</ThemedText>
         <Pressable
           onPress={() => setLangPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.language")}
           style={[
             styles.pickerButton,
             { backgroundColor: themes[scheme].colors.surfaceVariant },
@@ -130,7 +132,11 @@ export default function SettingsScreen(): React.JSX.Element {
             <ThemedText style={styles.pickerButtonLabel}>
               {currentLangLabel}
             </ThemedText>
-            <IconButton icon="chevron-down" style={{ margin: 0 }} />
+            <IconButton
+              icon="chevron-down"
+              style={{ margin: 0 }}
+              accessibilityLabel={t("settings.openLanguagePicker")}
+            />
           </View>
         </Pressable>
 
@@ -140,6 +146,8 @@ export default function SettingsScreen(): React.JSX.Element {
         <ThemedText>{t("settings.currency")}</ThemedText>
         <Pressable
           onPress={openPicker}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.currency")}
           style={[
             styles.pickerButton,
             { backgroundColor: themes[scheme].colors.surfaceVariant },
@@ -149,7 +157,11 @@ export default function SettingsScreen(): React.JSX.Element {
             <ThemedText style={styles.pickerButtonLabel}>
               {currentSymbol} {currency}
             </ThemedText>
-            <IconButton icon="chevron-down" style={{ margin: 0 }} />
+            <IconButton
+              icon="chevron-down"
+              style={{ margin: 0 }}
+              accessibilityLabel={t("settings.openCurrencyPicker")}
+            />
           </View>
         </Pressable>
       </ScrollView>

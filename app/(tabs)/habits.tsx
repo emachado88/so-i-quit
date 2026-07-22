@@ -506,7 +506,11 @@ export default function HabitsScreen() {
               {t("habits.tobacco")}
             </Button>
           )}
-          <Button mode="outlined" onPress={() => handleAddHabit("Other")}>
+          <Button
+            mode="outlined"
+            onPress={() => handleAddHabit("Other")}
+            accessibilityLabel={t("habits.addCustom")}
+          >
             +
           </Button>
         </View>
@@ -570,10 +574,15 @@ export default function HabitsScreen() {
                       visible={menuVisibleId === habit.id}
                       onDismiss={() => setMenuVisibleId(null)}
                       anchor={
-                        <Pressable onPress={() => setMenuVisibleId(habit.id)}>
+                        <Pressable
+                          onPress={() => setMenuVisibleId(habit.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("habits.openMenu", { name: getHabitName(habit, t) })}
+                        >
                           <IconButton
                             icon="dots-horizontal"
                             style={{ margin: 0 }}
+                            accessibilityLabel={t("habits.openMenu", { name: getHabitName(habit, t) })}
                           />
                         </Pressable>
                       }
