@@ -26,12 +26,13 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 | Framework     | [Expo](https://expo.dev) SDK 57 + [React Native](https://reactnative.dev) 0.86           |
 | Navigation    | [Expo Router](https://docs.expo.dev/router/introduction/) v57 (file-based routing)       |
 | UI            | [React Native Paper](https://reactnativepaper.com) with custom MD3 theme tokens          |
-| Date Handling | dayjs with Portuguese locale                                                             |
+| Date Handling | dayjs (locale synced with app language)                                                  |
 | Storage       | AsyncStorage                                                                             |
 | Localization  | expo-localization (region, locale, currencyCode detection)                               |
 | Animation     | React Native Reanimated 4                                                                |
 | Language      | TypeScript 6.0 (strict mode)                                                             |
 | Linting       | ESLint 9 with expo config                                                                |
+| Monitoring    | [Sentry](https://sentry.io) (`@sentry/react-native`)                                    |
 
 ## Getting Started
 
@@ -80,6 +81,8 @@ components/
   haptic-tab.tsx         # Haptic feedback tab button
   savings-modal.tsx      # Modal for editing per-habit savings
   themed-text.tsx        # Themed text component (title, subtitle, etc.)
+lib/
+  sentry.ts              # Sentry initialisation + error boundary
 constants/
   interfaces.ts          # TypeScript interfaces (Habit, Theme, AppSettings)
   styles.ts              # Global styles (container, shadow, flex1)
@@ -102,7 +105,7 @@ docs/
 
 ## Roadmap
 
-See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, accessibility.
+See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, Paper phase-out.
 
 ## License
 

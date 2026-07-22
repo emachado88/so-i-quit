@@ -133,9 +133,9 @@ _Start: Phase 1 — colour palette + custom components. User provides light/dark
 
 ---
 
-## 4. App Hardening
+## 4. App Hardening ✅
 
-### 4.1 — TypeScript Strictness
+### 4.1 — TypeScript Strictness ✅
 
 `tsconfig.json` already has `"strict": true` but there's low-hanging fruit:
 
@@ -144,7 +144,7 @@ _Start: Phase 1 — colour palette + custom components. User provides light/dark
 - **Remove unused imports** — `Text` is imported in both `index.tsx` and `settings.tsx` but only `ThemedText` is used. Clean up.
 - **Strictify `useThemeColor` generics** — tighten the generic constraint so invalid colour names are caught at compile time.
 
-### 4.2 — Crash Reporting / Analytics
+### 4.2 — Crash Reporting / Analytics ✅
 
 Zero error tracking means crashes are invisible:
 
@@ -153,7 +153,7 @@ Zero error tracking means crashes are invisible:
 - **Alternatively** `expo-crashlytics` if Firebase is preferred — lighter integration with Expo's managed workflow.
 - **Start small**: capture unhandled promise rejections + React render errors. Expand to breadcrumbs later.
 
-### 4.3 — Accessibility Audit
+### 4.3 — Accessibility Audit ✅
 
 Preliminary gaps identified in the analysis:
 

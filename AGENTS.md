@@ -10,13 +10,14 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 - **Expo Router v57** — file-based routing under `app/`
 - **TypeScript 6.0** — strict mode
 - **react-native-paper** (being phased out) — Card, Button, TextInput, Snackbar, Divider
-- **dayjs** — date manipulation (locale: pt)
+- **dayjs** — date manipulation (locale synced with app language via `_layout.tsx`)
 - **@react-native-async-storage/async-storage** — persistence
 - **react-native-reanimated v4** — animations
 - **@react-native-community/datetimepicker** — native date/time pickers
 - **expo-font** + **@expo-google-fonts/inter** — Inter font family (Black, Bold, SemiBold, Medium, Regular)
 - **expo-localization** — locale/region detection (device timezone, currency, language)
 - **expo-build-properties** — native build configuration
+- **@sentry/react-native** — crash reporting + performance monitoring (`lib/sentry.ts`)
 
 ## Project Structure
 
@@ -33,7 +34,8 @@ components/
   haptic-tab.tsx         # Tab button with haptic feedback
   savings-modal.tsx      # Modal for editing per-habit savings amount
   themed-text.tsx        # ThemedText component (title/subtitle/default/link)
-  external-link.tsx      # External link helper
+lib/
+  sentry.ts              # Sentry init + error boundary wrapper
 constants/
   interfaces.ts          # Habit { id, key?, name, date, savings }, Theme, AppSettings types
   styles.ts              # globalStyles: container, shadow, flex1, flexWrap, flexRow, spacedUppercase
@@ -156,7 +158,7 @@ See `docs/improvements-roadmap.md` for the planned phases:
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
 3. ~~Notifications +~~ visual timeline — animated counters done ✅, notifications pending
-4. App hardening (TS strictness, Sentry, accessibility)
+4. ~~App hardening (TS strictness, Sentry, accessibility)~~ ✅ Done
 
 ## Brand
 
