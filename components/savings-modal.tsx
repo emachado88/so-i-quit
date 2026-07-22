@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { CURRENCY_SYMBOLS } from "@/constants/currencies";
 import { useAppSettings } from "@/contexts/settings-context";
@@ -54,50 +54,54 @@ export default function SavingsModal({
           { backgroundColor: themes[scheme].colors.surface },
         ]}
       >
-        <ThemedText style={styles.title}>
-          {optional ? t("savings.titleOptional") : t("savings.title")}
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          {t("savings.subtitle")}
-        </ThemedText>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ThemedText style={styles.title}>
+            {optional ? t("savings.titleOptional") : t("savings.title")}
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            {t("savings.subtitle")}
+          </ThemedText>
 
-        <TextInput
-          label={t("savings.amount")}
-          value={localValue}
-          inputMode="decimal"
-          keyboardType="numeric"
-          mode="outlined"
-          placeholder="0.00"
-          right={
-            <TextInput.Affix
-              text={`${CURRENCY_SYMBOLS[currency] ?? currency}${t("common.perDay")}`}
-            />
-          }
-          onChangeText={(text) =>
-            setLocalValue(
-              text
-                .replace(/[^0-9.]/g, "")
-                .replace(/(\..*)\./g, "$1")
-                .replace(/(\.\d{2})\d+/g, "$1"),
-            )
-          }
-          autoFocus
-        />
+          <TextInput
+            label={t("savings.amount")}
+            value={localValue}
+            inputMode="decimal"
+            keyboardType="numeric"
+            mode="outlined"
+            placeholder="0.00"
+            right={
+              <TextInput.Affix
+                text={`${CURRENCY_SYMBOLS[currency] ?? currency}${t("common.perDay")}`}
+              />
+            }
+            onChangeText={(text) =>
+              setLocalValue(
+                text
+                  .replace(/[^0-9.]/g, "")
+                  .replace(/(\..*)\./g, "$1")
+                  .replace(/(\.\d{2})\d+/g, "$1"),
+              )
+            }
+            autoFocus
+          />
 
-        <View style={styles.buttons}>
-          {optional && (
-            <Button mode="text" onPress={handleSkip}>
-              {t("savings.skip")}
+          <View style={styles.buttons}>
+            {optional && (
+              <Button mode="text" onPress={handleSkip}>
+                {t("savings.skip")}
+              </Button>
+            )}
+            <Button
+              mode="contained"
+              disabled={optional && !localValue}
+              onPress={handleSave}
+            >
+              {optional ? t("savings.save") : t("savings.confirm")}
             </Button>
-          )}
-          <Button
-            mode="contained"
-            disabled={optional && !localValue}
-            onPress={handleSave}
-          >
-            {optional ? t("savings.save") : t("savings.confirm")}
-          </Button>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Portal>
   );

@@ -1,5 +1,13 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   Divider,
   IconButton,
@@ -154,64 +162,69 @@ export default function SettingsScreen(): React.JSX.Element {
         renderToHardwareTextureAndroid={true}
         transparent
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setLangPickerOpen(false)}
+        <KeyboardAvoidingView
+          style={StyleSheet.absoluteFill}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <Pressable
-            style={[
-              globalStyles.container,
-              styles.modalContent,
-              { backgroundColor: themes[scheme].colors.surface },
-            ]}
-            onPress={() => {}}
+            style={styles.modalOverlay}
+            onPress={() => setLangPickerOpen(false)}
           >
-            <ScrollView style={styles.modalList}>
-              {SUPPORTED_LANGUAGES.map((l) => {
-                const isActive = l.code === language;
-                return (
-                  <Pressable
-                    key={l.code}
-                    onPress={() => {
-                      handleLanguageChange(l.code);
-                      setLangPickerOpen(false);
-                    }}
-                  >
-                    <View
-                      style={[
-                        styles.optionRow,
-                        isActive && {
-                          backgroundColor:
-                            themes[scheme].colors.primaryContainer,
-                        },
-                      ]}
+            <Pressable
+              style={[
+                globalStyles.container,
+                styles.modalContent,
+                { backgroundColor: themes[scheme].colors.surface },
+              ]}
+              onPress={() => {}}
+            >
+              <ScrollView style={styles.modalList}>
+                {SUPPORTED_LANGUAGES.map((l) => {
+                  const isActive = l.code === language;
+                  return (
+                    <Pressable
+                      key={l.code}
+                      onPress={() => {
+                        handleLanguageChange(l.code);
+                        setLangPickerOpen(false);
+                      }}
                     >
-                      <ThemedText
+                      <View
                         style={[
-                          styles.optionText,
+                          styles.optionRow,
                           isActive && {
-                            color: themes[scheme].colors.onPrimaryContainer,
+                            backgroundColor:
+                              themes[scheme].colors.primaryContainer,
                           },
                         ]}
                       >
-                        {l.label}
-                      </ThemedText>
-                      {isActive && (
                         <ThemedText
-                          style={{
-                            color: themes[scheme].colors.onPrimaryContainer,
-                          }}
+                          style={[
+                            styles.optionText,
+                            isActive && {
+                              color: themes[scheme].colors.onPrimaryContainer,
+                            },
+                          ]}
                         >
-                          ✓
+                          {l.label}
                         </ThemedText>
-                      )}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+                        {isActive && (
+                          <ThemedText
+                            style={{
+                              color: themes[scheme].colors.onPrimaryContainer,
+                            }}
+                          >
+                            ✓
+                          </ThemedText>
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Searchable currency picker modal ── */}
@@ -222,67 +235,72 @@ export default function SettingsScreen(): React.JSX.Element {
         renderToHardwareTextureAndroid={true}
         transparent
       >
-        <Pressable style={styles.modalOverlay} onPress={closePicker}>
-          <Pressable
-            style={[
-              globalStyles.container,
-              styles.modalContent,
-              { backgroundColor: themes[scheme].colors.surface },
-            ]}
-            onPress={() => {}} /* prevent tap-through to backdrop */
-          >
-            <Searchbar
-              placeholder={t("settings.searchCurrency")}
-              onChangeText={setSearch}
-              value={search}
-              autoFocus
-              style={styles.searchbar}
-            />
+        <KeyboardAvoidingView
+          style={StyleSheet.absoluteFill}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Pressable style={styles.modalOverlay} onPress={closePicker}>
+            <Pressable
+              style={[
+                globalStyles.container,
+                styles.modalContent,
+                { backgroundColor: themes[scheme].colors.surface },
+              ]}
+              onPress={() => {}} /* prevent tap-through to backdrop */
+            >
+              <Searchbar
+                placeholder={t("settings.searchCurrency")}
+                onChangeText={setSearch}
+                value={search}
+                autoFocus
+                style={styles.searchbar}
+              />
 
-            <ScrollView style={styles.modalList}>
-              {filtered.map((c) => {
-                const symbol = CURRENCY_SYMBOLS[c.code] ?? c.code;
-                const isActive = c.code === currency;
-                return (
-                  <Pressable
-                    key={c.code}
-                    onPress={() => selectCurrency(c.code)}
-                  >
-                    <View
-                      style={[
-                        styles.optionRow,
-                        isActive && {
-                          backgroundColor:
-                            themes[scheme].colors.primaryContainer,
-                        },
-                      ]}
+              <ScrollView style={styles.modalList}>
+                {filtered.map((c) => {
+                  const symbol = CURRENCY_SYMBOLS[c.code] ?? c.code;
+                  const isActive = c.code === currency;
+                  return (
+                    <Pressable
+                      key={c.code}
+                      onPress={() => selectCurrency(c.code)}
                     >
-                      <ThemedText
+                      <View
                         style={[
-                          styles.optionText,
+                          styles.optionRow,
                           isActive && {
-                            color: themes[scheme].colors.onPrimaryContainer,
+                            backgroundColor:
+                              themes[scheme].colors.primaryContainer,
                           },
                         ]}
                       >
-                        {symbol} {c.code}
-                      </ThemedText>
-                      {isActive && (
                         <ThemedText
-                          style={{
-                            color: themes[scheme].colors.onPrimaryContainer,
-                          }}
+                          style={[
+                            styles.optionText,
+                            isActive && {
+                              color: themes[scheme].colors.onPrimaryContainer,
+                            },
+                          ]}
                         >
-                          ✓
+                          {symbol} {c.code}
                         </ThemedText>
-                      )}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+                        {isActive && (
+                          <ThemedText
+                            style={{
+                              color: themes[scheme].colors.onPrimaryContainer,
+                            }}
+                          >
+                            ✓
+                          </ThemedText>
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Error snackbar ── */}
