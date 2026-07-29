@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Theme } from "@/constants/interfaces";
+import type { Theme } from "@/constants/types";
 import type { TranslationKey } from "@/i18n/en";
 
 type EffectiveScheme = "light" | "dark";

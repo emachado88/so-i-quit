@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react-native";
-import { Habit } from "@/constants/interfaces";
+import { Habit } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "habits";

@@ -1,6 +1,6 @@
 import { getLocales } from "expo-localization";
 
-import type { AppSettings, Theme } from "@/constants/interfaces";
+import type { AppSettings, Theme } from "@/constants/types";
 import { REGION_TO_CURRENCY } from "@/constants/currencies";
 import { detectLanguage } from "@/i18n";
 import AsyncStorage from "@react-native-async-storage/async-storage";

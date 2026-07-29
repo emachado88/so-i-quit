@@ -1,6 +1,6 @@
 import { getLocales } from "expo-localization";
 import dayjs from "dayjs";
-import type { Habit } from "@/constants/interfaces";
+import type { Habit } from "@/constants/types";
 import type { TranslationKey } from "@/i18n/en";
 
 // ---------------------------------------------------------------------------

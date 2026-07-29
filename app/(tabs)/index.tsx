@@ -1,6 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { CounterText, TimeValue } from "@/components/animated-counters";
-import { Habit } from "@/constants/interfaces";
+import { Habit } from "@/constants/types";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
 import { useAppSettings } from "@/contexts/settings-context";
@@ -88,7 +88,9 @@ export default function HomeScreen() {
             return (
               <Card key={habit.id} mode="contained">
                 <Card.Title
-                  title={t("progress.freeFor", { name: getHabitName(habit, t) })}
+                  title={t("progress.freeFor", {
+                    name: getHabitName(habit, t),
+                  })}
                   titleStyle={[
                     globalStyles.spacedUppercase,
                     { color: themes[scheme].colors.secondary },
@@ -101,7 +103,9 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={years} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t(years === 1 ? "progress.year" : "progress.years")}
+                            {t(
+                              years === 1 ? "progress.year" : "progress.years",
+                            )}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -109,7 +113,11 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={months} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t(months === 1 ? "progress.month" : "progress.months")}
+                            {t(
+                              months === 1
+                                ? "progress.month"
+                                : "progress.months",
+                            )}
                           </ThemedText>
                         </View>
                       ) : null}
@@ -125,7 +133,9 @@ export default function HomeScreen() {
                         <View style={styles.statColumn}>
                           <TimeValue value={hours} />
                           <ThemedText style={styles.timeSubtitle}>
-                            {t(hours === 1 ? "progress.hour" : "progress.hours")}
+                            {t(
+                              hours === 1 ? "progress.hour" : "progress.hours",
+                            )}
                           </ThemedText>
                         </View>
                       ) : null}

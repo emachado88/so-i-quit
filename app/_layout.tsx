@@ -34,7 +34,7 @@ import {
   getLanguage,
   saveLanguage,
 } from "@/data/settings";
-import type { Theme } from "@/constants/interfaces";
+import type { Theme } from "@/constants/types";
 import {
   AppSettingsContext,
   type AppSettingsValue,
@@ -139,13 +139,20 @@ const RootLayout = (): React.JSX.Element | null => {
     setLanguageState(code);
   }, []);
 
-  if (!fontsLoaded || storedTheme === null || currency === null || language === null) {
+  if (
+    !fontsLoaded ||
+    storedTheme === null ||
+    currency === null ||
+    language === null
+  ) {
     return null;
   }
 
   const scheme: "light" | "dark" =
     storedTheme === "system"
-      ? (deviceScheme === "unspecified" ? "light" : deviceScheme)
+      ? deviceScheme === "unspecified"
+        ? "light"
+        : deviceScheme
       : storedTheme;
 
   const contextValue: AppSettingsValue = {

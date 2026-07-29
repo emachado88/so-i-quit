@@ -25,7 +25,7 @@ import {
   Snackbar,
   TextInput,
 } from "react-native-paper";
-import { Habit } from "@/constants/interfaces";
+import { Habit } from "@/constants/types";
 import type { TranslationKey } from "@/i18n/en";
 import { globalStyles } from "@/constants/styles";
 import { themes } from "@/constants/theme";
@@ -577,12 +577,16 @@ export default function HabitsScreen() {
                         <Pressable
                           onPress={() => setMenuVisibleId(habit.id)}
                           accessibilityRole="button"
-                          accessibilityLabel={t("habits.openMenu", { name: getHabitName(habit, t) })}
+                          accessibilityLabel={t("habits.openMenu", {
+                            name: getHabitName(habit, t),
+                          })}
                         >
                           <IconButton
                             icon="dots-horizontal"
                             style={{ margin: 0 }}
-                            accessibilityLabel={t("habits.openMenu", { name: getHabitName(habit, t) })}
+                            accessibilityLabel={t("habits.openMenu", {
+                              name: getHabitName(habit, t),
+                            })}
                           />
                         </Pressable>
                       }

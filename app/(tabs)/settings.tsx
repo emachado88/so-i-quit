@@ -20,7 +20,7 @@ import { ThemedText } from "@/components/themed-text";
 import { CURRENCY_SYMBOLS } from "@/constants/currencies";
 import { globalStyles } from "@/constants/styles";
 import { useAppSettings } from "@/contexts/settings-context";
-import type { Theme } from "@/constants/interfaces";
+import type { Theme } from "@/constants/types";
 import { themes } from "@/constants/theme";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 
