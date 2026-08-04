@@ -10,6 +10,7 @@
 import { render } from "@testing-library/react-native";
 import React from "react";
 import type { ReactElement, ReactNode } from "react";
+import { PaperProvider } from "react-native-paper";
 import { jest } from "@jest/globals";
 
 import type { Habit, Milestone } from "@/constants/types";
@@ -17,6 +18,7 @@ import {
   AppSettingsContext,
   type AppSettingsValue,
 } from "@/contexts/settings-context";
+import { themes } from "@/constants/theme";
 import { useTranslation } from "@/i18n";
 
 // ---------------------------------------------------------------------------
@@ -75,7 +77,7 @@ const SettingsProvider = ({
 }) => {
   const { t } = useTranslation(overrides?.language ?? "en");
   const value: AppSettingsValue = {
-    scheme: "light",
+    scheme: overrides?.scheme ?? "light",
     storedTheme: "system",
     setTheme: jest.fn(async () => {}),
     currency: "EUR",
@@ -91,12 +93,27 @@ const SettingsProvider = ({
   };
   return (
     <AppSettingsContext.Provider value={value}>
-      {children}
+      {/* PaperProvider mirrors the app root: provides Portal.Host (required
+          by Modal/Dialog) and the MD3 theme for the active scheme. */}
+      <PaperProvider theme={themes[value.scheme]}>{children}</PaperProvider>
     </AppSettingsContext.Provider>
   );
 };
 
-export const renderWithProviders = (
+export const renderWithProviders = async (
   ui: ReactElement,
   overrides?: Partial<AppSettingsValue>,
-) => render(<SettingsProvider overrides={overrides}>{ui}</SettingsProvider>);
+) => {
+  const result = await render(
+    <SettingsProvider overrides={overrides}>{ui}</SettingsProvider>,
+  );
+  return {
+    ...result,
+    // RTL's rerender replaces the whole tree — re-wrap so the provider (and
+    // its overrides) survives value-prop changes in the component under test.
+    rerender: (nextUi: ReactElement) =>
+      result.rerender(
+        <SettingsProvider overrides={overrides}>{nextUi}</SettingsProvider>,
+      ),
+  };
+};

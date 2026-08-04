@@ -154,16 +154,32 @@ jest.mock("expo-router/build/react-navigation", () => {
 
 jest.mock("react-native-reanimated", () => {
   const { View } = require("react-native");
+  const { useRef } = require("react");
   const identity = <T,>(v: T): T => v;
   return {
+    // __esModule is required so `import Animated from "react-native-reanimated"`
+    // resolves to the `default` object (Animated.View / createAnimatedComponent).
+    __esModule: true,
     default: {
       View,
       createAnimatedComponent: (Component: any) => Component,
     },
-    useSharedValue: (initial: number) => ({ value: initial }),
+    // Real useSharedValue returns a STABLE object across renders (mutations
+    // like `animating.value = true` must survive re-renders).
+    useSharedValue: (initial: number) => {
+      const ref = useRef(null);
+      if (ref.current === null) ref.current = { value: initial };
+      return ref.current as { value: number };
+    },
     useAnimatedStyle: (factory: () => object) => factory() ?? {},
     useAnimatedProps: (factory: () => object) => factory() ?? {},
-    withTiming: identity,
+    // Real withTiming invokes the completion callback after the tween — the
+    // stub fires it on a macrotask so in-flight-animating state is preserved
+    // until tests advance fake timers.
+    withTiming: (toValue: number, _config?: object, callback?: () => void) => {
+      if (callback) setTimeout(callback, 0);
+      return toValue;
+    },
     withSpring: identity,
     withSequence: (...values: number[]) => values[values.length - 1],
     cancelAnimation: () => {},
@@ -183,7 +199,13 @@ jest.mock("react-native-svg", () => {
   const React = require("react");
   const { View } = require("react-native");
   const stub = (props: any) => React.createElement(View, props);
-  return { default: stub, Svg: stub, Circle: stub };
+  return {
+    // __esModule so the default import resolves to the stub function.
+    __esModule: true,
+    default: stub,
+    Svg: stub,
+    Circle: stub,
+  };
 });
 
 // ---------------------------------------------------------------------------
@@ -194,6 +216,34 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
 }));
+
+// Paper Modal/Dialog/Provider render SafeAreaProviderCompat, which uses
+// react-native-safe-area-context — the native module is unavailable under
+// jest and this package's jest/mock is shipped as un-compiled .tsx, so mock
+// the module manually. Consumer invokes its render prop with null insets so
+// SafeAreaProviderCompat falls through to the SafeAreaProvider passthrough.
+jest.mock("react-native-safe-area-context", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  const invokeWithNull = ({ children }: any) => children(null);
+  return {
+    __esModule: true,
+    SafeAreaProvider: ({ children, ...props }: any) =>
+      React.createElement(View, props, children),
+    SafeAreaInsetsContext: {
+      Provider: ({ children }: any) => children,
+      Consumer: invokeWithNull,
+    },
+    SafeAreaFrameContext: {
+      Provider: ({ children }: any) => children,
+      Consumer: invokeWithNull,
+    },
+    SafeAreaConsumer: ({ children }: any) => children(null),
+    useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+    initialWindowMetrics: null,
+  };
+});
 
 jest.mock("expo-font", () => ({
   useFonts: () => [true],
