@@ -107,7 +107,7 @@ jest.mock("expo-constants", () => ({
 
 jest.mock("expo-router", () => {
   const React = require("react");
-  const { View } = require("react-native");
+  const { Text, View } = require("react-native");
 
   const routerState = {
     replace: jest.fn(),
@@ -131,10 +131,21 @@ jest.mock("expo-router", () => {
     useIsFocused: () => true,
     useLocalSearchParams: () => ({}),
     Link: ({ children, ...props }: any) =>
-      React.createElement(View, props, children),
+      // Text wrapper: the test renderer rejects raw strings inside a View.
+      React.createElement(Text, props, children),
     Stack: Object.assign(
       ({ children }: any) => React.createElement(View, null, children),
       { Screen: () => null },
+    ),
+    Tabs: Object.assign(
+      ({ children }: any) => React.createElement(View, null, children),
+      {
+        // Invoke the tabBarIcon renderer so icon lines are exercised.
+        Screen: ({ options }: any) =>
+          options?.tabBarIcon
+            ? options.tabBarIcon({ color: "#000", focused: false, size: 28 })
+            : null,
+      },
     ),
   };
 });
@@ -247,6 +258,8 @@ jest.mock("react-native-safe-area-context", () => {
 
 jest.mock("expo-font", () => ({
   useFonts: () => [true],
+  // @expo/vector-icons (Paper icons) calls Font.isLoaded at module setup.
+  isLoaded: () => true,
 }));
 
 jest.mock("@expo-google-fonts/inter", () => ({

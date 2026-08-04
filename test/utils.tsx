@@ -111,9 +111,16 @@ export const renderWithProviders = async (
     ...result,
     // RTL's rerender replaces the whole tree — re-wrap so the provider (and
     // its overrides) survives value-prop changes in the component under test.
-    rerender: (nextUi: ReactElement) =>
+    // `nextOverrides` lets a rerender flip context deps (e.g. to re-trigger a
+    // useFocusEffect whose deps include a context field).
+    rerender: (
+      nextUi: ReactElement,
+      nextOverrides?: Partial<AppSettingsValue>,
+    ) =>
       result.rerender(
-        <SettingsProvider overrides={overrides}>{nextUi}</SettingsProvider>,
+        <SettingsProvider overrides={nextOverrides ?? overrides}>
+          {nextUi}
+        </SettingsProvider>,
       ),
   };
 };
