@@ -94,6 +94,33 @@ const completeWizardAndroid = async (date: Date, time: Date) => {
   });
 };
 
+/**
+ * Render the habits screen with fake timers active. The Paper Menu schedules
+ * its mount-time hide animation on the (real) clock — its completion
+ * callback then races the open (`setRendered(true)` can be undone by the
+ * hide's `setRendered(false)`) and closes the menu. That race only loses on
+ * cold/slow runs (single-test runs, CI), which is why menu tests must pin
+ * the clock from render time.
+ */
+const renderHabits = async (overrides?: Parameters<typeof renderWithProviders>[1]) => {
+  jest.useFakeTimers();
+  return renderWithProviders(<HabitsScreen />, overrides);
+};
+
+/**
+ * Open a habit's menu deterministically. Fake timers (active since the
+ * render) let us drain the mount-time hide animation with
+ * advanceTimersByTime before pressing, so nothing undoes the open.
+ */
+const openMenu = async (habitName = "Alcohol") => {
+  const anchor = screen.getAllByLabelText(`Open menu ${habitName}`)[0];
+  await act(async () => {
+    jest.advanceTimersByTime(2000);
+  });
+  await fireEvent.press(anchor);
+  jest.useRealTimers();
+};
+
 describe("app/(tabs)/habits", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -105,6 +132,9 @@ describe("app/(tabs)/habits", () => {
 
   afterEach(() => {
     (Platform as unknown as { OS: string }).OS = "ios";
+    // renderHabits() leaves fake timers on; restore so non-menu tests and
+    // later suites run against the real clock.
+    jest.useRealTimers();
   });
 
   it("shows the add buttons and the empty state", async () => {
@@ -210,11 +240,10 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
     // The menu anchor duplicates the label (Pressable + inner IconButton).
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
     expect(openAndroidPicker(0).mode).toBe("date");
     const newDate = new Date("2024-06-15T00:00:00.000Z");
@@ -235,11 +264,10 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
     // The menu anchor duplicates the label (Pressable + inner IconButton).
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit savings"));
     expect(screen.getByText("Daily Savings")).toBeOnTheScreen();
 
@@ -253,11 +281,10 @@ describe("app/(tabs)/habits", () => {
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
     const alertSpy = jest.spyOn(Alert, "alert");
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
     // The menu anchor duplicates the label (Pressable + inner IconButton).
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Delete"));
 
     expect(alertSpy).toHaveBeenCalledWith(
@@ -451,11 +478,10 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />, {
+    await renderHabits({
       milestoneNotificationsEnabled: true,
     });
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
     await act(async () => {
       openAndroidPicker(0).onValueChange({}, new Date("2024-06-15T00:00:00.000Z"));
@@ -471,9 +497,8 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: null, savings: null }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await renderHabits();
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
 
     expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(1);
@@ -484,9 +509,8 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await renderHabits();
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
 
     await act(async () => {
@@ -499,9 +523,8 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await renderHabits();
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
 
     await act(async () => {
@@ -519,10 +542,9 @@ describe("app/(tabs)/habits", () => {
     ]);
     jest.spyOn(habitsData, "deleteHabit").mockRejectedValue(new Error("boom"));
     const alertSpy = jest.spyOn(Alert, "alert");
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Delete"));
     const buttons = alertSpy.mock.calls[0][2] as {
       style?: string;
@@ -541,10 +563,9 @@ describe("app/(tabs)/habits", () => {
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
     jest.spyOn(habitsData, "updateHabit").mockRejectedValue(new Error("boom"));
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit savings"));
     await fireEvent.changeText(screen.getByPlaceholderText("0.00"), "5.25");
     await fireEvent.press(screen.getByText("Confirm"));
@@ -569,10 +590,9 @@ describe("app/(tabs)/habits", () => {
     await seedHabits([
       makeHabit({ id: "h1", name: "Alcohol", date: "2025-01-01T00:00:00.000Z", savings: "5" }),
     ]);
-    await renderWithProviders(<HabitsScreen />);
+    await renderHabits();
 
-    const menuAnchor = screen.getAllByLabelText("Open menu Alcohol")[0];
-    await fireEvent.press(menuAnchor);
+    await openMenu();
     await fireEvent.press(screen.getByText("Edit date"));
 
     const picker = screen.getByTestId("date-time-picker");

@@ -51,6 +51,13 @@ describe("app/(tabs)/index (progress)", () => {
     // Spy implementations (e.g. getHabits mockRejectedValue) must not leak
     // into subsequent tests.
     jest.restoreAllMocks();
+    // The total-savings CounterText animates via requestAnimationFrame
+    // (setTimeout-based under jest) — a noop rAF keeps those ticks from
+    // firing outside act() and spamming act() warnings.
+    (globalThis as unknown as { requestAnimationFrame: () => number }).requestAnimationFrame =
+      () => 0;
+    (globalThis as unknown as { cancelAnimationFrame: () => void }).cancelAnimationFrame =
+      () => {};
   });
 
   it("redirects to the habits tab when there are no habits", async () => {
