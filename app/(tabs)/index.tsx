@@ -27,7 +27,6 @@ import { Link, useFocusEffect, useNavigation } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { AppState, ScrollView, StyleSheet, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
-import dayjs from "dayjs";
 import { MilestoneRing } from "@/components/milestone-ring";
 
 /** Pending in-app celebration (newly crossed milestone). */
@@ -156,7 +155,7 @@ export default function HomeScreen() {
             const progress = ringProgress(habit, milestones, new Date());
 
             return (
-              <Card key={habit.id} mode="contained">
+              <Card key={habit.id} mode="outlined">
                 <Card.Title
                   title={t("progress.freeFor", {
                     name: getHabitName(habit, t),
@@ -167,94 +166,110 @@ export default function HomeScreen() {
                   ]}
                 />
                 <Card.Content>
-                  <View style={styles.cardCounters}>
-                    <View style={styles.cardRow}>
-                      {years ? (
-                        <View style={styles.statColumn}>
-                          <TimeValue value={years} />
-                          <ThemedText style={styles.timeSubtitle}>
-                            {t(
-                              years === 1 ? "progress.year" : "progress.years",
-                            )}
-                          </ThemedText>
+                  <View
+                    style={[globalStyles.flexRow, globalStyles.justifyBetween]}
+                  >
+                    <View
+                      style={[
+                        globalStyles.flex1,
+                        globalStyles.alignStart,
+                        globalStyles.justifyBetween,
+                      ]}
+                    >
+                      <View style={styles.cardCounters}>
+                        <View style={styles.cardRow}>
+                          {years ? (
+                            <View style={styles.statColumn}>
+                              <TimeValue value={years} />
+                              <ThemedText style={styles.timeSubtitle}>
+                                {t(
+                                  years === 1
+                                    ? "progress.year"
+                                    : "progress.years",
+                                )}
+                              </ThemedText>
+                            </View>
+                          ) : null}
+                          {months ? (
+                            <View style={styles.statColumn}>
+                              <TimeValue value={months} />
+                              <ThemedText style={styles.timeSubtitle}>
+                                {t(
+                                  months === 1
+                                    ? "progress.month"
+                                    : "progress.months",
+                                )}
+                              </ThemedText>
+                            </View>
+                          ) : null}
+                          {days ? (
+                            <View style={styles.statColumn}>
+                              <TimeValue value={days} />
+                              <ThemedText style={styles.timeSubtitle}>
+                                {t(
+                                  days === 1 ? "progress.day" : "progress.days",
+                                )}
+                              </ThemedText>
+                            </View>
+                          ) : null}
+                          {hours ? (
+                            <View style={styles.statColumn}>
+                              <TimeValue value={hours} />
+                              <ThemedText style={styles.timeSubtitle}>
+                                {t(
+                                  hours === 1
+                                    ? "progress.hour"
+                                    : "progress.hours",
+                                )}
+                              </ThemedText>
+                            </View>
+                          ) : null}
+                          {!years && !months && !days && !hours && (
+                            <View style={styles.statColumn}>
+                              <ThemedText>
+                                {t("progress.justStarted")}
+                              </ThemedText>
+                            </View>
+                          )}
                         </View>
-                      ) : null}
-                      {months ? (
-                        <View style={styles.statColumn}>
-                          <TimeValue value={months} />
-                          <ThemedText style={styles.timeSubtitle}>
-                            {t(
-                              months === 1
-                                ? "progress.month"
-                                : "progress.months",
-                            )}
+                      </View>
+                      <ThemedText
+                        style={[
+                          styles.cardActions,
+                          { color: themes[scheme].colors.secondary },
+                        ]}
+                      >
+                        {totalHabitSavings > 0
+                          ? formatAmount(totalHabitSavings, currency)
+                          : null}
+                      </ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        globalStyles.flex1,
+                        globalStyles.alignEnd,
+                        { gap: 16 },
+                      ]}
+                    >
+                      <MilestoneRing
+                        progress={progress}
+                        size={72}
+                        strokeWidth={8}
+                        color={themes[scheme].colors.primary}
+                        trackColor={themes[scheme].colors.surfaceDisabled}
+                      />
+                      {next != null && (
+                        <View>
+                          <ThemedText style={styles.nextText}>
+                            {t("milestone.next", {
+                              milestone: formatMilestoneLabel(next, t),
+                            })}
                           </ThemedText>
-                        </View>
-                      ) : null}
-                      {days ? (
-                        <View style={styles.statColumn}>
-                          <TimeValue value={days} />
-                          <ThemedText style={styles.timeSubtitle}>
-                            {t(days === 1 ? "progress.day" : "progress.days")}
-                          </ThemedText>
-                        </View>
-                      ) : null}
-                      {hours ? (
-                        <View style={styles.statColumn}>
-                          <TimeValue value={hours} />
-                          <ThemedText style={styles.timeSubtitle}>
-                            {t(
-                              hours === 1 ? "progress.hour" : "progress.hours",
-                            )}
-                          </ThemedText>
-                        </View>
-                      ) : null}
-                      {!years && !months && !days && !hours && (
-                        <View style={styles.statColumn}>
-                          <ThemedText>{t("progress.justStarted")}</ThemedText>
                         </View>
                       )}
                     </View>
-                    <MilestoneRing
-                      progress={progress}
-                      size={60}
-                      strokeWidth={8}
-                      color={themes[scheme].colors.primary}
-                      trackColor={themes[scheme].colors.surfaceDisabled}
-                    />
                   </View>
-                  {next != null && (
-                    <View style={{ width: "100%" }}>
-                      <ThemedText style={styles.nextText}>
-                        {t("milestone.next", {
-                          milestone: formatMilestoneLabel(next, t),
-                        })}
-                      </ThemedText>
-                    </View>
-                  )}
                 </Card.Content>
-                <Card.Actions style={styles.actionsRow}>
-                  <ThemedText
-                    style={[
-                      styles.cardActions,
-                      { color: themes[scheme].colors.secondary },
-                    ]}
-                  >
-                    {totalHabitSavings > 0
-                      ? formatAmount(totalHabitSavings, currency)
-                      : null}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.cardActions,
-                      { color: themes[scheme].colors.secondary },
-                    ]}
-                  >
-                    {t("progress.since", {
-                      date: dayjs(habit.date).format("D MMM YYYY"),
-                    })}
-                  </ThemedText>
-                </Card.Actions>
               </Card>
             );
           })}
@@ -352,7 +367,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   cardCounters: {
-    flexDirection: "row",
     justifyContent: "space-around",
   },
   cardActions: {

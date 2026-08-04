@@ -760,7 +760,7 @@ export default function HabitsScreen() {
                   style={[
                     globalStyles.flexRow,
                     globalStyles.justifyBetween,
-                    globalStyles.alignBottom,
+                    globalStyles.alignEnd,
                     { gap: 20 },
                   ]}
                 >
