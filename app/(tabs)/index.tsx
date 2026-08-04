@@ -318,7 +318,7 @@ export default function HomeScreen() {
           onPress: dismissCelebration,
         }}
         style={{
-          backgroundColor: themes[scheme].colors.secondary,
+          backgroundColor: themes[scheme].colors.primary,
         }}
         onDismiss={dismissCelebration}
       >
