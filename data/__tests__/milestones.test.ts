@@ -125,4 +125,32 @@ describe("data/milestones", () => {
     // Persisted
     expect((await getMilestonesForHabit("h2")).length).toBeGreaterThan(0);
   });
+
+  it("tolerates corrupt JSON in the store (treats as empty)", async () => {
+    mockStore.set("milestones-v1", "{not json");
+    const h = habit("2025-01-01T00:00:00.000Z");
+    const { milestones } = await ensureMilestonesForHabit(
+      h,
+      new Date("2025-06-01T00:00:00Z"),
+    );
+    expect(milestones.length).toBeGreaterThan(0);
+  });
+
+  it("tolerates a stored non-object value (treats as empty)", async () => {
+    mockStore.set("milestones-v1", JSON.stringify("garbage"));
+    const h = habit("2025-01-01T00:00:00.000Z");
+    const { milestones } = await ensureMilestonesForHabit(
+      h,
+      new Date("2025-06-01T00:00:00Z"),
+    );
+    expect(milestones.length).toBeGreaterThan(0);
+  });
+
+  it("deleting an unknown habit is a no-op", async () => {
+    await expect(deleteMilestonesForHabit("missing")).resolves.toBeUndefined();
+  });
+
+  it("getMilestonesForHabit returns [] for unknown habits", async () => {
+    expect(await getMilestonesForHabit("nobody")).toEqual([]);
+  });
 });

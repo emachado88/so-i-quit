@@ -65,6 +65,9 @@ const mockLocales = [
     currencyCode: "USD",
   },
 ];
+// Independent copy: the per-test fixture array is mutated in place, so the
+// reset must restore from a source that is never itself emptied.
+const defaultLocales = [...mockLocales];
 (globalThis as unknown as { __rnTestLocales: typeof mockLocales }).__rnTestLocales =
   mockLocales;
 
@@ -228,5 +231,5 @@ beforeEach(() => {
   (globalThis as unknown as { __rnTestConstants?: { executionEnvironment: string } }).__rnTestConstants!.executionEnvironment =
     "StoreClient";
   (globalThis as unknown as { __rnTestLocales?: unknown[] }).__rnTestLocales!.length = 0;
-  (globalThis as unknown as { __rnTestLocales?: unknown[] }).__rnTestLocales!.push(...mockLocales);
+  (globalThis as unknown as { __rnTestLocales?: unknown[] }).__rnTestLocales!.push(...defaultLocales);
 });
