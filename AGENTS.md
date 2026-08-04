@@ -16,8 +16,10 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 - **@react-native-community/datetimepicker** — native date/time pickers
 - **expo-font** + **@expo-google-fonts/inter** — Inter font family (Black, Bold, SemiBold, Medium, Regular)
 - **expo-localization** — locale/region detection (device timezone, currency, language)
+- **expo-notifications** — local milestone celebration notifications (lazy-loaded, Expo Go–guarded)
 - **expo-build-properties** — native build configuration
 - **@sentry/react-native** — crash reporting + performance monitoring (`lib/sentry.ts`)
+- **vitest** — unit tests for milestone logic (`data/__tests__`, `lib/__tests__`)
 
 ## Project Structure
 
@@ -25,19 +27,23 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 app/                     # Expo Router pages (file-based)
   (tabs)/
     _layout.tsx          # Tab bar (3 tabs: Progress, Habits, Settings)
-    index.tsx            # Progress — live counters, savings summary, sorted oldest-first
+    index.tsx            # Progress — live counters, savings summary, sorted oldest-first; redirects to Habits when none exist
     habits.tsx           # Habits — CRUD, date/time pickers, savings input (max 50%)
     settings.tsx         # Settings — app config (theme, language, currency)
   _layout.tsx            # Root — PaperProvider, StatusBar, dayjs locale, Inter fonts, settings context
 components/
   animated-counters.tsx  # Animated TimeValue + MoneyValue counters (Reanimated spring bump)
   haptic-tab.tsx         # Tab button with haptic feedback
+  milestone-ring.tsx     # Circular milestone progress ring (Reanimated + react-native-svg)
+  milestone-opt-in-dialog.tsx  # Post-wizard opt-in prompt for milestone notifications
   savings-modal.tsx      # Modal for editing per-habit savings amount
   themed-text.tsx        # ThemedText component (title/subtitle/default/link)
 lib/
   sentry.ts              # Sentry init + error boundary wrapper
+  milestones.ts          # Milestone calendar: generateMilestones, isMilestoneReached, formatting
+  milestone-notifications.ts  # Local notifications for milestones (Expo Go–safe lazy import)
 constants/
-  interfaces.ts          # Habit { id, key?, name, date, savings }, Theme, AppSettings types
+  types.ts               # Habit, Milestone, Theme, AppSettings types
   styles.ts              # globalStyles: container, shadow, flex1, flexWrap, flexRow, spacedUppercase
   theme.ts               # Colors (standard/light/dark), themes (MD3LightTheme/MD3DarkTheme), fontFamilyConfig
   currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY maps
@@ -51,6 +57,7 @@ i18n/
   index.ts               # useTranslation hook, detectLanguage(), SUPPORTED_LANGUAGES, interpolation
 data/
   habits.ts              # AsyncStorage CRUD (getHabits, addHabit, updateHabit, deleteHabit, saveHabits)
+  milestones.ts          # AsyncStorage persistence for milestones (key "milestones-v1")
   settings.ts            # AsyncStorage persistence for theme, language, currency + locale-based detection
 hooks/
   use-bump-value.ts      # useBumpValue hook — scale-bump animation on value change (Reanimated)
@@ -123,6 +130,7 @@ Loaded in `app/_layout.tsx` via `useFonts` from `expo-font` with PostScript name
 ```bash
 npm run lint                    # ESLint (expo config)
 npx tsc --noEmit               # TypeScript check (strict mode)
+npm test                       # Vitest unit tests (milestone logic)
 ```
 
 ## Key Decisions & Pitfalls
@@ -152,13 +160,17 @@ npx tsc --noEmit               # TypeScript check (strict mode)
 - Underscore names (`Inter_400Regular`) don't resolve on iOS — always map to PostScript form
 - Fonts load synchronously; `app/_layout.tsx` returns `null` until `fontsLoaded` is true
 
+### Expo Notifications (Milestones)
+- `expo-notifications` is never statically imported — `lib/milestone-notifications.ts` lazy-`require`s it behind an `IS_EXPO_GO` guard (`Constants.executionEnvironment === ExecutionEnvironment.StoreClient`) so Expo Go sessions don't crash on the native module
+- Milestones are fixed per-habit intervals (day/week/month/year) persisted under AsyncStorage key `"milestones-v1"`; opt-in via `components/milestone-opt-in-dialog.tsx`, toggled in settings
+
 ## Roadmap
 
-See `docs/improvements-roadmap.md` for the planned phases:
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
-3. ~~Notifications +~~ visual timeline — animated counters done ✅, notifications pending
-4. ~~App hardening (TS strictness, Sentry, accessibility)~~ ✅ Done
+3. ~~Milestone tracking + local notifications (animated counters, milestone rings)~~ ✅ Done
+4. ~~App hardening (TS strictness, Sentry, accessibility, Vitest)~~ ✅ Done
+5. Next: react-native-paper phase-out (custom components)
 
 ## Brand
 

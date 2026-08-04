@@ -12,6 +12,7 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 
 - **⏱ Live Counters** — Track years, months, days, hours since quitting each habit
 - **💰 Savings Calculator** — Enter how much you spend per day and see total savings grow in real time
+- **🎉 Milestone Rings** — Daily/weekly/monthly/yearly celebration rings with opt-in local notifications
 - **🎨 Theme Override** — Choose System, Light, or Dark mode (persisted)
 - **💱 Currency Picker** — Searchable currency selector with locale-based auto-detection on first run
 - **🌍 Locale-aware** — Dayjs locale matches device region; currency formatting uses Intl.NumberFormat
@@ -30,8 +31,10 @@ So I Quit is a React Native (Expo) app that helps you quit habits — alcohol, t
 | Storage       | AsyncStorage                                                                             |
 | Localization  | expo-localization (region, locale, currencyCode detection)                               |
 | Animation     | React Native Reanimated 4                                                                |
+| Notifications | expo-notifications (local milestone celebrations)                                        |
 | Language      | TypeScript 6.0 (strict mode)                                                             |
 | Linting       | ESLint 9 with expo config                                                                |
+| Testing       | Vitest (milestone logic unit tests)                                                      |
 | Monitoring    | [Sentry](https://sentry.io) (`@sentry/react-native`)                                    |
 
 ## Getting Started
@@ -55,6 +58,7 @@ Scan the QR code with Expo Go, or press `a` for Android / `i` for iOS simulator.
 | `npm run ios`     | Start with iOS simulator    |
 | `npm run web`     | Start with web browser      |
 | `npm run lint`    | Run ESLint                  |
+| `npm test`        | Run Vitest unit tests       |
 
 ### Build
 
@@ -79,12 +83,16 @@ app/                     # Expo Router pages
 components/
   animated-counters.tsx  # Animated TimeValue + MoneyValue counters (Reanimated spring)
   haptic-tab.tsx         # Haptic feedback tab button
+  milestone-ring.tsx     # Circular milestone progress ring (Reanimated + SVG)
+  milestone-opt-in-dialog.tsx  # Opt-in prompt for milestone notifications
   savings-modal.tsx      # Modal for editing per-habit savings
   themed-text.tsx        # Themed text component (title, subtitle, etc.)
 lib/
   sentry.ts              # Sentry initialisation + error boundary
+  milestones.ts          # Milestone calendar + formatting logic
+  milestone-notifications.ts  # Local milestone notifications (Expo Go–safe)
 constants/
-  interfaces.ts          # TypeScript interfaces (Habit, Theme, AppSettings)
+  types.ts               # TypeScript types (Habit, Milestone, Theme, AppSettings)
   styles.ts              # Global styles (container, shadow, flex1)
   theme.ts               # Light/dark MD3 colour tokens + Inter font config
   currencies.ts          # Currency symbols + region-to-currency maps
@@ -92,6 +100,7 @@ contexts/
   settings-context.tsx   # AppSettings context (theme, currency, scheme)
 data/
   habits.ts              # AsyncStorage CRUD for habits
+  milestones.ts          # AsyncStorage persistence for milestones
   settings.ts            # AsyncStorage persistence for settings + locale detection
 hooks/
   use-bump-value.ts      # Scale-bump animation hook (Reanimated)
@@ -99,13 +108,11 @@ utils/
   utils.ts               # Date/savings formatting helpers (Intl-based)
 assets/
   images/                # App icon, splash, favicon
-docs/
-  improvements-roadmap.md          # Next-phase roadmap
 ```
 
 ## Roadmap
 
-See [docs/improvements-roadmap.md](./docs/improvements-roadmap.md) for the planned next phases: notifications, Paper phase-out.
+Milestones + local notifications are shipped. Next planned phase: react-native-paper phase-out (custom components).
 
 ## License
 
