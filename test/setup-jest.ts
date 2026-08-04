@@ -54,7 +54,7 @@ jest.mock("@react-native-async-storage/async-storage", () => {
 });
 
 // ---------------------------------------------------------------------------
-// expo-localization — locale fixture, overridable per test
+// expo-localization — locale fixture, overridable per test via __rnTestLocales
 // ---------------------------------------------------------------------------
 
 const mockLocales = [
@@ -65,9 +65,12 @@ const mockLocales = [
     currencyCode: "USD",
   },
 ];
+(globalThis as unknown as { __rnTestLocales: typeof mockLocales }).__rnTestLocales =
+  mockLocales;
 
 jest.mock("expo-localization", () => ({
-  getLocales: () => mockLocales,
+  getLocales: () =>
+    (globalThis as unknown as { __rnTestLocales: typeof mockLocales }).__rnTestLocales,
 }));
 
 // ---------------------------------------------------------------------------
@@ -221,4 +224,9 @@ beforeEach(() => {
   if (router) {
     for (const fn of Object.values(router)) fn.mockClear();
   }
+  // Reset environment fixtures to their defaults.
+  (globalThis as unknown as { __rnTestConstants?: { executionEnvironment: string } }).__rnTestConstants!.executionEnvironment =
+    "StoreClient";
+  (globalThis as unknown as { __rnTestLocales?: unknown[] }).__rnTestLocales!.length = 0;
+  (globalThis as unknown as { __rnTestLocales?: unknown[] }).__rnTestLocales!.push(...mockLocales);
 });
