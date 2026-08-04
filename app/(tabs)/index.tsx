@@ -23,7 +23,7 @@ import {
   getHabitName,
   parseSavings,
 } from "@/utils/utils";
-import { Link, useFocusEffect, useNavigation } from "expo-router";
+import { Link, useFocusEffect, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { AppState, ScrollView, StyleSheet, View } from "react-native";
 import { Card, Snackbar } from "react-native-paper";
@@ -39,6 +39,7 @@ export default function HomeScreen() {
   const { scheme, currency, t, milestoneNotificationsEnabled } =
     useAppSettings();
   const navigation = useNavigation();
+  const router = useRouter();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [milestonesByHabit, setMilestonesByHabit] = useState<
     Record<string, Milestone[]>
@@ -54,6 +55,8 @@ export default function HomeScreen() {
       const loadHabits = async () => {
         try {
           const data = await getHabits();
+          // No habits yet → send the user to the Habits tab to create one.
+          if (data.length === 0) router.replace("/habits");
           setHabits(data);
 
           // Reconcile milestones: roll reached targets forward and collect
@@ -97,7 +100,7 @@ export default function HomeScreen() {
       loadHabits();
       const interval = setInterval(() => setTick((t) => t + 1), 1000);
       return () => clearInterval(interval);
-    }, [t, milestoneNotificationsEnabled]),
+    }, [router, t, milestoneNotificationsEnabled]),
   );
 
   useEffect(() => {
@@ -125,6 +128,8 @@ export default function HomeScreen() {
   const totalSavings = habits.reduce((acc, habit) => {
     return acc + daysSince(habit.date) * parseSavings(habit.savings);
   }, 0);
+
+  if (!habits.length) return;
 
   return (
     <View style={globalStyles.flex1}>
