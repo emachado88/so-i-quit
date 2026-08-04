@@ -1,22 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import type { Habit } from "@/constants/types";
 
 // Deliberate AsyncStorage mock: pure in-memory map, no native module.
-const store = new Map<string, string>();
-vi.mock("@react-native-async-storage/async-storage", () => ({
+const mockStore = new Map<string, string>();
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  __esModule: true,
   default: {
-    getItem: async (key: string) => store.get(key) ?? null,
+    getItem: async (key: string) => mockStore.get(key) ?? null,
     setItem: async (key: string, value: string) => {
-      store.set(key, value);
+      mockStore.set(key, value);
     },
     removeItem: async (key: string) => {
-      store.delete(key);
+      mockStore.delete(key);
     },
     multiGet: async (keys: string[]) =>
-      keys.map((k) => [k, store.get(k) ?? null] as [string, string | null]),
+      keys.map((k) => [k, mockStore.get(k) ?? null] as [string, string | null]),
     multiSet: async (pairs: [string, string][]) => {
-      for (const [k, v] of pairs) store.set(k, v);
+      for (const [k, v] of pairs) mockStore.set(k, v);
     },
   },
 }));
@@ -37,7 +36,7 @@ const habit = (date: string): Habit => ({
 });
 
 beforeEach(() => {
-  store.clear();
+  mockStore.clear();
 });
 
 describe("data/milestones", () => {

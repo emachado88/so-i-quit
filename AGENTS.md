@@ -19,7 +19,7 @@ A React Native (Expo) habit tracker that counts time since quitting and calculat
 - **expo-notifications** — local milestone celebration notifications (lazy-loaded, Expo Go–guarded)
 - **expo-build-properties** — native build configuration
 - **@sentry/react-native** — crash reporting + performance monitoring (`lib/sentry.ts`)
-- **vitest** — unit tests for milestone logic (`data/__tests__`, `lib/__tests__`)
+- **jest-expo** — test runner (jest preset do Expo SDK 57) + **@testing-library/react-native** v14 + `test-renderer` for component tests; 80% coverage gate via `npm run test:coverage`
 
 ## Project Structure
 
@@ -130,7 +130,8 @@ Loaded in `app/_layout.tsx` via `useFonts` from `expo-font` with PostScript name
 ```bash
 npm run lint                    # ESLint (expo config)
 npx tsc --noEmit               # TypeScript check (strict mode)
-npm test                       # Vitest unit tests (milestone logic)
+npm test                       # Jest unit + component tests
+npm run test:coverage          # Jest with coverage (80% thresholds enforced)
 ```
 
 ## Key Decisions & Pitfalls
@@ -169,7 +170,7 @@ npm test                       # Vitest unit tests (milestone logic)
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
 3. ~~Milestone tracking + local notifications (animated counters, milestone rings)~~ ✅ Done
-4. ~~App hardening (TS strictness, Sentry, accessibility, Vitest)~~ ✅ Done
+4. ~~App hardening (TS strictness, Sentry, accessibility, test suite)~~ ✅ Done
 5. Next: react-native-paper phase-out (custom components)
 
 ## Brand

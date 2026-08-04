@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import dayjs from "dayjs";
 
 import type { Habit, Milestone } from "@/constants/types";
