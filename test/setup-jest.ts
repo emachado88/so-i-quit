@@ -282,6 +282,42 @@ jest.mock("@react-native-community/datetimepicker", () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Console noise filtering — expected, deliberate error-path logging
+// ---------------------------------------------------------------------------
+
+const KNOWN_CONSOLE_NOISE: RegExp[] = [
+  /^Error loading habits:/,
+  /^Error completing wizard:/,
+  /^Error scheduling milestone notifications:/,
+  /^Error updating date:/,
+  /^Error updating savings:/,
+  /^Error cancelling milestone notifications:/,
+  /^Error deleting habit:/,
+  /^Error adding habit:/,
+  /^Error adding custom habit:/,
+  /^\[Sentry\] No EXPO_PUBLIC_SENTRY_DSN set/,
+];
+
+const realConsoleError = console.error.bind(console);
+const realConsoleWarn = console.warn.bind(console);
+
+// App code logs via console.error/warn inside catch handlers (the screen also
+// shows a Snackbar); tests that force those error paths produce EXPECTED
+// noise. Swallow only the known prefixes — anything else (act warnings,
+// unexpected errors, debug output) still reaches jest's console so genuine
+// problems stay visible.
+const isKnownConsoleNoise = (args: unknown[]) =>
+  typeof args[0] === "string" &&
+  KNOWN_CONSOLE_NOISE.some((pattern) => pattern.test(args[0] as string));
+
+console.error = (...args: unknown[]) => {
+  if (!isKnownConsoleNoise(args)) realConsoleError(...args);
+};
+console.warn = (...args: unknown[]) => {
+  if (!isKnownConsoleNoise(args)) realConsoleWarn(...args);
+};
+
+// ---------------------------------------------------------------------------
 // Reset shared state before each test
 // ---------------------------------------------------------------------------
 

@@ -111,6 +111,12 @@ const renderHabits = async (overrides?: Parameters<typeof renderWithProviders>[1
  * Open a habit's menu deterministically. Fake timers (active since the
  * render) let us drain the mount-time hide animation with
  * advanceTimersByTime before pressing, so nothing undoes the open.
+ *
+ * Timers STAY faked for the rest of the test: the menu's open/hide
+ * animation completions (setMenuLayout / setRendered) then remain pending
+ * on the fake clock instead of firing on the real one after the test ends
+ * (which surfaces spurious "not wrapped in act" warnings). afterEach()
+ * restores the real clock.
  */
 const openMenu = async (habitName = "Alcohol") => {
   const anchor = screen.getAllByLabelText(`Open menu ${habitName}`)[0];
@@ -118,7 +124,6 @@ const openMenu = async (habitName = "Alcohol") => {
     jest.advanceTimersByTime(2000);
   });
   await fireEvent.press(anchor);
-  jest.useRealTimers();
 };
 
 describe("app/(tabs)/habits", () => {
