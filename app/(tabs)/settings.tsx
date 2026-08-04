@@ -1,6 +1,8 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AppState,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -8,12 +10,14 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 import {
   Divider,
   IconButton,
   Searchbar,
   SegmentedButtons,
   Snackbar,
+  Switch,
 } from "react-native-paper";
 
 import { ThemedText } from "@/components/themed-text";
@@ -23,6 +27,15 @@ import { useAppSettings } from "@/contexts/settings-context";
 import type { Theme } from "@/constants/types";
 import { themes } from "@/constants/theme";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { getHabits } from "@/data/habits";
+import {
+  cancelAllMilestoneNotifications,
+  getNotificationPermissionStatus,
+  isNotificationsSupported,
+  reconcileAllHabitNotifications,
+  requestNotificationPermission,
+} from "@/lib/milestone-notifications";
+import type { NotificationPermissionStatus } from "@/lib/milestone-notifications";
 
 export default function SettingsScreen(): React.JSX.Element {
   const {
@@ -33,6 +46,8 @@ export default function SettingsScreen(): React.JSX.Element {
     setCurrency,
     language,
     setLanguage,
+    milestoneNotificationsEnabled,
+    setMilestoneNotificationsEnabled,
     t,
   } = useAppSettings();
   const options = useCurrencyOptions();
@@ -40,6 +55,53 @@ export default function SettingsScreen(): React.JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
+  // OS-level notification permission (synced with the toggle below). Null
+  // while unknown (loading or Expo Go, where the subsystem is unavailable).
+  const [osPermission, setOsPermission] = useState<NotificationPermissionStatus | null>(null);
+  const osPermissionRef = useRef<NotificationPermissionStatus | null>(null);
+  const notificationsSupported = isNotificationsSupported();
+
+  // Keep the toggle in sync with the OS-level permission: re-check whenever
+  // the screen regains focus or the app returns to the foreground (e.g. the
+  // user toggled notifications in system settings and came back).
+  const refreshOsPermission = useCallback((): void => {
+    if (!notificationsSupported) return;
+    getNotificationPermissionStatus()
+      .then((status) => {
+        const prev = osPermissionRef.current;
+        osPermissionRef.current = status;
+        setOsPermission(status);
+        // OS permission revoked while the pref was on: pending schedules are
+        // dead — cancel them. Restored later: reconcile rebuilds everything.
+        if (prev !== "denied" && status === "denied" && milestoneNotificationsEnabled) {
+          getHabits()
+            .then((habits) => cancelAllMilestoneNotifications(habits))
+            .catch(() => setError(t("settings.failedNotifications")));
+        }
+        if (prev === "denied" && status !== "denied" && milestoneNotificationsEnabled) {
+          getHabits()
+            .then((habits) => reconcileAllHabitNotifications(habits, t))
+            .catch(() => setError(t("settings.failedNotifications")));
+        }
+      })
+      .catch(() => {
+        // Permission API unavailable (e.g. web) — leave state untouched.
+      });
+  }, [notificationsSupported, milestoneNotificationsEnabled, t]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshOsPermission();
+    }, [refreshOsPermission]),
+  );
+
+  useEffect(() => {
+    if (!notificationsSupported) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshOsPermission();
+    });
+    return () => sub.remove();
+  }, [notificationsSupported, refreshOsPermission]);
 
   const themeOptions = useMemo(
     () => [
@@ -84,6 +146,38 @@ export default function SettingsScreen(): React.JSX.Element {
       setCurrency(code).catch(() => setError(t("settings.failedCurrency")));
     },
     [setCurrency, t],
+  );
+
+  // Milestone notifications: enabling requests OS permission first (the
+  // toggle reflects the effective state: pref AND OS permission) and then
+  // reconciles all dated habits; disabling cancels everything pending.
+  // Notification side effects live in lib/milestone-notifications.ts.
+  const handleMilestoneNotificationsChange = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      try {
+        if (enabled && notificationsSupported && osPermission !== "granted") {
+          const granted = await requestNotificationPermission();
+          osPermissionRef.current = granted ? "granted" : "denied";
+          setOsPermission(osPermissionRef.current);
+          if (!granted) return; // pref stays off; the denied hint explains why
+        }
+        await setMilestoneNotificationsEnabled(enabled);
+        const habits = await getHabits();
+        if (enabled) {
+          await reconcileAllHabitNotifications(habits, t);
+        } else {
+          await cancelAllMilestoneNotifications(habits);
+        }
+      } catch {
+        setError(t("settings.failedNotifications"));
+      }
+    },
+    [
+      notificationsSupported,
+      osPermission,
+      setMilestoneNotificationsEnabled,
+      t,
+    ],
   );
 
   const openPicker = useCallback(() => setPickerOpen(true), []);
@@ -164,6 +258,36 @@ export default function SettingsScreen(): React.JSX.Element {
             />
           </View>
         </Pressable>
+
+        <Divider />
+
+        {/* Milestone notifications */}
+        <View style={styles.switchRow}>
+          <ThemedText>{t("settings.milestoneNotifications")}</ThemedText>
+          <Switch
+            value={
+              milestoneNotificationsEnabled && osPermission !== "denied"
+            }
+            onValueChange={handleMilestoneNotificationsChange}
+            accessibilityLabel={t("settings.milestoneNotifications")}
+          />
+        </View>
+        {osPermission === "denied" ? (
+          <Pressable
+            onPress={() => Linking.openSettings()}
+            accessibilityRole="link"
+            accessibilityLabel={t("settings.milestoneNotificationsDenied")}
+            style={styles.switchHintLink}
+          >
+            <ThemedText style={styles.switchHint}>
+              {t("settings.milestoneNotificationsDenied")}
+            </ThemedText>
+          </Pressable>
+        ) : (
+          <ThemedText style={styles.switchHint}>
+            {t("milestone.notificationsOptInBody")}
+          </ThemedText>
+        )}
       </ScrollView>
 
       {/* ── Language picker modal ── */}
@@ -362,6 +486,19 @@ const useCurrencyOptions = (): CurrencyOption[] =>
 
 const styles = StyleSheet.create({
   container: { gap: 16 },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  switchHint: {
+    fontSize: 13,
+    flex: 1,
+  },
+  switchHintLink: {
+    flex: 1,
+  },
   pickerButton: {
     borderRadius: 4,
     paddingHorizontal: 16,

@@ -62,6 +62,30 @@ const nl: Translations = {
   "settings.failedTheme": "Thema opslaan mislukt",
   "settings.failedLanguage": "Taal opslaan mislukt",
   "settings.failedCurrency": "Valuta opslaan mislukt",
+  "settings.failedNotifications": "Meldingsvoorkeuren opslaan mislukt",
+  "settings.milestoneNotifications": "Mijlpaalmeldingen",
+  "settings.milestoneNotificationsDenied":
+    "Meldingen zijn uitgeschakeld in de systeeminstellingen. Schakel ze daar in om mijlpaalvieringen te ontvangen.",
+
+  // Mijlpalen ──
+  "milestone.day.one": "dag",
+  "milestone.day.other": "dagen",
+  "milestone.week.one": "week",
+  "milestone.week.other": "weken",
+  "milestone.month.one": "maand",
+  "milestone.month.other": "maanden",
+  "milestone.year.one": "jaar",
+  "milestone.year.other": "jaar",
+  "milestone.reached": "Mijlpaal bereikt!",
+  "milestone.reachedBody": "{{habit}} vrij sinds {{milestone}}!",
+  "milestone.next": "Volgende: {{milestone}}",
+  "milestone.notificationTitle": "Mijlpaal bereikt!",
+  "milestone.notificationBody": "{{habit}} vrij sinds {{milestone}}!",
+  "milestone.notificationsOptInTitle": "Je mijlpalen vieren?",
+  "milestone.notificationsOptInBody":
+    "Ontvang een viering wanneer je een mijlpaal bereikt.",
+  "milestone.enableNotifications": "Meldingen inschakelen",
+  "milestone.notNow": "Niet nu",
 
   "savings.title": "Dagelijkse Besparing",
   "savings.titleOptional": "Dagelijkse Besparing (optioneel)",

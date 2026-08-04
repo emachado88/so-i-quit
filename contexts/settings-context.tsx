@@ -9,16 +9,24 @@ export interface AppSettingsValue {
   scheme: EffectiveScheme;
   /** Persisted theme preference ("system", "light", or "dark"). */
   storedTheme: Theme;
-  /** Persist a new theme preference. */
+  /** Persist new theme preference. */
   setTheme: (theme: Theme) => Promise<void>;
   /** ISO 4217 currency code (e.g. "EUR", "USD"). */
   currency: string;
-  /** Persist a new currency code. */
+  /** Persist new currency code. */
   setCurrency: (code: string) => Promise<void>;
   /** Current language code (e.g. "en", "pt", "fr"). */
   language: string;
-  /** Persist a new language code. */
+  /** Persist new language code. */
   setLanguage: (code: string) => Promise<void>;
+  /** Opt-in local milestone notifications. */
+  milestoneNotificationsEnabled: boolean;
+  /** Persist new milestone notification preference. */
+  setMilestoneNotificationsEnabled: (enabled: boolean) => Promise<void>;
+  /** Whether the post-wizard opt-in prompt was already shown. */
+  milestoneNotificationsPrompted: boolean;
+  /** Persist "prompt shown" flag. */
+  setMilestoneNotificationsPrompted: (prompted: boolean) => Promise<void>;
   /** Translate a key with optional interpolation params. */
   t: (key: TranslationKey, params?: Record<string, string>) => string;
 }

@@ -43,7 +43,8 @@ const de: Translations = {
   "habits.errorTitle": "Fehler",
   "habits.failedToLoad": "Gewohnheiten konnten nicht geladen werden",
   "habits.failedToAdd": "{{name}} konnte nicht hinzugefügt werden",
-  "habits.failedToAddCustom": "Eigene Gewohnheit konnte nicht hinzugefügt werden",
+  "habits.failedToAddCustom":
+    "Eigene Gewohnheit konnte nicht hinzugefügt werden",
   "habits.failedToSave": "Speichern fehlgeschlagen",
   "habits.failedToDelete": "{{name}} konnte nicht gelöscht werden",
   "habits.failedToUpdateDate": "Datum konnte nicht aktualisiert werden",
@@ -62,6 +63,30 @@ const de: Translations = {
   "settings.failedTheme": "Design konnte nicht gespeichert werden",
   "settings.failedLanguage": "Sprache konnte nicht gespeichert werden",
   "settings.failedCurrency": "Währung konnte nicht gespeichert werden",
+  "settings.failedNotifications": "Benachrichtigungseinstellungen konnten nicht gespeichert werden",
+  "settings.milestoneNotifications": "Meilenstein-Benachrichtigungen",
+  "settings.milestoneNotificationsDenied":
+    "Benachrichtigungen sind in den Systemeinstellungen deaktiviert. Aktiviere sie dort, um Meilenstein-Feiern zu erhalten.",
+
+  // Meilensteine ──
+  "milestone.day.one": "Tag",
+  "milestone.day.other": "Tage",
+  "milestone.week.one": "Woche",
+  "milestone.week.other": "Wochen",
+  "milestone.month.one": "Monat",
+  "milestone.month.other": "Monate",
+  "milestone.year.one": "Jahr",
+  "milestone.year.other": "Jahre",
+  "milestone.reached": "Meilenstein erreicht!",
+  "milestone.reachedBody": "{{habit}} frei seit {{milestone}}!",
+  "milestone.next": "Als Nächstes: {{milestone}}",
+  "milestone.notificationTitle": "Meilenstein erreicht!",
+  "milestone.notificationBody": "{{habit}} frei seit {{milestone}}!",
+  "milestone.notificationsOptInTitle": "Deine Meilensteine feiern?",
+  "milestone.notificationsOptInBody":
+    "Erhalte eine Feier, wenn du einen Meilenstein erreichst.",
+  "milestone.enableNotifications": "Benachrichtigungen aktivieren",
+  "milestone.notNow": "Später",
 
   "savings.title": "Tägliche Ersparnis",
   "savings.titleOptional": "Tägliche Ersparnis (optional)",

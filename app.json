@@ -8,7 +8,8 @@
     "scheme": "soiquit",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.emachado.soiquit"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,11 +48,18 @@
               "org.gradle.workers.max": "4",
               "org.gradle.parallel": "true",
               "org.gradle.caching": "true"
-            }
+            },
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
       "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "color": "#1A6B5C"
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {

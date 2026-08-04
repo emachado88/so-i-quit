@@ -43,7 +43,8 @@ const it: Translations = {
   "habits.errorTitle": "Errore",
   "habits.failedToLoad": "Impossibile caricare le abitudini",
   "habits.failedToAdd": "Impossibile aggiungere {{name}}",
-  "habits.failedToAddCustom": "Impossibile aggiungere l'abitudine personalizzata",
+  "habits.failedToAddCustom":
+    "Impossibile aggiungere l'abitudine personalizzata",
   "habits.failedToSave": "Impossibile salvare",
   "habits.failedToDelete": "Impossibile eliminare {{name}}",
   "habits.failedToUpdateDate": "Impossibile aggiornare la data",
@@ -62,6 +63,30 @@ const it: Translations = {
   "settings.failedTheme": "Impossibile salvare il tema",
   "settings.failedLanguage": "Impossibile salvare la lingua",
   "settings.failedCurrency": "Impossibile salvare la valuta",
+  "settings.failedNotifications": "Impossibile salvare le preferenze delle notifiche",
+  "settings.milestoneNotifications": "Notifiche dei traguardi",
+  "settings.milestoneNotificationsDenied":
+    "Le notifiche sono disattivate nelle impostazioni di sistema. Attivale lì per ricevere le celebrazioni dei traguardi.",
+
+  // Traguardi ──
+  "milestone.day.one": "giorno",
+  "milestone.day.other": "giorni",
+  "milestone.week.one": "settimana",
+  "milestone.week.other": "settimane",
+  "milestone.month.one": "mese",
+  "milestone.month.other": "mesi",
+  "milestone.year.one": "anno",
+  "milestone.year.other": "anni",
+  "milestone.reached": "Traguardo raggiunto!",
+  "milestone.reachedBody": "{{habit}} libero da {{milestone}}!",
+  "milestone.next": "Prossimo: {{milestone}}",
+  "milestone.notificationTitle": "Traguardo raggiunto!",
+  "milestone.notificationBody": "{{habit}} libero da {{milestone}}!",
+  "milestone.notificationsOptInTitle": "Celebrare i tuoi traguardi?",
+  "milestone.notificationsOptInBody":
+    "Ricevi una celebrazione quando raggiungi un traguardo.",
+  "milestone.enableNotifications": "Attiva le notifiche",
+  "milestone.notNow": "Non ora",
 
   "savings.title": "Risparmio Giornaliero",
   "savings.titleOptional": "Risparmio Giornaliero (opzionale)",

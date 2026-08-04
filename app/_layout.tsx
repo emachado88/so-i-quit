@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import "dayjs/locale/de";
+import { addNotificationResponseListener } from "@/lib/milestone-notifications";
 import "dayjs/locale/es";
 import "dayjs/locale/fr";
 import "dayjs/locale/it";
@@ -8,7 +9,8 @@ import "dayjs/locale/pt";
 import "dayjs/locale/pt-br";
 import "dayjs/locale/en-gb";
 import "dayjs/locale/zh-cn";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+
 import { StatusBar } from "expo-status-bar";
 import { getLocales } from "expo-localization";
 import "react-native-reanimated";
@@ -33,6 +35,10 @@ import {
   saveCurrency,
   getLanguage,
   saveLanguage,
+  getMilestoneNotificationsEnabled,
+  saveMilestoneNotificationsEnabled,
+  getMilestoneNotificationsPrompted,
+  saveMilestoneNotificationsPrompted,
 } from "@/data/settings";
 import type { Theme } from "@/constants/types";
 import {
@@ -105,6 +111,10 @@ const RootLayout = (): React.JSX.Element | null => {
   const [storedTheme, setStoredTheme] = useState<Theme | null>(null);
   const [currency, setCurrencyState] = useState<string | null>(null);
   const [language, setLanguageState] = useState<string | null>(null);
+  const [milestoneNotificationsEnabled, setMilestoneNotificationsState] =
+    useState<boolean | null>(null);
+  const [milestoneNotificationsPrompted, setMilestoneNotificationsPromptedState] =
+    useState<boolean | null>(null);
 
   const { t } = useTranslation(language ?? "en");
 
@@ -116,11 +126,26 @@ const RootLayout = (): React.JSX.Element | null => {
     }
   }, [language]);
 
+  const router = useRouter();
+
+  // Milestone notification taps: route to the Progress tab (first tab).
+  // Safe in Expo Go (addNotificationResponseListener no-ops there).
+  useEffect(() => {
+    const sub = addNotificationResponseListener((habitId) => {
+      if (habitId) router.navigate("/");
+    });
+    return () => sub.remove();
+  }, [router]);
+
   useEffect(() => {
     Promise.all([
       getTheme().then(setStoredTheme),
       getCurrency().then(setCurrencyState),
       getLanguage().then(setLanguageState),
+      getMilestoneNotificationsEnabled().then(setMilestoneNotificationsState),
+      getMilestoneNotificationsPrompted().then(
+        setMilestoneNotificationsPromptedState,
+      ),
     ]);
   }, []);
 
@@ -139,11 +164,29 @@ const RootLayout = (): React.JSX.Element | null => {
     setLanguageState(code);
   }, []);
 
+  const setMilestoneNotificationsEnabled = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      await saveMilestoneNotificationsEnabled(enabled);
+      setMilestoneNotificationsState(enabled);
+    },
+    [],
+  );
+
+  const setMilestoneNotificationsPrompted = useCallback(
+    async (prompted: boolean): Promise<void> => {
+      await saveMilestoneNotificationsPrompted(prompted);
+      setMilestoneNotificationsPromptedState(prompted);
+    },
+    [],
+  );
+
   if (
     !fontsLoaded ||
     storedTheme === null ||
     currency === null ||
-    language === null
+    language === null ||
+    milestoneNotificationsEnabled === null ||
+    milestoneNotificationsPrompted === null
   ) {
     return null;
   }
@@ -163,6 +206,10 @@ const RootLayout = (): React.JSX.Element | null => {
     setCurrency,
     language,
     setLanguage,
+    milestoneNotificationsEnabled,
+    setMilestoneNotificationsEnabled,
+    milestoneNotificationsPrompted,
+    setMilestoneNotificationsPrompted,
     t,
   };
 

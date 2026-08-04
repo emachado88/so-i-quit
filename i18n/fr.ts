@@ -62,6 +62,30 @@ const fr: Translations = {
   "settings.failedTheme": "Échec de la sauvegarde du thème",
   "settings.failedLanguage": "Échec de la sauvegarde de la langue",
   "settings.failedCurrency": "Échec de la sauvegarde de la devise",
+  "settings.failedNotifications": "Échec de la sauvegarde des préférences de notifications",
+  "settings.milestoneNotifications": "Notifications de jalons",
+  "settings.milestoneNotificationsDenied":
+    "Les notifications sont désactivées dans les réglages du système. Activez-les là pour recevoir les célébrations de jalons.",
+
+  // Jalons ──
+  "milestone.day.one": "jour",
+  "milestone.day.other": "jours",
+  "milestone.week.one": "semaine",
+  "milestone.week.other": "semaines",
+  "milestone.month.one": "mois",
+  "milestone.month.other": "mois",
+  "milestone.year.one": "an",
+  "milestone.year.other": "ans",
+  "milestone.reached": "Jalon atteint !",
+  "milestone.reachedBody": "{{habit}} libre depuis {{milestone}} !",
+  "milestone.next": "Prochain : {{milestone}}",
+  "milestone.notificationTitle": "Jalon atteint !",
+  "milestone.notificationBody": "{{habit}} libre depuis {{milestone}} !",
+  "milestone.notificationsOptInTitle": "Célébrer vos jalons ?",
+  "milestone.notificationsOptInBody":
+    "Recevez une célébration quand vous atteignez un jalon.",
+  "milestone.enableNotifications": "Activer les notifications",
+  "milestone.notNow": "Pas maintenant",
 
   "savings.title": "Épargne quotidienne",
   "savings.titleOptional": "Épargne quotidienne (optionnel)",

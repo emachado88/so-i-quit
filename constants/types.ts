@@ -12,4 +12,19 @@ export interface AppSettings {
   theme: Theme;
   language: string;
   currency: string;
+  /** Local milestone celebration notifications (opt-in). */
+  milestoneNotificationsEnabled: boolean;
+  /** Whether the post-wizard opt-in prompt has been shown at least once. */
+  milestoneNotificationsPrompted: boolean;
+}
+
+export type MilestoneUnit = "day" | "week" | "month" | "year";
+
+export interface Milestone {
+  id: string;
+  habitId: string;
+  unit: MilestoneUnit;
+  amount: number;
+  reachedAt: string | null;
+  notificationId: string | null;
 }

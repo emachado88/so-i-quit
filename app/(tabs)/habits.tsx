@@ -10,7 +10,24 @@ import {
 } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import SavingsModal from "@/components/savings-modal";
-import { getHabits, addHabit, updateHabit, deleteHabit } from "@/data/habits";
+import MilestoneOptInDialog from "@/components/milestone-opt-in-dialog";
+import {
+  getHabits,
+  addHabit,
+  updateHabit,
+  deleteHabit,
+} from "@/data/habits";
+import {
+  ensureMilestonesForHabit,
+  getMilestonesForHabit,
+  deleteMilestonesForHabit,
+  saveMilestonesForHabit,
+} from "@/data/milestones";
+import {
+  requestNotificationPermission,
+  reconcileHabitNotifications,
+  cancelHabitNotifications,
+} from "@/lib/milestone-notifications";
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
@@ -59,7 +76,15 @@ type EditPicker =
   | { type: "savings"; habitId: string; currentValue: string | null };
 
 export default function HabitsScreen() {
-  const { scheme, currency, t } = useAppSettings();
+  const {
+    scheme,
+    currency,
+    t,
+    milestoneNotificationsEnabled,
+    milestoneNotificationsPrompted,
+    setMilestoneNotificationsEnabled,
+    setMilestoneNotificationsPrompted,
+  } = useAppSettings();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [customHabitName, setCustomHabitName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -67,6 +92,10 @@ export default function HabitsScreen() {
   const [editPicker, setEditPicker] = useState<EditPicker | null>(null);
   const [menuVisibleId, setMenuVisibleId] = useState<string | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [optInVisible, setOptInVisible] = useState(false);
+  const [pendingOptInHabitId, setPendingOptInHabitId] = useState<string | null>(
+    null,
+  );
   const otherInputRef = useRef<any>(null);
   const customInputFocusedRef = useRef(false);
   // iOS: skip the auto-fired onChange when DateTimePicker mounts
@@ -146,7 +175,7 @@ export default function HabitsScreen() {
     [handleWizardCancel],
   );
 
-  // ── Wizard: finish (after savings or skip savings) ──
+  // Wizard: finish (after savings or skip savings) ──
 
   const handleWizardFinish = useCallback(
     async (savings: string | null) => {
@@ -154,37 +183,133 @@ export default function HabitsScreen() {
       if (!current || !current.selectedDate) return;
       wizardFinishedRef.current = true;
       try {
+        // Reset flow: tear down the previous streak's schedule before the
+        // date changes (cancel old pending notifications, drop milestone state).
+        if (current.flow === "reset") {
+          const oldMilestones = await getMilestonesForHabit(current.habitId);
+          await cancelHabitNotifications(oldMilestones);
+          await deleteMilestonesForHabit(current.habitId);
+        }
+
         await updateHabit(current.habitId, {
           date: current.selectedDate.toISOString(),
           savings,
         });
         await loadHabits();
+
+        // Initialize/refresh the current streak's milestones, then schedule
+        // future targets only when the user opted in.
+        const fresh = await getHabits();
+        const habit = fresh.find((h) => h.id === current.habitId);
+        if (habit?.date) {
+          const now = new Date();
+          await ensureMilestonesForHabit(habit, now);
+          if (milestoneNotificationsEnabled) {
+            const stored = await getMilestonesForHabit(habit.id);
+            const reconciled = await reconcileHabitNotifications(
+              habit,
+              stored,
+              t,
+              now,
+            );
+            await saveMilestonesForHabit(habit.id, reconciled);
+          }
+        }
+
+        // First completed wizard: show the one-time opt-in prompt.
+        if (current.flow === "new" && !milestoneNotificationsPrompted) {
+          await setMilestoneNotificationsPrompted(true);
+          setPendingOptInHabitId(current.habitId);
+          setOptInVisible(true);
+        }
       } catch (error) {
         console.error("Error completing wizard:", error);
         setSnackbarMessage(t("habits.failedToSave"));
       }
       setWizard(null);
     },
-    [wizard, loadHabits, t],
+    [
+      wizard,
+      loadHabits,
+      t,
+      milestoneNotificationsEnabled,
+      milestoneNotificationsPrompted,
+      setMilestoneNotificationsPrompted,
+    ],
   );
 
-  // ── Menu: Edit date (date → time picker) ──
+  // Opt-in: enable notifications for the just-completed habit ──
+
+  const handleOptInEnable = useCallback(async (): Promise<void> => {
+    const habitId = pendingOptInHabitId;
+    setOptInVisible(false);
+    setPendingOptInHabitId(null);
+
+    const granted = await requestNotificationPermission();
+    if (!granted) return; // keep preference disabled; in-app celebration still works
+
+    await setMilestoneNotificationsEnabled(true);
+    if (habitId) {
+      try {
+        const fresh = await getHabits();
+        const habit = fresh.find((h) => h.id === habitId);
+        if (habit?.date) {
+          const stored = await getMilestonesForHabit(habit.id);
+          const reconciled = await reconcileHabitNotifications(habit, stored, t);
+          await saveMilestonesForHabit(habit.id, reconciled);
+        }
+      } catch (error) {
+        console.error("Error scheduling milestone notifications:", error);
+        setSnackbarMessage(t("habits.failedToSave"));
+      }
+    }
+  }, [pendingOptInHabitId, setMilestoneNotificationsEnabled, t]);
+
+  const handleOptInNotNow = useCallback((): void => {
+    setOptInVisible(false);
+    setPendingOptInHabitId(null);
+  }, []);
+
+  // Menu: Edit date (date → time picker) ──
 
   const handleEditDateSelected = useCallback(
     async (habitId: string, date: Date) => {
       try {
+        // Cancel the old streak's schedules before the date changes, then
+        // regenerate milestone state from the new date.
+        const oldMilestones = await getMilestonesForHabit(habitId);
+        await cancelHabitNotifications(oldMilestones);
+        await deleteMilestonesForHabit(habitId);
+
         await updateHabit(habitId, { date: date.toISOString() });
         await loadHabits();
+
+        const fresh = await getHabits();
+        const habit = fresh.find((h) => h.id === habitId);
+        if (habit?.date) {
+          const now = new Date();
+          await ensureMilestonesForHabit(habit, now);
+          if (milestoneNotificationsEnabled) {
+            const stored = await getMilestonesForHabit(habit.id);
+            const reconciled = await reconcileHabitNotifications(
+              habit,
+              stored,
+              t,
+              now,
+            );
+            await saveMilestonesForHabit(habit.id, reconciled);
+          }
+        }
       } catch (error) {
         console.error("Error updating date:", error);
         setSnackbarMessage(t("habits.failedToUpdateDate"));
       }
       setEditPicker(null);
     },
-    [loadHabits, t],
+    [loadHabits, milestoneNotificationsEnabled, t],
   );
 
-  // ── Menu: Edit savings (modal only) ──
+  // Menu: Edit savings (modal only) ──
 
   const handleEditSavingsSave = useCallback(
     async (habitId: string, savings: string | null) => {
@@ -272,6 +397,18 @@ export default function HabitsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
+              // Cancel pending schedules first; if cancellation fails we keep
+              // the milestone record so ids can be retried (never silently lose ids).
+              const milestones = await getMilestonesForHabit(habit.id);
+              try {
+                await cancelHabitNotifications(milestones);
+              } catch (error) {
+                console.error(
+                  "Error cancelling milestone notifications:",
+                  error,
+                );
+              }
+              await deleteMilestonesForHabit(habit.id);
               await deleteHabit(habit.id);
               await loadHabits();
             } catch (error) {
@@ -732,6 +869,13 @@ export default function HabitsScreen() {
           onDismiss={() => setEditPicker(null)}
         />
       )}
+
+      {/* Milestone notifications opt-in (first completed wizard) */}
+      <MilestoneOptInDialog
+        visible={optInVisible}
+        onEnable={handleOptInEnable}
+        onNotNow={handleOptInNotNow}
+      />
 
       <Snackbar
         visible={!!snackbarMessage}

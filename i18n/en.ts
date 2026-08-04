@@ -1,14 +1,14 @@
 /**
- * English translations — base language.
- * This object defines the shape all other languages must satisfy.
+ * English translations — the base language.
+ * This object defines the shape that all other languages must satisfy.
  */
 const en = {
-  // ── Tab bar ──
+  // Tab bar ──
   "tabs.progress": "Progress",
   "tabs.habits": "Habits",
   "tabs.settings": "Settings",
 
-  // ── Progress screen ──
+  // Progress screen ──
   "progress.congratulations": "Congratulations!",
   "progress.readyToGetBetter": "Ready to get better?",
   "progress.doingGreat": "You're doing great,",
@@ -23,12 +23,12 @@ const en = {
   "progress.days": "days",
   "progress.hour": "hour",
   "progress.hours": "hours",
-  "progress.justStarted": "You've just started, keep going",
+  "progress.justStarted": "You've started, keep going",
   "progress.totalSavings": "Total savings",
   "progress.since": "since {{date}}",
   "progress.failedToLoad": "Failed to load habits",
 
-  // ── Habits screen ──
+  // Habits screen ──
   "habits.title": "Habits",
   "habits.addNew": "Add New Habit",
   "habits.alcohol": "Alcohol",
@@ -36,7 +36,7 @@ const en = {
   "habits.habitName": "Habit name",
   "habits.add": "Add",
   "habits.addCustom": "Add custom habit",
-  "habits.openMenu": "Open menu for {{name}}",
+  "habits.openMenu": "Open menu {{name}}",
   "habits.noHabits": "No habits added yet.",
   "habits.editDate": "Edit date",
   "habits.editSavings": "Edit savings",
@@ -54,7 +54,7 @@ const en = {
   "habits.failedToUpdateDate": "Failed to update date",
   "habits.failedToUpdateSavings": "Failed to update savings",
 
-  // ── Settings screen ──
+  // Settings screen ──
   "settings.title": "Settings",
   "settings.appearance": "Appearance",
   "settings.system": "System",
@@ -68,8 +68,32 @@ const en = {
   "settings.failedTheme": "Failed to save theme preference",
   "settings.failedLanguage": "Failed to save language preference",
   "settings.failedCurrency": "Failed to save currency preference",
+  "settings.failedNotifications": "Failed to save notification preferences",
+  "settings.milestoneNotifications": "Milestone notifications",
+  "settings.milestoneNotificationsDenied":
+    "Notifications are turned off in your system settings. Enable them there to receive milestone celebrations.",
 
-  // ── Savings modal ──
+  // Milestones ──
+  "milestone.day.one": "day",
+  "milestone.day.other": "days",
+  "milestone.week.one": "week",
+  "milestone.week.other": "weeks",
+  "milestone.month.one": "month",
+  "milestone.month.other": "months",
+  "milestone.year.one": "year",
+  "milestone.year.other": "years",
+  "milestone.reached": "Milestone reached!",
+  "milestone.reachedBody": "{{habit}} free for {{milestone}}!",
+  "milestone.next": "Next: {{milestone}}",
+  "milestone.notificationTitle": "Milestone reached!",
+  "milestone.notificationBody": "{{habit}} free for {{milestone}}!",
+  "milestone.notificationsOptInTitle": "Celebrate your milestones?",
+  "milestone.notificationsOptInBody":
+    "Get a celebration when you reach a milestone.",
+  "milestone.enableNotifications": "Enable notifications",
+  "milestone.notNow": "Not now",
+
+  // Savings modal ──
   "savings.title": "Daily Savings",
   "savings.titleOptional": "Daily Savings (optional)",
   "savings.subtitle": "How much do you save per day by quitting?",
@@ -78,7 +102,7 @@ const en = {
   "savings.save": "Save",
   "savings.confirm": "Confirm",
 
-  // ── Common ──
+  // Common ──
   "common.dismiss": "Dismiss",
   "common.perDay": "/day",
   "common.cancel": "Cancel",
