@@ -3,7 +3,9 @@ import dayjs from "dayjs";
 import type { Habit, Milestone } from "@/constants/types";
 import {
   BASE_MILESTONES,
+  definitionTargetDate,
   generateMilestones,
+  generateYearlyMilestoneDefinitions,
   getMilestoneId,
   getNextMilestone,
   getPreviousMilestone,
@@ -243,5 +245,62 @@ describe("lib/milestones", () => {
     const m = generateMilestones(h, new Date("2025-04-01T00:00:00Z"));
     expect(m.length).toBeGreaterThan(0);
     expect(dayjs).toBeDefined();
+  });
+
+  describe("definitionTargetDate", () => {
+    it("computes the raw target from a definition", () => {
+      const h = habit("2025-01-01T00:00:00.000Z");
+      expect(definitionTargetDate(h, { unit: "week", amount: 2 }).format("YYYY-MM-DD")).toBe(
+        "2025-01-15",
+      );
+    });
+  });
+
+  describe("generateYearlyMilestoneDefinitions", () => {
+    it("returns [] for undated habits", () => {
+      const h = { ...habit("2025-01-01"), date: null };
+      expect(generateYearlyMilestoneDefinitions(h, new Date())).toEqual([]);
+    });
+
+    it("materializes anniversaries through the horizon", () => {
+      const h = habit("2024-01-01T00:00:00.000Z");
+      const defs = generateYearlyMilestoneDefinitions(
+        h,
+        new Date("2025-06-01T00:00:00Z"),
+      );
+      const amounts = defs.map((d) => d.amount);
+      expect(amounts).toContain(2); // year 2
+      expect(amounts).toContain(11); // through the horizon
+      expect(amounts).not.toContain(1); // year 1 is part of BASE_MILESTONES
+      expect(amounts.every((a) => a >= 2)).toBe(true);
+    });
+  });
+
+  describe("undated edge cases", () => {
+    const undated = { ...habit("2025-01-01"), date: null };
+
+    it("getNextMilestone returns null", () => {
+      expect(getNextMilestone(undated, [], new Date())).toBeNull();
+    });
+
+    it("getPreviousMilestone returns null", () => {
+      expect(getPreviousMilestone(undated, [], new Date())).toBeNull();
+    });
+  });
+
+  describe("ringProgress degenerate cases", () => {
+    it("returns 1 when the span is not positive", () => {
+      const h = habit("2025-01-01T00:00:00.000Z");
+      // Milestone whose target equals the streak start → zero span
+      const degenerate: Milestone = {
+        id: "h1-day-0",
+        habitId: "h1",
+        unit: "day",
+        amount: 0,
+        reachedAt: null,
+        notificationId: null,
+      };
+      expect(ringProgress(h, [degenerate], new Date("2025-01-01T00:00:00Z"))).toBe(1);
+    });
   });
 });

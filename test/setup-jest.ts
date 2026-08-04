@@ -86,6 +86,7 @@ const mockConstantsState = { executionEnvironment: "StoreClient" };
   mockConstantsState;
 
 jest.mock("expo-constants", () => ({
+  __esModule: true,
   default: {
     get executionEnvironment() {
       return (
