@@ -36,7 +36,7 @@ const pt: Translations = {
   "habits.editDate": "Editar data",
   "habits.editSavings": "Editar poupança",
   "habits.delete": "Eliminar",
-  "habits.reset": "Reiniciar",
+  "habits.logRelapse": "Registar recaída",
   "habits.deleteTitle": "Eliminar {{name}}",
   "habits.deleteConfirm": "Tens a certeza que queres eliminar {{name}}?",
   "habits.enterName": "Introduz um nome de hábito",

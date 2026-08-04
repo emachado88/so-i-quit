@@ -36,7 +36,7 @@ const zh: Translations = {
   "habits.editDate": "编辑日期",
   "habits.editSavings": "编辑节省",
   "habits.delete": "删除",
-  "habits.reset": "重置",
+  "habits.logRelapse": "记录复发",
   "habits.deleteTitle": "删除{{name}}",
   "habits.deleteConfirm": "确定要删除{{name}}吗？",
   "habits.enterName": "请输入习惯名称",

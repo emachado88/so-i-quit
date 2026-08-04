@@ -41,7 +41,7 @@ const en = {
   "habits.editDate": "Edit date",
   "habits.editSavings": "Edit savings",
   "habits.delete": "Delete",
-  "habits.reset": "Reset",
+  "habits.logRelapse": "Log relapse",
   "habits.deleteTitle": "Delete {{name}}",
   "habits.deleteConfirm": "Are you sure you want to delete {{name}}?",
   "habits.enterName": "Please enter a habit name",

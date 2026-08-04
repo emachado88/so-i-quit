@@ -24,6 +24,9 @@ export const globalStyles = StyleSheet.create({
   justifyBetween: {
     justifyContent: "space-between",
   },
+  alignBottom: {
+    alignItems: "flex-end",
+  },
   alignCenter: {
     alignItems: "center",
   },

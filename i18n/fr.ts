@@ -36,7 +36,7 @@ const fr: Translations = {
   "habits.editDate": "Modifier la date",
   "habits.editSavings": "Modifier l'épargne",
   "habits.delete": "Supprimer",
-  "habits.reset": "Réinitialiser",
+  "habits.logRelapse": "Enregistrer une rechute",
   "habits.deleteTitle": "Supprimer {{name}}",
   "habits.deleteConfirm": "Êtes-vous sûr de vouloir supprimer {{name}} ?",
   "habits.enterName": "Veuillez entrer un nom d'habitude",

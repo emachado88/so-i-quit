@@ -11,12 +11,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import SavingsModal from "@/components/savings-modal";
 import MilestoneOptInDialog from "@/components/milestone-opt-in-dialog";
-import {
-  getHabits,
-  addHabit,
-  updateHabit,
-  deleteHabit,
-} from "@/data/habits";
+import { getHabits, addHabit, updateHabit, deleteHabit } from "@/data/habits";
 import {
   ensureMilestonesForHabit,
   getMilestonesForHabit,
@@ -255,7 +250,11 @@ export default function HabitsScreen() {
         const habit = fresh.find((h) => h.id === habitId);
         if (habit?.date) {
           const stored = await getMilestonesForHabit(habit.id);
-          const reconciled = await reconcileHabitNotifications(habit, stored, t);
+          const reconciled = await reconcileHabitNotifications(
+            habit,
+            stored,
+            t,
+          );
           await saveMilestonesForHabit(habit.id, reconciled);
         }
       } catch (error) {
@@ -684,7 +683,7 @@ export default function HabitsScreen() {
         keyboardVerticalOffset={100}
       >
         <ScrollView
-          contentContainerStyle={[globalStyles.container, styles.scrollContent]}
+          contentContainerStyle={[globalStyles.container, styles.gap20]}
         >
           {habits.length === 0 && (
             <ThemedText>{t("habits.noHabits")}</ThemedText>
@@ -695,7 +694,7 @@ export default function HabitsScreen() {
               mode="contained"
               style={{ backgroundColor: themes[scheme].colors.surface }}
             >
-              <Card.Content>
+              <Card.Content style={styles.gap20}>
                 <View style={styles.cardHeader}>
                   <ThemedText
                     style={[
@@ -757,42 +756,44 @@ export default function HabitsScreen() {
                   </View>
                 </View>
 
-                {(habit.date || habit.savings) && (
-                  <>
-                    <Divider style={globalStyles.divider} />
-                    <View
-                      style={[
-                        globalStyles.flexRow,
-                        globalStyles.justifyBetween,
-                      ]}
-                    >
-                      <ThemedText>
-                        {habit.date &&
-                          dayjs(habit.date).format("D MMM YYYY, HH:mm")}
-                      </ThemedText>
-
-                      <ThemedText>
-                        {habit.savings &&
-                          `${formatAmount(Number(habit.savings), currency)}${t("common.perDay")}`}
-                      </ThemedText>
-                    </View>
-                  </>
-                )}
-
-                <Divider style={globalStyles.divider} />
-
-                <Button
-                  mode="contained"
-                  icon="sign-caution"
-                  textColor={themes[scheme].colors.onSecondary}
+                <View
                   style={[
-                    globalStyles.flex1,
-                    { backgroundColor: themes[scheme].colors.secondary },
+                    globalStyles.flexRow,
+                    globalStyles.justifyBetween,
+                    globalStyles.alignBottom,
+                    { gap: 20 },
                   ]}
-                  onPress={() => handleReset(habit)}
                 >
-                  {t("habits.reset")}
-                </Button>
+                  {habit.date || habit.savings ? (
+                    <>
+                      <View>
+                        <ThemedText>
+                          {habit.date &&
+                            dayjs(habit.date).format("D MMM YYYY, HH:mm")}
+                        </ThemedText>
+
+                        <ThemedText>
+                          {habit.savings &&
+                            `${formatAmount(Number(habit.savings), currency)}${t("common.perDay")}`}
+                        </ThemedText>
+                      </View>
+                    </>
+                  ) : (
+                    <View></View>
+                  )}
+                  <Button
+                    mode="contained"
+                    icon="calendar-remove"
+                    textColor={themes[scheme].colors.onSecondary}
+                    style={[
+                      globalStyles.flex1,
+                      { backgroundColor: themes[scheme].colors.secondary },
+                    ]}
+                    onPress={() => handleReset(habit)}
+                  >
+                    {t("habits.logRelapse")}
+                  </Button>
+                </View>
               </Card.Content>
             </Card>
           ))}
@@ -913,7 +914,7 @@ const styles = StyleSheet.create({
     gap: 10,
     alignItems: "center",
   },
-  scrollContent: {
+  gap20: {
     gap: 20,
   },
   cardHeader: {
