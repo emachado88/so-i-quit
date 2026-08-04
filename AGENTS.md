@@ -134,6 +134,18 @@ npm test                       # Jest unit + component tests
 npm run test:coverage          # Jest with coverage (80% thresholds enforced)
 ```
 
+## Testing
+
+- **Stack:** jest-expo (SDK 57 preset) + **@testing-library/react-native v14** (universal `test-renderer`). Logic layers (`utils`, `data`, `i18n`, `lib`) run in node; components/screens use RTL.
+- **RTL v14 API is fully async** — `await render(...)`, `await fireEvent.press(...)`, `await renderHook(...)`. No type queries (`UNSAFE_getByType` is gone) — use semantic queries (`getByRole`, `getByText`, `getByTestId`, `getByPlaceholderText`) + `toHaveProp`/`toHaveStyle` matchers, or `container.queryAll(predicate)`.
+- **Coverage standard:** ≥80% on lines/functions/branches/statements, enforced by `coverageThreshold` in `jest.config.js` via `npm run test:coverage` (currently ~93/86/86/94 — green).
+- **Test layout:** colocated `__tests__/` dirs (`components/__tests__/`, `app/(tabs)/__tests__/`, …). `collectCoverageFrom` excludes tests.
+- **Global mocks (`test/setup-jest.ts`):** in-memory AsyncStorage (`globalThis.__rnTestStorage`, cleared before each test — seed it to arrange data-layer tests), expo-localization/constants fixtures (`__rnTestLocales`, `__rnTestConstants`), expo-router stubs (`useFocusEffect` runs the effect; `router` fns on `__rnTestRouter`), reanimated/svg/safe-area-context manual stubs, haptics/fonts/sentry/datetimepicker mocks. `expo-notifications` is deliberately NOT mocked — the app's lazy-require Expo Go guard keeps it inert.
+- **`test/utils.tsx`:** `renderWithProviders` (AppSettingsContext + PaperProvider with the active scheme, provider-preserving rerender) + `makeHabit`/`makeMilestone`/`makeSettingsValue` fixtures.
+- **Mocking conventions:** `jest.mock` factories must return `__esModule: true` when the module has a default import; per-file mocks (e.g. `@/lib/milestone-notifications` in screen tests) override setup; `jest.restoreAllMocks()` in beforeEach so spy implementations don't leak; module-level mocks accumulate call counts — `jest.clearAllMocks()`.
+- **Platform-dependent flows:** jest-expo defaults to iOS — flip `Platform.OS = "android"` per test (restore in afterEach) to exercise Android-only paths (`DateTimePickerAndroid.open`).
+- **Timers:** enable fake timers AFTER the initial render where possible; wrap `advanceTimersByTime` in `act`.
+
 ## Key Decisions & Pitfalls
 
 ### iOS Date/Time Picker
@@ -170,7 +182,7 @@ npm run test:coverage          # Jest with coverage (80% thresholds enforced)
 1. ~~Custom MD3 colour palette (light + dark)~~ ✅ Done
 2. ~~Tab reorganisation (Progress / Habits / Settings), theme/language/currency~~ ✅ Done
 3. ~~Milestone tracking + local notifications (animated counters, milestone rings)~~ ✅ Done
-4. ~~App hardening (TS strictness, Sentry, accessibility, test suite)~~ ✅ Done
+4. ~~App hardening (TS strictness, Sentry, accessibility, test suite)~~ ✅ Done — jest-expo + RTL-RN v14, 80% coverage standard enforced by `npm run test:coverage` (~93/86/86/94 across the four metrics)
 5. Next: react-native-paper phase-out (custom components)
 
 ## Brand
