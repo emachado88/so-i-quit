@@ -69,3 +69,31 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+
+/*
+ * Hide every native widget affordance on date/time inputs.
+ *
+ * Chromium draws a trailing chevron (date, Chrome 120+) / calendar glyph via
+ * the `-webkit-calendar-picker-indicator` pseudo-element, and the Android
+ * WebView renders date+time as spinner fields with up/down arrows via
+ * `-webkit-inner-spin-button`. All of these live inside the input's UA
+ * shadow root — invisible in DevTools unless "Show user agent shadow DOM"
+ * is enabled. They are decoration only: tapping the field still opens the
+ * platform picker. `-webkit-appearance: none` on the inputs themselves is
+ * the extra step some WebViews need (older System WebView keeps drawing
+ * arrows from the widget chrome even when the pseudo-elements are hidden).
+ */
+input[type='date'],
+input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator,
+input[type='date']::-webkit-inner-spin-button,
+input[type='time']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}

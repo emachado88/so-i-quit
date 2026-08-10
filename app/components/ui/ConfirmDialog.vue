@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+import { useI18n } from "vue-i18n";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 withDefaults(
   defineProps<{
-    title: string
-    message: string
-    confirmLabel: string
-    cancelLabel?: string
-    destructive?: boolean
+    title: string;
+    message: string;
+    confirmLabel: string;
+    cancelLabel?: string;
+    destructive?: boolean;
   }>(),
   { destructive: false },
-)
-const emit = defineEmits<{ confirm: []; cancel: [] }>()
+);
+const emit = defineEmits<{ confirm: []; cancel: [] }>();
 </script>
 
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+    class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4 sm:items-center"
     @click.self="emit('cancel')"
   >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
@@ -30,7 +30,7 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>()
           class="rounded-lg px-4 py-2 text-sm font-semibold text-muted transition-colors hover:text-ink"
           @click="emit('cancel')"
         >
-          {{ cancelLabel ?? t('common.cancel') }}
+          {{ cancelLabel ?? t("common.cancel") }}
         </button>
         <button
           type="button"
