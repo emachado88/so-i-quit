@@ -146,6 +146,24 @@ describe('utils/settings', () => {
       expect(getCurrency()).toBe('BRL')
     })
 
+    it('decouples language from currency (English device, PT region)', () => {
+      // The user's case: phone language English, locale/region Portugal —
+      // EN strings + EUR units.
+      vi.stubGlobal('navigator', { language: 'en-PT', languages: ['en-PT'] })
+      expect(detectLanguage()).toBe('en')
+      expect(getCurrency()).toBe('EUR')
+    })
+
+    it('prefers the region from navigator.languages over a defaulted language tag', () => {
+      // navigator.language can come defaulted ("en-US") while the device
+      // locale list carries the real region ("en-PT").
+      vi.stubGlobal('navigator', {
+        language: 'en-US',
+        languages: ['en-PT', 'en-US'],
+      })
+      expect(getCurrency()).toBe('EUR')
+    })
+
     it('returns the stored currency when present', () => {
       saveCurrency('GBP')
       expect(getCurrency()).toBe('GBP')

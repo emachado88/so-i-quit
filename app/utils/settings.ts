@@ -120,17 +120,39 @@ const fullLocale = (): string => {
 }
 
 /**
- * Detect the preferred currency from the device locale (fallback EUR).
+ * Preferred locale tags from the environment — navigator.languages first
+ * (it often carries the full device locale, e.g. "en-PT"), falling back to
+ * navigator.language.
+ */
+const getNavigatorLocales = (): string[] => {
+  if (typeof navigator === 'undefined') return []
+  try {
+    const languages = navigator.languages
+    if (Array.isArray(languages) && languages.length > 0) {
+      return languages as string[]
+    }
+  } catch {
+    // some environments throw on navigator.languages
+  }
+  const single = getNavigatorLanguage()
+  return single ? [single] : []
+}
+
+/**
+ * Detect the preferred currency from the device LOCALE (region) — never
+ * from the language: they are independent axes (a phone can be set to
+ * English with a Portuguese region → EN strings, EUR units).
  *
- * `navigator.language` often omits the region ("pt"), so when it carries
- * none the full locale Intl resolves for formatting (e.g. "pt-PT", "pt-BR")
- * is used instead — that region is what the device's region/units setting
- * drives (the "units do sistema" the user picks in the OS).
+ * Sources, in order: the first navigator locale tag that carries a region
+ * ("en-PT"), then the full locale Intl resolves (e.g. "pt-PT" when
+ * navigator.language is region-less like "pt"), else the EUR default.
  */
 const detectDefaultCurrency = (): string => {
-  const navLocale = getNavigatorLanguage()
-  const locale = extractRegion(navLocale) ? navLocale : fullLocale()
-  return currencyFromLocale(locale) ?? DEFAULT_SETTINGS.currency
+  for (const tag of getNavigatorLocales()) {
+    const currency = currencyFromLocale(tag)
+    if (currency) return currency
+  }
+  return currencyFromLocale(fullLocale()) ?? DEFAULT_SETTINGS.currency
 }
 
 const isTheme = (value: unknown): value is Theme =>
