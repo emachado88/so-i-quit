@@ -81,9 +81,14 @@ export const getNotificationPermissionStatus =
   async (): Promise<NotificationPermissionStatus> => {
     if (!isNative()) return 'undetermined'
     try {
+      // `areEnabled()` reflects the real OS switch (areNotificationsEnabled).
+      // `checkPermissions()` only reads the runtime POST_NOTIFICATIONS grant,
+      // which stays GRANTED when the user turns all notifications off in
+      // system settings — so it would wrongly report "granted".
+      const { value } = await LocalNotifications.areEnabled()
+      if (!value) return 'denied'
       const { display } = await LocalNotifications.checkPermissions()
       if (display === 'granted') return 'granted'
-      if (display === 'denied') return 'denied'
       return 'undetermined'
     } catch {
       return 'undetermined'

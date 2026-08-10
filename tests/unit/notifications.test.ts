@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
   const cancel = vi.fn(async (_options: CancelOptions) => {})
   const requestPermissions = vi.fn(async () => ({ display: 'granted' }))
   const checkPermissions = vi.fn(async () => ({ display: 'granted' }))
+  const areEnabled = vi.fn(async () => ({ value: true }))
   const createChannel = vi.fn(async () => {})
   const checkExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
   const changeExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
@@ -45,7 +46,7 @@ const mocks = vi.hoisted(() => {
   return {
     schedule, getPending, cancel, requestPermissions, checkPermissions,
     createChannel, checkExact, changeExact, isNative, addListener,
-    appAddListener,
+    appAddListener, areEnabled,
   }
 })
 
@@ -64,6 +65,7 @@ vi.mock('@capacitor/local-notifications', () => ({
     cancel: mocks.cancel,
     requestPermissions: mocks.requestPermissions,
     checkPermissions: mocks.checkPermissions,
+    areEnabled: mocks.areEnabled,
     createChannel: mocks.createChannel,
     checkExactNotificationSetting: mocks.checkExact,
     changeExactNotificationSetting: mocks.changeExact,
@@ -180,10 +182,17 @@ describe('permissions', () => {
 
   it('getNotificationPermissionStatus maps plugin states', async () => {
     await expect(notifications.getNotificationPermissionStatus()).resolves.toBe('granted')
-    mocks.checkPermissions.mockResolvedValue({ display: 'denied' })
-    await expect(notifications.getNotificationPermissionStatus()).resolves.toBe('denied')
     mocks.checkPermissions.mockResolvedValue({ display: 'prompt' })
     await expect(notifications.getNotificationPermissionStatus()).resolves.toBe('undetermined')
+  })
+
+  it('reports denied when the OS switch is off even if the runtime grant remains', async () => {
+    // User revoked "All notifications" in system settings: the runtime
+    // POST_NOTIFICATIONS grant stays GRANTED, but areEnabled() is false.
+    // The status must be 'denied' so the toggle reflects the real state.
+    mocks.areEnabled.mockResolvedValue({ value: false })
+    mocks.checkPermissions.mockResolvedValue({ display: 'granted' })
+    await expect(notifications.getNotificationPermissionStatus()).resolves.toBe('denied')
   })
 })
 
