@@ -55,7 +55,7 @@ onUnmounted(() => cancelAnimationFrame(raf))
           {{ t('progress.totalSavings') }}
         </p>
         <p class="mt-0.5 text-3xl font-black tracking-tight tabular-nums">
-          {{ formatAmount(display, currency, 0) }}
+          {{ formatAmount(display, currency) }}
         </p>
       </div>
       <p v-if="sinceDate" class="ml-auto text-right text-[11px] font-bold leading-snug opacity-90">

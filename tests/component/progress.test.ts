@@ -122,8 +122,8 @@ describe('pages/index', () => {
     const text = wrapper.text()
     expect(text).toContain('Alcohol free for')
     expect(text).toContain('Tobacco free for')
-    // 10 × €5 + 5 × €10 = €100, whole euros
-    expect(text).toContain('€100')
+    // 10 × €5 + 5 × €10 = €100
+    expect(text).toContain('€100.00')
 
     // Oldest first (wireframe: "sorted oldest-first")
     const articles = wrapper.findAll('article')
@@ -180,7 +180,7 @@ describe('components/progress/HabitProgressCard', () => {
     expect(text).toContain('Alcohol free for')
     expect(text).toMatch(/40\s*days/)
     expect(text).toContain('1 month')
-    expect(text).toContain('€210') // 40 × €5.25, whole euros
+    expect(text).toContain('€210.00') // 40 × €5.25
     expect(text).toContain('saved')
     expect(text).toContain('✓ 1 day')
     expect(text).toContain('Next: 2 months')
@@ -211,7 +211,7 @@ describe('components/progress/TotalSavingsCard', () => {
     })
     const text = wrapper.text()
     expect(text).toContain('Total savings')
-    expect(text).toContain('€4,888')
+    expect(text).toContain('€4,888.00')
     expect(text).toContain('since')
     expect(text).toContain('2025')
   })

@@ -121,7 +121,7 @@ onMounted(() => {
         </p>
         <p class="mt-1 text-xs font-medium text-muted">{{ breakdownLabel }}</p>
         <p v-if="saved > 0" class="mt-0.5 text-xs font-bold text-primary">
-          {{ formatAmount(saved, currency, 0) }} {{ t("progress.saved") }}
+          {{ formatAmount(saved, currency) }} {{ t("progress.saved") }}
         </p>
       </div>
       <div class="flex shrink-0 flex-col items-center gap-1.5">
