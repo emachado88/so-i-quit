@@ -37,14 +37,24 @@ const mocks = vi.hoisted(() => {
       remove: () => Promise.resolve(),
     }),
   )
+  const appAddListener = vi.fn(
+    async (_event: string, _listener: (state: { isActive: boolean }) => void) => ({
+      remove: () => Promise.resolve(),
+    }),
+  )
   return {
     schedule, getPending, cancel, requestPermissions, checkPermissions,
     createChannel, checkExact, changeExact, isNative, addListener,
+    appAddListener,
   }
 })
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: { isNativePlatform: () => mocks.isNative() },
+}))
+
+vi.mock('@capacitor/app', () => ({
+  App: { addListener: mocks.appAddListener },
 }))
 
 vi.mock('@capacitor/local-notifications', () => ({
@@ -187,6 +197,34 @@ describe('exact alarms', () => {
   it('openExactNotificationSettings calls the plugin', async () => {
     await notifications.openExactNotificationSettings()
     expect(mocks.changeExact).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('addAppForegroundListener', () => {
+  it('registers an appStateChange listener on native and fires only when active', async () => {
+    const onForeground = vi.fn()
+    const sub = notifications.addAppForegroundListener(onForeground)
+    await flush()
+
+    expect(mocks.appAddListener).toHaveBeenCalledWith(
+      'appStateChange',
+      expect.any(Function),
+    )
+    const listener = mocks.appAddListener.mock.calls[0]![1] as (
+      state: { isActive: boolean },
+    ) => void
+    listener({ isActive: false })
+    expect(onForeground).not.toHaveBeenCalled()
+    listener({ isActive: true })
+    expect(onForeground).toHaveBeenCalledTimes(1)
+    sub.remove()
+  })
+
+  it('is a no-op subscription in the browser', async () => {
+    mocks.isNative.mockReturnValue(false)
+    const sub = notifications.addAppForegroundListener(() => {})
+    expect(mocks.appAddListener).not.toHaveBeenCalled()
+    sub.remove() // must not throw
   })
 })
 

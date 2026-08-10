@@ -13,6 +13,7 @@ import Snackbar from '../components/ui/Snackbar.vue'
 import { CURRENCY_SYMBOLS } from '../utils/currencies'
 import { getHabits } from '../utils/habits'
 import {
+  addAppForegroundListener,
   cancelAllMilestoneNotifications,
   checkExactNotificationSetting,
   getNotificationPermissionStatus,
@@ -90,15 +91,20 @@ const refreshOsPermission = async (): Promise<void> => {
 
 onMounted(() => {
   void refreshOsPermission()
-  document.addEventListener('visibilitychange', handleVisibilityChange)
+  // Native app lifecycle: re-check the OS permission every time the app
+  // returns to the foreground (e.g. the user toggled notifications in
+  // system settings and came back). `visibilitychange` is unreliable in
+  // the WebView — DOM visibility doesn't change on app background.
+  foregroundSub = addAppForegroundListener(() => {
+    void refreshOsPermission()
+  })
 })
 
-const handleVisibilityChange = (): void => {
-  if (document.visibilityState === 'visible') void refreshOsPermission()
-}
+let foregroundSub: { remove: () => void } | null = null
 
 onUnmounted(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  foregroundSub?.remove()
+  foregroundSub = null
 })
 
 // ── Appearance ──
@@ -154,8 +160,16 @@ const setCurrency = (code: string): void => {
 
 // ── Milestone notifications ──
 
+/**
+ * Effective toggle state: the preference AND the OS permission. When the
+ * user revokes notifications in system settings, the toggle shows off even
+ * though the stored preference is still on (RN parity — the preference is
+ * kept so restoring the OS permission re-enables without re-prompting).
+ */
 const notificationsEnabled = computed(
-  () => settings.value.milestoneNotificationsEnabled,
+  () =>
+    settings.value.milestoneNotificationsEnabled &&
+    osPermission.value !== 'denied',
 )
 
 const handleNotificationsToggle = async (): Promise<void> => {

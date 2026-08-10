@@ -12,15 +12,24 @@ import { installStorageMock, seedStorage } from '../helpers'
 // Nuxt auto-imports don't exist in vitest — the page's composable wrappers
 // and notification side effects are mocked; persistence flows through the
 // real settings utils.
-const mocks = vi.hoisted(() => ({
-  setTheme: vi.fn(),
-  setLocale: vi.fn(),
-  requestPermission: vi.fn(async () => false),
-  cancelAll: vi.fn(async () => {}),
-  permissionStatus: vi.fn(async () => 'undetermined'),
-  exactAlarm: vi.fn(async () => true),
-  reconcileAll: vi.fn(async () => {}),
-}))
+const mocks = vi.hoisted(() => {
+  const foregroundCallback: { current: (() => void) | null } = { current: null }
+  const foreground = vi.fn((cb: () => void) => {
+    foregroundCallback.current = cb
+    return { remove: vi.fn() }
+  })
+  return {
+    setTheme: vi.fn(),
+    setLocale: vi.fn(),
+    requestPermission: vi.fn(async () => false),
+    cancelAll: vi.fn(async () => {}),
+    permissionStatus: vi.fn(async () => 'undetermined'),
+    exactAlarm: vi.fn(async () => true),
+    reconcileAll: vi.fn(async () => {}),
+    foreground,
+    foregroundCallback,
+  }
+})
 
 vi.mock('../../app/composables/useThemeMode', () => ({
   useThemeMode: () => ({ preference: 'light', setTheme: mocks.setTheme }),
@@ -36,6 +45,7 @@ vi.mock('../../app/utils/notifications', () => ({
   getNotificationPermissionStatus: mocks.permissionStatus,
   checkExactNotificationSetting: mocks.exactAlarm,
   reconcileAllHabitNotifications: mocks.reconcileAll,
+  addAppForegroundListener: mocks.foreground,
 }))
 
 installStorageMock()
@@ -190,6 +200,50 @@ describe('pages/settings', () => {
     await flushPromises()
     expect(mocks.cancelAll).toHaveBeenCalledTimes(1)
     expect(getSettings().milestoneNotificationsEnabled).toBe(false)
+  })
+
+  it('shows the toggle off when the OS revoked permission but the pref is on', async () => {
+    // User enabled notifications earlier (pref on), then revoked them in
+    // system settings. The toggle must reflect the effective state.
+    seedStorage('settings-v1', JSON.stringify({ milestoneNotificationsEnabled: true }))
+    mocks.permissionStatus.mockResolvedValue('denied')
+    const wrapper = await mountPage()
+    const toggle = wrapper.find('[role="switch"]')
+
+    expect(getSettings().milestoneNotificationsEnabled).toBe(true)
+    expect(toggle.attributes('aria-checked')).toBe('false')
+  })
+
+  it('keeps the pref on when the OS revoked permission (restore re-enables)', async () => {
+    seedStorage('settings-v1', JSON.stringify({ milestoneNotificationsEnabled: true }))
+    mocks.permissionStatus.mockResolvedValue('denied')
+    const wrapper = await mountPage()
+    expect(getSettings().milestoneNotificationsEnabled).toBe(true)
+
+    // OS permission restored while the pref is still on.
+    mocks.permissionStatus.mockResolvedValue('granted')
+    mocks.foregroundCallback.current?.()
+    await flushPromises()
+
+    expect(mocks.reconcileAll).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[role="switch"]').attributes('aria-checked')).toBe('true')
+  })
+
+  it('re-checks the OS permission when the app returns to the foreground', async () => {
+    seedStorage('settings-v1', JSON.stringify({ milestoneNotificationsEnabled: true }))
+    mocks.permissionStatus.mockResolvedValue('granted')
+    const wrapper = await mountPage()
+    expect(mocks.foreground).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[role="switch"]').attributes('aria-checked')).toBe('true')
+
+    // User revokes notifications in system settings and comes back.
+    mocks.permissionStatus.mockResolvedValue('denied')
+    mocks.foregroundCallback.current?.()
+    await flushPromises()
+
+    // OS revoked → toggle flips off (and pending schedules were cancelled).
+    expect(wrapper.find('[role="switch"]').attributes('aria-checked')).toBe('false')
+    expect(mocks.cancelAll).toHaveBeenCalledTimes(1)
   })
 
   it('shows the currency symbol + code for a seeded currency', async () => {

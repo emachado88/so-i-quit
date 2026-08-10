@@ -12,6 +12,7 @@
  */
 
 import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
 import { getHabitName } from './domain'
@@ -219,6 +220,33 @@ export const cancelAllMilestoneNotifications = async (): Promise<void> => {
 
 export interface NotificationTapSubscription {
   remove: () => void
+}
+
+/**
+ * Register a callback for when the app returns to the foreground (e.g. the
+ * user toggled notifications in system settings and came back). Uses the
+ * native app lifecycle (`appStateChange`) — the WebView equivalent of the RN
+ * AppState listener. `visibilitychange` alone is unreliable in the WebView:
+ * the DOM visibility doesn't change when the app itself backgrounds. Browser:
+ * no-op subscription.
+ */
+export const addAppForegroundListener = (
+  onForeground: () => void,
+): NotificationTapSubscription => {
+  if (!isNative()) return { remove: () => {} }
+
+  let handle: { remove: () => Promise<void> } | null = null
+  void App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) onForeground()
+  }).then((listenerHandle) => {
+    handle = listenerHandle
+  })
+
+  return {
+    remove: () => {
+      void handle?.remove()
+    },
+  }
 }
 
 /**
