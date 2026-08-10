@@ -53,6 +53,7 @@ const deletePending = ref<Habit | null>(null);
 const relapsePending = ref<Habit | null>(null);
 const optInVisible = ref(false);
 const pendingOptInHabitId = ref<string | null>(null);
+const customHabitInput = ref<HTMLInputElement | null>(null);
 
 const settingsCurrency = computed(() => getSettings().currency);
 
@@ -80,6 +81,7 @@ onMounted(loadHabits);
 const handleAddHabit = (type: "alcohol" | "tobacco" | "Other"): void => {
   if (type === "Other") {
     showCustomInput.value = true;
+    nextTick(() => customHabitInput.value?.focus());
     return;
   }
   const key = type === "alcohol" ? "habits.alcohol" : "habits.tobacco";
@@ -268,6 +270,12 @@ const handleOptInNotNow = (): void => {
   optInVisible.value = false;
   pendingOptInHabitId.value = null;
 };
+
+const handleCustomHabitInputBlur = (): void => {
+  setTimeout(() => {
+    showCustomInput.value = false;
+  }, 100);
+};
 </script>
 
 <template>
@@ -298,7 +306,7 @@ const handleOptInNotNow = (): void => {
       </button>
       <button
         type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-lg leading-none text-muted transition-colors hover:bg-card hover:text-ink"
+        class="rounded-full text-sm font-medium border border-dashed border-border align-middle bg-surface px-4 py-1.5 text-ink transition-colors hover:bg-card"
         :aria-label="t('habits.addCustom')"
         @click="handleAddHabit('Other')"
       >
@@ -310,9 +318,11 @@ const handleOptInNotNow = (): void => {
     <div v-if="showCustomInput" class="flex items-center gap-2">
       <input
         v-model="customHabitName"
+        ref="customHabitInput"
         type="text"
         :placeholder="t('habits.habitName')"
         class="flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+        @blur="handleCustomHabitInputBlur"
       />
       <button
         type="button"
