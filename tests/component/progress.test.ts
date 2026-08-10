@@ -19,11 +19,32 @@ import type { Habit, Milestone } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
 
 // Notification side effects are mocked (their logic has its own suite); the
-// screen only calls reconcile when notifications are enabled.
+// screen only calls reconcile when notifications are enabled. The foreground
+// listener is captured so tests can simulate the app returning to the
+// foreground (the flow that re-checks milestones crossed while backgrounded).
+const { nowRef, foregroundHandlers } = vi.hoisted(() => ({
+  nowRef: { value: null as { value: Date } | null },
+  foregroundHandlers: [] as Array<() => void>,
+}))
+
+// `useNow` must return a real Vue ref (the template unwraps `:now="now"`
+// before passing it to the cards) — a plain object would trip the Date prop
+// type check. The hoisted `nowRef` gives tests a handle to rewind the clock.
+vi.mock('../../app/composables/useNow', async () => {
+  const { ref } = await import('vue')
+  const now = ref(new Date())
+  nowRef.value = now
+  return { useNow: () => now }
+})
+
 vi.mock('../../app/utils/notifications', () => ({
   reconcileHabitNotifications: vi.fn(
     async (_habit: unknown, stored: unknown) => stored,
   ),
+  addAppForegroundListener: vi.fn((handler: () => void) => {
+    foregroundHandlers.push(handler)
+    return { remove: vi.fn() }
+  }),
 }))
 
 installStorageMock()
@@ -66,6 +87,10 @@ const makeMilestones = (habit: Habit, now: Date): Milestone[] =>
 // Synchronous rAF: the money counter jumps straight to its target value.
 beforeEach(async () => {
   vi.clearAllMocks()
+  // Keep the mocked page clock aligned with the real clock unless a test
+  // rewinds it (the page-level `daysAgo` helper uses Date.now()).
+  if (nowRef.value) nowRef.value.value = new Date()
+  foregroundHandlers.length = 0
   vi.stubGlobal('requestAnimationFrame', (cb: (t: number) => void) => {
     cb(performance.now() + 1e9)
     return 1
@@ -79,9 +104,17 @@ const wrappers: Array<{ unmount: () => void }> = []
 afterEach(() => {
   for (const wrapper of wrappers.splice(0)) wrapper.unmount()
   document.body.innerHTML = ''
+  // Undo any visibility override (the backgrounded test flips it hidden).
+  Object.defineProperty(document, 'visibilityState', {
+    value: 'visible',
+    configurable: true,
+  })
 })
 
 const mountPage = async () => {
+  // The real useNow() snapshots the clock at mount; mirror that so dates
+  // seeded with Date.now() (daysAgo) align with the page's `now`.
+  if (nowRef.value) nowRef.value.value = new Date()
   const wrapper = mount(IndexPage, { global: { plugins: [i18n, router] } })
   wrappers.push(wrapper)
   await nextTick()
@@ -161,6 +194,95 @@ describe('pages/index', () => {
 
     await toast.find('button').trigger('click')
     await nextTick()
+    expect(wrapper.find('[role="status"]').text()).toContain(
+      'Alcohol free for 3 days!',
+    )
+  })
+
+  it('celebrates a milestone crossed while the page stays mounted', async () => {
+    // Streak started 1.5 days ago; the milestone record was rolled forward
+    // in the first hour. The 1-day target is crossed at mount; the 3-day
+    // target passes while the user keeps the Progress page open.
+    const habit = makeHabit({
+      date: new Date(Date.now() - 1.5 * 86_400_000).toISOString(),
+    })
+    saveHabits([habit])
+    const firstHour = new Date(Date.now() - 1.5 * 86_400_000 + 3_600_000)
+    saveMilestonesForHabit(
+      habit.id,
+      generateMilestones(habit, firstHour).map((milestone) => ({
+        ...milestone,
+        reachedAt: null,
+      })),
+    )
+
+    const wrapper = await mountPage()
+    expect(wrapper.find('[role="status"]').text()).toContain(
+      'Alcohol free for 1 day!',
+    )
+    await wrapper.find('[role="status"] button').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+
+    // No navigation, no foreground event — the clock just crosses the 3-day
+    // target while the page stays mounted. The live tick watcher must queue
+    // the celebration on its own.
+    if (nowRef.value) nowRef.value.value = new Date(Date.now() + 2 * 86_400_000)
+    await nextTick()
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').text()).toContain(
+      'Alcohol free for 3 days!',
+    )
+  })
+
+  it('celebrates milestones crossed while backgrounded when the app returns', async () => {
+    // Streak started 1.5 days ago. The milestone record was rolled forward
+    // in the first hour — the 1-day target is crossed at mount, but the
+    // 3-day target only becomes crossed while the app is "away".
+    const habit = makeHabit({
+      date: new Date(Date.now() - 1.5 * 86_400_000).toISOString(),
+    })
+    saveHabits([habit])
+    const firstHour = new Date(Date.now() - 1.5 * 86_400_000 + 3_600_000)
+    saveMilestonesForHabit(
+      habit.id,
+      generateMilestones(habit, firstHour).map((milestone) => ({
+        ...milestone,
+        reachedAt: null,
+      })),
+    )
+
+    // Mount while foreground: the 1-day crossing (already behind us) is
+    // celebrated in-app — the OS notification covered it in the background,
+    // but returning to the app must still celebrate it (RN AppState parity).
+    const wrapper = await mountPage()
+    expect(wrapper.find('[role="status"]').text()).toContain(
+      'Alcohol free for 1 day!',
+    )
+    await wrapper.find('[role="status"] button').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+
+    // Background the app: DOM visibility flips hidden, so the live watcher
+    // must NOT celebrate while away (the OS notification covers it).
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'hidden',
+      configurable: true,
+    })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await nextTick()
+
+    // Time passes while backgrounded: the 3-day target is crossed, but the
+    // in-app queue must stay empty until the app returns.
+    if (nowRef.value) nowRef.value.value = new Date(Date.now() + 2 * 86_400_000)
+    await nextTick()
+    await flushPromises()
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+
+    // Return to the foreground: the native lifecycle listener re-runs load()
+    // and the 3-day crossing is celebrated without a remount.
+    foregroundHandlers[0]?.()
+    await flushPromises()
     expect(wrapper.find('[role="status"]').text()).toContain(
       'Alcohol free for 3 days!',
     )
