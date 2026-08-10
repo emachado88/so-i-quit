@@ -138,6 +138,9 @@ onMounted(() => {
       class="chips flex gap-1.5 overflow-x-auto px-4 pb-3 scrollbar-none scroll-smooth"
     >
       <span
+        class="fixed left-5.5 bg-linear-to-r from-surface to-transparent h-6.5 w-3.5"
+      />
+      <span
         v-for="milestone in reached"
         :key="milestone.id"
         class="shrink-0 whitespace-nowrap rounded-full border border-transparent bg-primary-soft px-2.5 py-1 text-[11px] font-semibold text-on-primary-soft"
