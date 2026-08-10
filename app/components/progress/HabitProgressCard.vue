@@ -39,7 +39,7 @@ const reached = computed(() =>
   props.milestones.filter((milestone) => milestone.reachedAt !== null),
 );
 const saved = computed(() => days.value * parseSavings(props.habit.savings));
-const percent = computed(() => Math.round(progress.value * 100));
+const percent = computed(() => Math.floor(progress.value * 100));
 
 const justStarted = computed(() => {
   const { years, months, days: d, hours } = parts.value;
