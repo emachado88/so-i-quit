@@ -214,6 +214,44 @@ export const cancelAllMilestoneNotifications = async (): Promise<void> => {
 }
 
 // ---------------------------------------------------------------------------
+// Tap handling
+// ---------------------------------------------------------------------------
+
+export interface NotificationTapSubscription {
+  remove: () => void
+}
+
+/**
+ * Register a listener for taps on milestone notifications. Fires on
+ * background taps AND cold starts (the Android plugin retains the launch
+ * intent action until a JS listener registers). Browser: no-op subscription.
+ */
+export const addNotificationTapListener = (
+  onTap: (habitId: string) => void,
+): NotificationTapSubscription => {
+  if (!isNative()) return { remove: () => {} }
+
+  let handle: { remove: () => Promise<void> } | null = null
+  void LocalNotifications.addListener(
+    'localNotificationActionPerformed',
+    (action) => {
+      const extra = action.notification?.extra as
+        | { habitId?: string }
+        | undefined
+      if (extra?.habitId) onTap(extra.habitId)
+    },
+  ).then((listenerHandle) => {
+    handle = listenerHandle
+  })
+
+  return {
+    remove: () => {
+      void handle?.remove()
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Reconcile
 // ---------------------------------------------------------------------------
 

@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type {
+  ActionPerformed,
   CancelOptions,
   ScheduleOptions,
 } from '@capacitor/local-notifications'
@@ -31,9 +32,14 @@ const mocks = vi.hoisted(() => {
   const checkExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
   const changeExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
   const isNative = vi.fn(() => true)
+  const addListener = vi.fn(
+    async (_event: string, _listener: (a: ActionPerformed) => void) => ({
+      remove: () => Promise.resolve(),
+    }),
+  )
   return {
     schedule, getPending, cancel, requestPermissions, checkPermissions,
-    createChannel, checkExact, changeExact, isNative,
+    createChannel, checkExact, changeExact, isNative, addListener,
   }
 })
 
@@ -51,6 +57,7 @@ vi.mock('@capacitor/local-notifications', () => ({
     createChannel: mocks.createChannel,
     checkExactNotificationSetting: mocks.checkExact,
     changeExactNotificationSetting: mocks.changeExact,
+    addListener: mocks.addListener,
   },
 }))
 
@@ -80,6 +87,12 @@ const makeHabit = (overrides: Partial<Habit> = {}): Habit => ({
   savings: '5',
   ...overrides,
 })
+
+/** Let the addListener promise resolve (its .then assigns the handle). */
+const flush = async (): Promise<void> => {
+  await Promise.resolve()
+  await Promise.resolve()
+}
 
 const makeMilestone = (overrides: Partial<Milestone> = {}): Milestone => ({
   id: 'h1-month-1',
@@ -174,6 +187,53 @@ describe('exact alarms', () => {
   it('openExactNotificationSettings calls the plugin', async () => {
     await notifications.openExactNotificationSettings()
     expect(mocks.changeExact).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('addNotificationTapListener', () => {
+  it('registers a localNotificationActionPerformed listener on native', async () => {
+    const onTap = vi.fn()
+    const sub = notifications.addNotificationTapListener(onTap)
+    await flush()
+
+    expect(mocks.addListener).toHaveBeenCalledWith(
+      'localNotificationActionPerformed',
+      expect.any(Function),
+    )
+    sub.remove()
+  })
+
+  it('invokes the callback with the habitId from the notification extra', async () => {
+    const onTap = vi.fn()
+    notifications.addNotificationTapListener(onTap)
+    await flush()
+
+    const listener = mocks.addListener.mock.calls[0]![1] as unknown as (
+      action: ActionPerformed,
+    ) => void
+    listener({ notification: { extra: { habitId: 'h1' } } } as ActionPerformed)
+    expect(onTap).toHaveBeenCalledWith('h1')
+  })
+
+  it('ignores taps without a habitId', async () => {
+    const onTap = vi.fn()
+    notifications.addNotificationTapListener(onTap)
+    await flush()
+
+    const listener = mocks.addListener.mock.calls[0]![1] as unknown as (
+      action: ActionPerformed,
+    ) => void
+    listener({ notification: { extra: { milestoneId: 'm1' } } } as ActionPerformed)
+    listener({ notification: { extra: undefined } } as ActionPerformed)
+    expect(onTap).not.toHaveBeenCalled()
+  })
+
+  it('is a no-op subscription in the browser', async () => {
+    mocks.isNative.mockReturnValue(false)
+    const onTap = vi.fn()
+    const sub = notifications.addNotificationTapListener(onTap)
+    expect(mocks.addListener).not.toHaveBeenCalled()
+    sub.remove() // must not throw
   })
 })
 
