@@ -1,6 +1,196 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+
+import { useNow } from '../composables/useNow'
+import CelebrationToast from '../components/progress/CelebrationToast.vue'
+import HabitProgressCard from '../components/progress/HabitProgressCard.vue'
+import TotalSavingsCard from '../components/progress/TotalSavingsCard.vue'
+import Snackbar from '../components/ui/Snackbar.vue'
+import {
+  daysSince,
+  getHabitName,
+  parseSavings,
+} from '../utils/domain'
+import { getHabits } from '../utils/habits'
+import { formatMilestoneLabel } from '../utils/milestones'
+import {
+  ensureMilestonesForHabit,
+  saveMilestonesForHabit,
+} from '../utils/milestones-store'
+import { reconcileHabitNotifications } from '../utils/notifications'
+import { getSettings } from '../utils/settings'
+import type { Habit, Milestone } from '../utils/types'
+
+/** Pending in-app celebration (newly crossed milestone). */
+interface Celebration {
+  habitId: string
+  milestone: Milestone
+}
+
+const { t, locale } = useI18n()
+const router = useRouter()
+
+// ── State ──
+
+const habits = ref<Habit[]>([])
+const milestonesByHabit = ref<Record<string, Milestone[]>>({})
+const celebrations = ref<Celebration[]>([])
+const snackbarMessage = ref<string | null>(null)
+const now = useNow()
+
+const datedHabits = computed(() =>
+  [...habits.value]
+    .filter((habit) => habit.date)
+    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
+)
+const hasAnyHabitWithDate = computed(() => datedHabits.value.length > 0)
+const totalSavings = computed(() =>
+  habits.value.reduce(
+    (sum, habit) =>
+      sum + daysSince(habit.date, now.value) * parseSavings(habit.savings),
+    0,
+  ),
+)
+const sinceDate = computed(() => datedHabits.value[0]?.date ?? null)
+const currency = computed(() => getSettings().currency)
+
+// ── Navigation (locale-aware, no Nuxt auto-imports — unit-test friendly) ──
+
+const goToHabits = (): void => {
+  const prefix = locale.value === 'en' ? '' : `/${locale.value}`
+  router.push(`${prefix}/habits`)
+}
+
+// ── Data ──
+
+const load = async (): Promise<void> => {
+  try {
+    habits.value = getHabits()
+    const nowDate = now.value
+    const newly: Celebration[] = []
+    const byHabit: Record<string, Milestone[]> = {}
+
+    for (const habit of datedHabits.value) {
+      // Roll reached targets forward and collect newly crossed milestones
+      // for the in-app celebration queue.
+      const result = ensureMilestonesForHabit(habit, nowDate)
+      byHabit[habit.id] = result.milestones
+      for (const milestone of result.newlyReached) {
+        newly.push({ habitId: habit.id, milestone })
+      }
+      // Extend the native schedule through the rolling horizon when
+      // notifications are enabled (new annuals get scheduled).
+      if (getSettings().milestoneNotificationsEnabled) {
+        byHabit[habit.id] = await reconcileHabitNotifications(
+          habit,
+          byHabit[habit.id],
+          t,
+          nowDate,
+        )
+        saveMilestonesForHabit(habit.id, byHabit[habit.id])
+      }
+    }
+    milestonesByHabit.value = byHabit
+
+    // Only toast while the app is the visible surface; backgrounded, the OS
+    // notification already covered it (RN AppState parity).
+    if (newly.length > 0 && document.visibilityState === 'visible') {
+      celebrations.value = [...celebrations.value, ...newly]
+    }
+  } catch {
+    snackbarMessage.value = t('progress.failedToLoad')
+  }
+}
+
+onMounted(load)
+
+// ── Celebration queue ──
+
+const activeCelebration = computed(() => celebrations.value[0] ?? null)
+const activeCelebrationText = computed(() => {
+  const celebration = activeCelebration.value
+  if (!celebration) return null
+  const habit = habits.value.find((h) => h.id === celebration.habitId)
+  return habit
+    ? t('milestone.reachedBody', {
+        habit: getHabitName(habit, t),
+        milestone: formatMilestoneLabel(celebration.milestone, t),
+      })
+    : t('milestone.reached')
+})
+const dismissCelebration = (): void => {
+  celebrations.value = celebrations.value.slice(1)
+}
+</script>
+
 <template>
-  <main class="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-    <h1 class="text-2xl font-black tracking-tight text-ink">{{ $t('tabs.progress') }}</h1>
-    <!-- Scaffold placeholder — real Progress screen lands in Ticket 9 -->
+  <main class="flex flex-col gap-4 px-4 py-6">
+    <!-- Empty state (wireframe): no habits yet → guide to the Habits tab -->
+    <div
+      v-if="habits.length === 0"
+      class="flex flex-col items-center gap-3 px-6 py-16 text-center"
+    >
+      <div
+        class="flex h-21 w-21 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,var(--color-primary-hover),var(--color-depth))] text-4xl shadow-md"
+      >
+        🚭
+      </div>
+      <h1 class="text-xl font-black tracking-tight text-ink">
+        {{ t('progress.readyToGetBetter') }}
+      </h1>
+      <p class="max-w-[260px] text-[13.5px] leading-relaxed text-muted">
+        {{ t('progress.emptyBody') }}
+      </p>
+      <button
+        type="button"
+        class="mt-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        @click="goToHabits"
+      >
+        {{ t('progress.emptyCta') }}
+      </button>
+    </div>
+
+    <template v-else>
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-ink">
+          {{ t('tabs.progress') }}
+        </h1>
+        <p class="mt-0.5 text-[13px] text-muted">
+          {{ hasAnyHabitWithDate ? t('progress.doingGreat') : t('progress.noData') }}
+        </p>
+        <button
+          v-if="!hasAnyHabitWithDate"
+          type="button"
+          class="mt-1 text-[13px] font-bold text-primary underline underline-offset-2"
+          @click="goToHabits"
+        >
+          {{ t('progress.goToHabits') }}
+        </button>
+      </div>
+
+      <HabitProgressCard
+        v-for="habit in datedHabits"
+        :key="habit.id"
+        :habit="habit"
+        :milestones="milestonesByHabit[habit.id] ?? []"
+        :now="now"
+        :currency="currency"
+      />
+
+      <TotalSavingsCard
+        v-if="totalSavings > 0"
+        :total="totalSavings"
+        :since-date="sinceDate"
+        :currency="currency"
+      />
+    </template>
+
+    <CelebrationToast
+      :message="activeCelebrationText"
+      @dismiss="dismissCelebration"
+    />
+    <Snackbar :message="snackbarMessage" @dismiss="snackbarMessage = null" />
   </main>
 </template>

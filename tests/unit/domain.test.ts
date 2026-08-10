@@ -5,6 +5,7 @@ import {
   breakdown,
   daysSince,
   formatAmount,
+  formatDate,
   formatDateTime,
   getHabitName,
   normalizeSavings,
@@ -168,6 +169,37 @@ describe('utils/domain', () => {
     })
   })
 
+  describe('formatDate', () => {
+    it('returns empty for null and invalid input', () => {
+      expect(formatDate(null)).toBe('')
+      expect(formatDate('garbage')).toBe('')
+    })
+
+    it('formats a date-only string via Intl (en)', () => {
+      // Local date (no Z) — TZ-independent day/month assertions
+      const out = formatDate('2025-05-10T08:00:00', 'en')
+      expect(out).toContain('2025')
+      expect(out).toContain('May')
+      expect(out).toContain('10')
+    })
+  })
+
+  describe('explicit now', () => {
+    it('daysSince accepts an explicit now', () => {
+      const threeDaysAgo = dayjs(NOW).subtract(3, 'days').toISOString()
+      expect(daysSince(threeDaysAgo, new Date(NOW))).toBe(3)
+    })
+
+    it('breakdown accepts an explicit now', () => {
+      expect(breakdown('2025-05-31T10:00:00.000Z', new Date(NOW))).toEqual({
+        years: 0,
+        months: 0,
+        days: 1,
+        hours: 2,
+      })
+    })
+  })
+
   describe('formatAmount', () => {
     it('formats with the locale-aware symbol (en-US, USD)', () => {
       setLanguage('en-US')
@@ -182,6 +214,12 @@ describe('utils/domain', () => {
     it('rounds to two decimals', () => {
       setLanguage('en-US')
       expect(formatAmount(1234.567, 'EUR')).toBe('€1,234.57')
+    })
+
+    it('supports whole-euro totals via maxFractionDigits', () => {
+      setLanguage('en-US')
+      expect(formatAmount(4888, 'EUR', 0)).toBe('€4,888')
+      expect(formatAmount(1234.57, 'EUR', 0)).toBe('€1,235')
     })
 
     it('falls back to a raw code when Intl fails', () => {

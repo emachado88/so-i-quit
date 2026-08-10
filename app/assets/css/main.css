@@ -11,6 +11,13 @@
   --color-success: #2d9d6a;
   --color-danger: #d94f4f;
 
+  /* Soft tint variants (wireframe: chips, badges, dialog icons) */
+  --color-primary-soft: #cee8e0;
+  --color-on-primary-soft: #08352c;
+  --color-accent-soft: #f5e8c8;
+  --color-danger-soft: #fce4e4;
+  --color-on-danger-soft: #601010;
+
   /* Light surfaces */
   --color-bg: #f7f6f3;
   --color-surface: #ffffff;
@@ -39,6 +46,13 @@ html.dark {
   --color-border: #2e2d2b;
   --color-muted: #7a7670;
   --color-ink: #f0eeea;
+
+  /* Dark soft tints */
+  --color-primary-soft: #12504a;
+  --color-on-primary-soft: #cee8e0;
+  --color-accent-soft: #4d3300;
+  --color-danger-soft: #601010;
+  --color-on-danger-soft: #fce4e4;
 }
 
 h1,

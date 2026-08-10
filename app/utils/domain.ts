@@ -33,30 +33,36 @@ export const getHabitName = (
 // Time helpers
 // ---------------------------------------------------------------------------
 
-export const daysSince = (isoDate: string | null): number => {
+export const daysSince = (
+  isoDate: string | null,
+  now: Date = new Date(),
+): number => {
   if (!isoDate) return 0
   const d = dayjs(isoDate)
-  return d.isValid() ? dayjs().diff(d, 'days') : 0
+  return d.isValid() ? dayjs(now).diff(d, 'days') : 0
 }
 
-export const breakdown = (isoDate: string | null): Breakdown => {
+export const breakdown = (
+  isoDate: string | null,
+  now: Date = new Date(),
+): Breakdown => {
   if (!isoDate) return ZERO_BREAKDOWN
   const d = dayjs(isoDate)
   if (!d.isValid()) return ZERO_BREAKDOWN
 
   let current = d
-  const now = dayjs()
+  const nowTime = dayjs(now)
 
-  const years = now.diff(current, 'years')
+  const years = nowTime.diff(current, 'years')
   current = current.add(years, 'years')
 
-  const months = now.diff(current, 'months')
+  const months = nowTime.diff(current, 'months')
   current = current.add(months, 'months')
 
-  const days = now.diff(current, 'days')
+  const days = nowTime.diff(current, 'days')
   current = current.add(days, 'days')
 
-  const hours = now.diff(current, 'hours')
+  const hours = nowTime.diff(current, 'hours')
 
   return { years, months, days, hours }
 }
@@ -103,6 +109,21 @@ export const formatDateTime = (isoDate: string | null, locale = 'en'): string =>
   }).format(date)
 }
 
+/**
+ * Format an ISO date as a localized date-only string via Intl
+ * (e.g. "10 May 2025" en). Returns '' for null/invalid input.
+ */
+export const formatDate = (isoDate: string | null, locale = 'en'): string => {
+  if (!isoDate) return ''
+  const date = new Date(isoDate)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
 /** Clean a potentially prefixed currency symbol (e.g. "US$" → "$"). */
 const cleanSymbol = (raw: string): string => {
   // Match pattern like "US$", "CA$", "A$", "HK$", "MX$", "R$" etc.
@@ -124,6 +145,7 @@ const cleanSymbol = (raw: string): string => {
 export const formatAmount = (
   value: number,
   currencyCode: string = 'EUR',
+  maxFractionDigits: number = 2,
 ): string => {
   try {
     const locale =
@@ -133,6 +155,9 @@ export const formatAmount = (
     const parts = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currencyCode,
+      // When maxFractionDigits is lowered below the currency's default,
+      // Intl also lowers the minimum — whole-euro totals ("€4,888").
+      maximumFractionDigits: maxFractionDigits,
     }).formatToParts(value)
 
     return parts
