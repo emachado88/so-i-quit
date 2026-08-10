@@ -89,12 +89,48 @@ export const detectLanguage = (): string => {
   return 'en'
 }
 
-/** Detect preferred currency from the locale region (fallback EUR). */
+/**
+ * Extract the region code from a locale tag — the LAST segment of a
+ * multi-segment tag, since a script tag can sit between language and region
+ * ("zh-Hans-CN" → "CN"). Region codes are 2 letters (PT) or 3 digits (419);
+ * scripts are 4 letters. Single-segment tags ("pt", "sv") carry no region —
+ * their code is a language, not a region ("sv" ≠ El Salvador).
+ */
+export const extractRegion = (locale: string): string | undefined => {
+  const segments = locale.split('-')
+  if (segments.length < 2) return undefined
+  const last = segments[segments.length - 1]?.toUpperCase()
+  if (last && (/^[A-Z]{2}$/.test(last) || /^\d{3}$/.test(last))) return last
+  return undefined
+}
+
+/** Preferred currency for a locale tag (undefined when unknown). */
+export const currencyFromLocale = (locale: string): string | undefined => {
+  const region = extractRegion(locale)
+  return region ? REGION_TO_CURRENCY[region] : undefined
+}
+
+/** Full locale the engine resolves for date/number formatting. */
+const fullLocale = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().locale
+  } catch {
+    return getNavigatorLanguage()
+  }
+}
+
+/**
+ * Detect the preferred currency from the device locale (fallback EUR).
+ *
+ * `navigator.language` often omits the region ("pt"), so when it carries
+ * none the full locale Intl resolves for formatting (e.g. "pt-PT", "pt-BR")
+ * is used instead — that region is what the device's region/units setting
+ * drives (the "units do sistema" the user picks in the OS).
+ */
 const detectDefaultCurrency = (): string => {
-  const tag = getNavigatorLanguage().toLowerCase()
-  const region = tag.split('-')[1]?.toUpperCase()
-  if (region && REGION_TO_CURRENCY[region]) return REGION_TO_CURRENCY[region]
-  return DEFAULT_SETTINGS.currency
+  const navLocale = getNavigatorLanguage()
+  const locale = extractRegion(navLocale) ? navLocale : fullLocale()
+  return currencyFromLocale(locale) ?? DEFAULT_SETTINGS.currency
 }
 
 const isTheme = (value: unknown): value is Theme =>

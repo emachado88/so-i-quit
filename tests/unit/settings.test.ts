@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  currencyFromLocale,
   DEFAULT_SETTINGS,
   detectLanguage,
+  extractRegion,
   getCurrency,
   getLanguage,
   getMilestoneNotificationsEnabled,
@@ -85,6 +87,38 @@ describe('utils/settings', () => {
     })
   })
 
+  describe('extractRegion / currencyFromLocale', () => {
+    it('extracts 2-letter and 3-digit regions', () => {
+      expect(extractRegion('en-US')).toBe('US')
+      expect(extractRegion('pt-PT')).toBe('PT')
+      expect(extractRegion('es-419')).toBe('419')
+    })
+
+    it('reads the region from the last segment (script tags)', () => {
+      expect(extractRegion('zh-Hans-CN')).toBe('CN')
+      expect(currencyFromLocale('zh-Hans-CN')).toBe('CNY')
+    })
+
+    it('treats single-segment tags as region-less', () => {
+      expect(extractRegion('pt')).toBeUndefined()
+      expect(extractRegion('sv')).toBeUndefined()
+      // "sv" is the Swedish language, NOT El Salvador
+      expect(currencyFromLocale('sv')).toBeUndefined()
+    })
+
+    it('maps regions to currencies', () => {
+      expect(currencyFromLocale('pt-PT')).toBe('EUR')
+      expect(currencyFromLocale('pt-BR')).toBe('BRL')
+      expect(currencyFromLocale('en-GB')).toBe('GBP')
+      expect(currencyFromLocale('en-US')).toBe('USD')
+    })
+
+    it('returns undefined for unknown regions', () => {
+      expect(currencyFromLocale('xx-YY')).toBeUndefined()
+      expect(currencyFromLocale('es-419')).toBeUndefined()
+    })
+  })
+
   describe('getCurrency', () => {
     it('detects from the browser region on first run', () => {
       setLanguage('en-US')
@@ -94,6 +128,22 @@ describe('utils/settings', () => {
     it('maps PT region to EUR', () => {
       setLanguage('pt-PT')
       expect(getCurrency()).toBe('EUR')
+    })
+
+    it('falls back to the Intl full locale when navigator has no region', () => {
+      // Many Android devices report a region-less tag ("pt").
+      setLanguage('pt')
+      vi.stubGlobal('Intl', {
+        ...Intl,
+        DateTimeFormat: () => ({ resolvedOptions: () => ({ locale: 'pt-PT' }) }),
+      })
+      expect(getCurrency()).toBe('EUR')
+
+      vi.stubGlobal('Intl', {
+        ...Intl,
+        DateTimeFormat: () => ({ resolvedOptions: () => ({ locale: 'pt-BR' }) }),
+      })
+      expect(getCurrency()).toBe('BRL')
     })
 
     it('returns the stored currency when present', () => {
