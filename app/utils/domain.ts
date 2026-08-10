@@ -84,6 +84,25 @@ export const normalizeSavings = (raw: string): string | null => {
   return num % 1 === 0 ? String(num) : num.toFixed(2)
 }
 
+/**
+ * Format an ISO date as a localized date+time string via Intl
+ * (e.g. "31 May 2025, 10:00" en — the RN app used dayjs "D MMM YYYY, HH:mm").
+ * Returns '' for null/invalid input.
+ */
+export const formatDateTime = (isoDate: string | null, locale = 'en'): string => {
+  if (!isoDate) return ''
+  const date = new Date(isoDate)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+}
+
 /** Clean a potentially prefixed currency symbol (e.g. "US$" → "$"). */
 const cleanSymbol = (raw: string): string => {
   // Match pattern like "US$", "CA$", "A$", "HK$", "MX$", "R$" etc.

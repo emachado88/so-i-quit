@@ -2,7 +2,6 @@
   "tabs.progress": "Progress",
   "tabs.habits": "Habits",
   "tabs.settings": "Settings",
-
   "progress.congratulations": "Congratulations!",
   "progress.readyToGetBetter": "Ready to get better?",
   "progress.doingGreat": "You're doing great,",
@@ -21,7 +20,6 @@
   "progress.totalSavings": "Total savings",
   "progress.since": "since {date}",
   "progress.failedToLoad": "Failed to load habits",
-
   "habits.title": "Habits",
   "habits.addNew": "Add New Habit",
   "habits.alcohol": "Alcohol",
@@ -29,6 +27,9 @@
   "habits.habitName": "Habit name",
   "habits.add": "Add",
   "habits.addCustom": "Add custom habit",
+  "habits.relapseConfirm": "Log a relapse for {name}? This restarts your streak from today.",
+  "habits.time": "Time",
+  "habits.date": "Date",
   "habits.openMenu": "Open menu {name}",
   "habits.noHabits": "No habits added yet.",
   "habits.editDate": "Edit date",
@@ -46,7 +47,6 @@
   "habits.failedToDelete": "Failed to delete {name}",
   "habits.failedToUpdateDate": "Failed to update date",
   "habits.failedToUpdateSavings": "Failed to update savings",
-
   "settings.title": "Settings",
   "settings.appearance": "Appearance",
   "settings.system": "System",
@@ -63,7 +63,6 @@
   "settings.failedNotifications": "Failed to save notification preferences",
   "settings.milestoneNotifications": "Milestone notifications",
   "settings.milestoneNotificationsDenied": "Notifications are turned off in your system settings. Enable them there to receive milestone celebrations.",
-
   "milestone.day.one": "day",
   "milestone.day.other": "days",
   "milestone.week.one": "week",
@@ -81,7 +80,6 @@
   "milestone.notificationsOptInBody": "Get a celebration when you reach a milestone.",
   "milestone.enableNotifications": "Enable notifications",
   "milestone.notNow": "Not now",
-
   "savings.title": "Daily Savings",
   "savings.titleOptional": "Daily Savings (optional)",
   "savings.subtitle": "How much do you save per day by quitting?",
@@ -89,7 +87,6 @@
   "savings.skip": "Skip",
   "savings.save": "Save",
   "savings.confirm": "Confirm",
-
   "common.dismiss": "Dismiss",
   "common.perDay": "/day",
   "common.cancel": "Cancel"

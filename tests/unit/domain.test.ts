@@ -5,6 +5,7 @@ import {
   breakdown,
   daysSince,
   formatAmount,
+  formatDateTime,
   getHabitName,
   normalizeSavings,
   parseSavings,
@@ -148,6 +149,22 @@ describe('utils/domain', () => {
       expect(normalizeSavings('5.25')).toBe('5.25')
       expect(normalizeSavings('5.256')).toBe('5.26')
       expect(normalizeSavings('0.5')).toBe('0.50')
+    })
+  })
+
+  describe('formatDateTime', () => {
+    it('returns empty for null and invalid input', () => {
+      expect(formatDateTime(null)).toBe('')
+      expect(formatDateTime('garbage')).toBe('')
+    })
+
+    it('formats a local date+time via Intl (en)', () => {
+      // Local date (no Z) — TZ-independent day/month assertions
+      const out = formatDateTime('2025-05-31T10:00:00', 'en')
+      expect(out).toContain('2025')
+      expect(out).toContain('May')
+      expect(out).toContain('31')
+      expect(out).toContain('10:00')
     })
   })
 
