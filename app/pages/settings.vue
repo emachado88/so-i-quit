@@ -1,6 +1,6 @@
 <template>
-  <main class="mx-auto flex min-h-dvh max-w-[430px] flex-col items-center justify-center gap-3 px-6 text-center">
-    <h1 class="text-2xl font-black tracking-tight text-ink">Settings</h1>
-    <p class="text-sm text-muted">Scaffold OK — real Settings screen lands in Ticket 10.</p>
+  <main class="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+    <h1 class="text-2xl font-black tracking-tight text-ink">{{ $t('tabs.settings') }}</h1>
+    <!-- Scaffold placeholder — real Settings screen lands in Ticket 10 -->
   </main>
 </template>

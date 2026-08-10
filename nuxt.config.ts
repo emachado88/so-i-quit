@@ -2,8 +2,19 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-08-10',
+  app: {
+    head: {
+      // viewport-fit=cover → Capacitor keeps the WebView edge-to-edge (no
+      // native margins); the shell offsets content with env(safe-area-inset-*).
+      viewport:
+        'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
+    },
+  },
   modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts'],
   css: ['~/assets/css/main.css'],
+  // Component names without directory prefixes (TabBar, HabitCard, ...) —
+  // every component name in this app is unique.
+  components: [{ path: '~/components', pathPrefix: false }],
   vite: {
     plugins: [tailwindcss()],
   },
