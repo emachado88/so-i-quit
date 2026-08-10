@@ -21,6 +21,13 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        debug {
+            // Identidade dev: instala como com.soiquit.app.dev com label próprio,
+            // para coexistir com a versão release/Play (com.soiquit.app).
+            applicationIdSuffix ".dev"
+            resValue "string", "app_name", "So I Quit (Dev)"
+            resValue "string", "title_activity_main", "So I Quit (Dev)"
+        }
     }
 }
 

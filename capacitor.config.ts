@@ -1,11 +1,11 @@
-import type { CapacitorConfig } from '@capacitor/cli'
+import type { CapacitorConfig } from "@capacitor/cli";
 
-const liveUrl = process.env.CAP_LIVE_URL
+const liveUrl = process.env.CAP_LIVE_URL;
 
 const config: CapacitorConfig = {
-  appId: 'com.soiquit.app',
-  appName: 'So I Quit',
-  webDir: 'dist',
+  appId: liveUrl ? "com.soiquit.dev" : "com.soiquit.app",
+  appName: liveUrl ? "So I Quit (Dev)" : "So I Quit",
+  webDir: "dist",
   server: liveUrl
     ? {
         // Dev only (npm run mobile:run:live) — never committed with a URL.
@@ -13,8 +13,8 @@ const config: CapacitorConfig = {
         cleartext: true,
       }
     : {
-        androidScheme: 'https',
+        androidScheme: "https",
       },
-}
+};
 
-export default config
+export default config;
