@@ -309,7 +309,7 @@ describe('components/progress/HabitProgressCard', () => {
     expect(
       wrapper.find('svg[aria-label="milestone progress"]').exists(),
     ).toBe(true)
-    expect(wrapper.find('circle.stroke-primary').exists()).toBe(true)
+    expect(wrapper.find('circle.stroke-success').exists()).toBe(true)
   })
 
   it('shows the just-started message for streaks under an hour', () => {
@@ -322,6 +322,25 @@ describe('components/progress/HabitProgressCard', () => {
       global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain("You've started, keep going")
+  })
+
+  it('keeps the ring empty while milestone data has not loaded yet', () => {
+    // Milestones arrive a beat after the habit (async load) — until then the
+    // ring must render empty, not full (regression: ringProgress() reported
+    // 100% with an empty milestone list and the ring flashed from full).
+    const habit = makeHabit({ date: atDaysAgo(40), savings: '5' })
+
+    const wrapper = mount(HabitProgressCard, {
+      props: { habit, milestones: [], now: NOW, currency: 'EUR' },
+      global: { plugins: [i18n] },
+    })
+
+    const bar = wrapper.find('circle.stroke-success')
+    expect(bar.exists()).toBe(true)
+    // Empty ring: dashoffset equals the full circumference, not 0 (full).
+    expect(bar.attributes('stroke-dashoffset')).toBe(
+      String(2 * Math.PI * ((74 - 7) / 2)),
+    )
   })
 })
 

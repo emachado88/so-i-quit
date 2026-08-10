@@ -30,7 +30,13 @@ const name = computed(() => getHabitName(props.habit, t));
 const days = computed(() => daysSince(props.habit.date, props.now));
 const parts = computed(() => breakdown(props.habit.date, props.now));
 const progress = computed(() =>
-  ringProgress(props.habit, props.milestones, props.now),
+  // Milestones arrive a beat after the habit (async load, notification
+  // scheduling awaits in between). Until they land, ringProgress() would
+  // report 100% ("no next milestone") and the ring would animate from full —
+  // treat "no data yet" as 0% (empty ring, no flash).
+  props.milestones.length === 0
+    ? 0
+    : ringProgress(props.habit, props.milestones, props.now),
 );
 const next = computed(() =>
   getNextMilestone(props.habit, props.milestones, props.now),
