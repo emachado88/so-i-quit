@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  applyNativeLocale,
   currencyFromLocale,
   DEFAULT_SETTINGS,
   detectLanguage,
@@ -56,6 +57,50 @@ describe('utils/settings', () => {
     it('falls back to en for unsupported languages', () => {
       setLanguage('xx-YY')
       expect(detectLanguage()).toBe('en')
+    })
+  })
+
+  describe('applyNativeLocale', () => {
+    it('fills language + currency from the native locale on first run', () => {
+      const updates = applyNativeLocale(
+        { languageCode: 'en', regionCode: 'PT', currencyCode: 'EUR' },
+        {},
+      )
+      expect(updates).toEqual({ language: 'en', currency: 'EUR' })
+    })
+
+    it('uses the region mapping when the native currency is unavailable', () => {
+      const updates = applyNativeLocale(
+        { languageCode: 'en', regionCode: 'PT', currencyCode: null },
+        {},
+      )
+      expect(updates).toEqual({ language: 'en', currency: 'EUR' })
+    })
+
+    it('never overrides a stored language or currency', () => {
+      const updates = applyNativeLocale(
+        { languageCode: 'pt', regionCode: 'PT', currencyCode: 'EUR' },
+        { language: 'en', currency: 'USD' },
+      )
+      expect(updates).toEqual({})
+    })
+
+    it('skips unknown language codes but keeps the currency', () => {
+      const updates = applyNativeLocale(
+        { languageCode: 'xx', regionCode: 'PT', currencyCode: 'EUR' },
+        {},
+      )
+      expect(updates).toEqual({ currency: 'EUR' })
+    })
+
+    it('returns no updates when nothing can be detected', () => {
+      expect(applyNativeLocale({}, {})).toEqual({})
+      expect(
+        applyNativeLocale(
+          { languageCode: 'xx', regionCode: null, currencyCode: null },
+          {},
+        ),
+      ).toEqual({})
     })
   })
 

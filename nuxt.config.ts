@@ -11,6 +11,11 @@ export default defineNuxtConfig({
     },
   },
   modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts'],
+  plugins: [
+    // Native device-locale detection (Capacitor) must run before the
+    // i18n-persist boot redirect reads the saved language.
+    { src: '~/plugins/native-locale.client.ts', order: -10 },
+  ],
   css: ['~/assets/css/main.css'],
   // Component names without directory prefixes (TabBar, HabitCard, ...) —
   // every component name in this app is unique.

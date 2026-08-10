@@ -159,6 +159,49 @@ const isTheme = (value: unknown): value is Theme =>
   value === 'light' || value === 'dark' || value === 'system'
 
 // ---------------------------------------------------------------------------
+// Native device-locale detection (first run)
+// ---------------------------------------------------------------------------
+
+export interface NativeLocale {
+  languageCode?: string | null
+  regionCode?: string | null
+  currencyCode?: string | null
+}
+
+/**
+ * Merge native device-locale detection into first-run settings.
+ *
+ * The WebView's navigator.language is not a reliable source for the region
+ * (it can report "en-GB" while the device region is PT) — the native locale
+ * from @capawesome/capacitor-localization carries the real languageCode /
+ * regionCode / currencyCode from the OS (Android derives currencyCode from
+ * the region/units setting).
+ *
+ * Only fills fields the user hasn't chosen yet (stored values win). The
+ * native currency code is authoritative; the region mapping is the fallback.
+ */
+export const applyNativeLocale = (
+  locale: NativeLocale,
+  stored: Partial<AppSettings>,
+): Partial<AppSettings> => {
+  const updates: Partial<AppSettings> = {}
+
+  if (!stored.language && locale.languageCode) {
+    const mapped = LANGUAGE_MAP[locale.languageCode.toLowerCase()]
+    if (mapped) updates.language = mapped
+  }
+
+  if (!stored.currency) {
+    const currency =
+      locale.currencyCode ??
+      (locale.regionCode ? REGION_TO_CURRENCY[locale.regionCode] : undefined)
+    if (currency) updates.currency = currency
+  }
+
+  return updates
+}
+
+// ---------------------------------------------------------------------------
 // Read
 // ---------------------------------------------------------------------------
 
