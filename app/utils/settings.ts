@@ -41,6 +41,18 @@ export const SUPPORTED_LANGUAGES = [
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
+/** Native display names for the language picker (order = picker order). */
+export const LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
+  en: 'English',
+  pt: 'Português',
+  fr: 'Français',
+  es: 'Español',
+  it: 'Italiano',
+  zh: '中文',
+  de: 'Deutsch',
+  nl: 'Nederlands',
+}
+
 /** Map device language tags to supported codes (ported from i18n/index.ts). */
 const LANGUAGE_MAP: Record<string, string> = {
   en: 'en',

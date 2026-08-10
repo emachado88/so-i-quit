@@ -71,29 +71,35 @@ body {
 }
 
 /*
- * Hide every native widget affordance on date/time inputs.
+ * Hide the native widget arrows on date/time inputs — Android/Chromium only.
  *
  * Chromium draws a trailing chevron (date, Chrome 120+) / calendar glyph via
  * the `-webkit-calendar-picker-indicator` pseudo-element, and the Android
  * WebView renders date+time as spinner fields with up/down arrows via
  * `-webkit-inner-spin-button`. All of these live inside the input's UA
  * shadow root — invisible in DevTools unless "Show user agent shadow DOM"
- * is enabled. They are decoration only: tapping the field still opens the
- * platform picker. `-webkit-appearance: none` on the inputs themselves is
- * the extra step some WebViews need (older System WebView keeps drawing
- * arrows from the widget chrome even when the pseudo-elements are hidden).
+ * is enabled. Tapping the field still opens the platform picker.
+ *
+ * iOS never draws these (plain text field that opens the native wheel
+ * picker), and `appearance: none` on the inputs has mixed reports there —
+ * some versions stop opening the picker. So the whole block is scoped via
+ * `@supports not (-webkit-touch-callout: none)`: that property is WebKit/
+ * iOS-only, so the fix applies to Chromium/Gecko and skips Safari iOS and
+ * the Capacitor WKWebView.
  */
-input[type='date'],
-input[type='time'] {
-  -webkit-appearance: none;
-  appearance: none;
-}
+@supports not (-webkit-touch-callout: none) {
+  input[type='date'],
+  input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-input[type='date']::-webkit-calendar-picker-indicator,
-input[type='time']::-webkit-calendar-picker-indicator,
-input[type='date']::-webkit-inner-spin-button,
-input[type='time']::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator,
+  input[type='date']::-webkit-inner-spin-button,
+  input[type='time']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
 }

@@ -385,3 +385,44 @@ export const REGION_TO_CURRENCY: Record<string, string> = {
   NU: 'NZD',
   FK: 'FKP',
 }
+
+// ---------------------------------------------------------------------------
+// Settings picker list
+// ---------------------------------------------------------------------------
+
+export interface CurrencyOption {
+  code: string
+  symbol: string
+  /** Localized currency name via Intl.DisplayNames (e.g. "Euro"). */
+  name: string
+}
+
+/**
+ * Currency options for the settings picker: the runtime's supported
+ * currencies (`Intl.supportedValuesOf`) restricted to the CURRENCY_SYMBOLS
+ * allow-list, sorted by the localized name. Falls back to the map keys when
+ * `Intl.supportedValuesOf` is unavailable.
+ */
+export const getCurrencyList = (locale: string): CurrencyOption[] => {
+  const codes =
+    typeof Intl.supportedValuesOf === 'function'
+      ? Intl.supportedValuesOf('currency').filter(
+          (code) => code in CURRENCY_SYMBOLS,
+        )
+      : Object.keys(CURRENCY_SYMBOLS)
+
+  let names: Intl.DisplayNames
+  try {
+    names = new Intl.DisplayNames([locale, 'en'], { type: 'currency' })
+  } catch {
+    names = new Intl.DisplayNames('en', { type: 'currency' })
+  }
+
+  return codes
+    .map((code) => ({
+      code,
+      symbol: CURRENCY_SYMBOLS[code] ?? code,
+      name: names.of(code) ?? code,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, locale))
+}
