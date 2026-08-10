@@ -1,0 +1,173 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import {
+  DEFAULT_SETTINGS,
+  detectLanguage,
+  getCurrency,
+  getLanguage,
+  getMilestoneNotificationsEnabled,
+  getMilestoneNotificationsPrompted,
+  getSettings,
+  getTheme,
+  saveCurrency,
+  saveLanguage,
+  saveMilestoneNotificationsEnabled,
+  saveMilestoneNotificationsPrompted,
+  saveSettings,
+  saveTheme,
+} from '../../app/utils/settings'
+import { installStorageMock, seedStorage } from '../helpers'
+
+installStorageMock()
+
+const setLanguage = (language: string): void => {
+  vi.stubGlobal('navigator', { language })
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('utils/settings', () => {
+  describe('DEFAULT_SETTINGS', () => {
+    it('has the expected shape', () => {
+      expect(DEFAULT_SETTINGS).toEqual({
+        theme: 'system',
+        language: '',
+        currency: 'EUR',
+        milestoneNotificationsEnabled: false,
+        milestoneNotificationsPrompted: false,
+      })
+    })
+  })
+
+  describe('detectLanguage', () => {
+    it('maps device language tags to supported codes', () => {
+      setLanguage('pt-PT')
+      expect(detectLanguage()).toBe('pt')
+      setLanguage('en-US')
+      expect(detectLanguage()).toBe('en')
+      setLanguage('zh-CN')
+      expect(detectLanguage()).toBe('zh')
+    })
+
+    it('falls back to en for unsupported languages', () => {
+      setLanguage('xx-YY')
+      expect(detectLanguage()).toBe('en')
+    })
+  })
+
+  describe('getTheme', () => {
+    it('returns the default when nothing is stored', () => {
+      expect(getTheme()).toBe('system')
+    })
+
+    it('returns the stored theme', () => {
+      saveTheme('dark')
+      expect(getTheme()).toBe('dark')
+    })
+
+    it('falls back to the default for invalid values', () => {
+      seedStorage('settings-v1', JSON.stringify({ theme: 'neon' }))
+      expect(getTheme()).toBe('system')
+    })
+  })
+
+  describe('getLanguage', () => {
+    it('detects the language when nothing is stored', () => {
+      setLanguage('fr-FR')
+      expect(getLanguage()).toBe('fr')
+    })
+
+    it('returns the stored language when present', () => {
+      saveLanguage('pt')
+      expect(getLanguage()).toBe('pt')
+    })
+  })
+
+  describe('getCurrency', () => {
+    it('detects from the browser region on first run', () => {
+      setLanguage('en-US')
+      expect(getCurrency()).toBe('USD')
+    })
+
+    it('maps PT region to EUR', () => {
+      setLanguage('pt-PT')
+      expect(getCurrency()).toBe('EUR')
+    })
+
+    it('returns the stored currency when present', () => {
+      saveCurrency('GBP')
+      expect(getCurrency()).toBe('GBP')
+    })
+  })
+
+  describe('milestone notification flags', () => {
+    it('reads stored booleans', () => {
+      saveMilestoneNotificationsEnabled(true)
+      saveMilestoneNotificationsPrompted(true)
+      expect(getMilestoneNotificationsEnabled()).toBe(true)
+      expect(getMilestoneNotificationsPrompted()).toBe(true)
+    })
+
+    it('defaults to false', () => {
+      expect(getMilestoneNotificationsEnabled()).toBe(false)
+      expect(getMilestoneNotificationsPrompted()).toBe(false)
+    })
+  })
+
+  describe('getSettings (batch)', () => {
+    it('returns defaults (with detected language) when nothing is stored', () => {
+      setLanguage('en-US')
+      expect(getSettings()).toEqual({
+        ...DEFAULT_SETTINGS,
+        language: 'en',
+        currency: 'USD',
+      })
+    })
+
+    it('returns persisted values', () => {
+      saveSettings({
+        theme: 'dark',
+        language: 'fr',
+        currency: 'CHF',
+        milestoneNotificationsEnabled: true,
+        milestoneNotificationsPrompted: true,
+      })
+      expect(getSettings()).toEqual({
+        theme: 'dark',
+        language: 'fr',
+        currency: 'CHF',
+        milestoneNotificationsEnabled: true,
+        milestoneNotificationsPrompted: true,
+      })
+    })
+
+    it('falls back to defaults for corrupt JSON', () => {
+      setLanguage('de-DE')
+      seedStorage('settings-v1', '{not json')
+      expect(getSettings()).toEqual({
+        ...DEFAULT_SETTINGS,
+        language: 'de',
+        currency: 'EUR',
+      })
+    })
+  })
+
+  describe('setters', () => {
+    it('each save merges into the stored settings', () => {
+      saveTheme('dark')
+      saveLanguage('pt')
+      saveCurrency('USD')
+      saveMilestoneNotificationsEnabled(true)
+      saveMilestoneNotificationsPrompted(true)
+      expect(getSettings()).toEqual({
+        theme: 'dark',
+        language: 'pt',
+        currency: 'USD',
+        milestoneNotificationsEnabled: true,
+        milestoneNotificationsPrompted: true,
+      })
+    })
+  })
+})
