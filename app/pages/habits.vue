@@ -302,7 +302,7 @@ const handleOptInNotNow = (): void => {
         :aria-label="t('habits.addCustom')"
         @click="handleAddHabit('Other')"
       >
-        +
+        + {{ t("habits.addAnother") }}
       </button>
     </div>
 
