@@ -20,13 +20,28 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // signingConfig signingConfigs.release  // once a production keystore exists
         }
         debug {
-            // Identidade dev: instala como com.soiquit.app.dev com label próprio,
-            // para coexistir com a versão release/Play (com.soiquit.app).
+            // Dev identity: installs as com.soiquit.app.dev with its own label,
+            // so it can coexist with the release/Play version (com.soiquit.app).
             applicationIdSuffix ".dev"
             resValue "string", "app_name", "So I Quit (Dev)"
             resValue "string", "title_activity_main", "So I Quit (Dev)"
+        }
+        preview {
+            // QA/sideload: installs as com.soiquit.app.preview, signed with the
+            // debug keystore (installable on any device without a dedicated keystore).
+            initWith release
+            // Capacitor libs (capacitor-android, cordova plugins) only have debug/release —
+            // without this, AGP fails with "Could not determine the dependencies of
+            // task ':app:mergePreviewNativeLibs'".
+            matchingFallbacks = ["release"]
+            applicationIdSuffix ".preview"
+            resValue "string", "app_name", "So I Quit (Preview)"
+            resValue "string", "title_activity_main", "So I Quit (Preview)"
+            signingConfig signingConfigs.debug
+            versionNameSuffix "-preview"
         }
     }
 }

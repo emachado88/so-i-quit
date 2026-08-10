@@ -15,6 +15,8 @@
     "mobile:sync": "npm run mobile:generate && cap sync android",
     "mobile:run": "cap run android",
     "mobile:apk": "cd android && ./gradlew assembleDebug",
+    "mobile:apk:preview": "cd android && ./gradlew assemblePreview",
+    "mobile:apk:release": "cd android && ./gradlew assembleRelease",
     "mobile:dev": "npm run dev -- --host 0.0.0.0",
     "mobile:run:live": "node scripts/live-reload.mjs"
   },
