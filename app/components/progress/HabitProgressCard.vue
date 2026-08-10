@@ -87,9 +87,11 @@ const milestonesRef = ref<HTMLElement | null>(null);
 
 onMounted(() => {
   // Scroll to the end of the milestones list.
-  milestonesRef.value?.scrollTo({
-    left: milestonesRef.value.scrollWidth,
-  });
+  setTimeout(() => {
+    milestonesRef.value?.scrollTo({
+      left: milestonesRef.value.scrollWidth,
+    });
+  }, 300);
 });
 </script>
 
@@ -133,7 +135,7 @@ onMounted(() => {
     </div>
     <div
       ref="milestonesRef"
-      class="chips flex gap-1.5 overflow-x-auto px-4 pb-3 scrollbar-none"
+      class="chips flex gap-1.5 overflow-x-auto px-4 pb-3 scrollbar-none scroll-smooth"
     >
       <span
         v-for="milestone in reached"
