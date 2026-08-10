@@ -1,17 +1,14 @@
-import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
     vue(),
-    // Vue API auto-imports for the test pipeline — mirrors Nuxt's own
-    // auto-imports so components don't need explicit `import { ref } from
-    // 'vue'` to be testable (Nuxt injects them in the app; vitest doesn't).
-    AutoImport({
-      imports: ['vue'],
-      dts: false,
-    }),
+    // Vue auto-imports (ref, computed, onMounted, ...) at transform time —
+    // vitest has no Nuxt auto-imports, so components can rely on them the
+    // same way they do in the app.
+    AutoImport({ imports: ['vue'], dts: false }),
   ],
   test: {
     environment: 'node',
