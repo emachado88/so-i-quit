@@ -39,6 +39,8 @@ export const SUPPORTED_LANGUAGES = [
   'nl',
 ] as const
 
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
+
 /** Map device language tags to supported codes (ported from i18n/index.ts). */
 const LANGUAGE_MAP: Record<string, string> = {
   en: 'en',

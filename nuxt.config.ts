@@ -18,8 +18,21 @@ export default defineNuxtConfig({
   i18n: {
     strategy: 'prefix_except_default',
     defaultLocale: 'en',
-    locales: [{ code: 'en', name: 'English', file: 'en.json' }],
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'pt', name: 'Português', file: 'pt.json' },
+      { code: 'fr', name: 'Français', file: 'fr.json' },
+      { code: 'es', name: 'Español', file: 'es.json' },
+      { code: 'it', name: 'Italiano', file: 'it.json' },
+      { code: 'zh', name: '中文', file: 'zh.json' },
+      { code: 'de', name: 'Deutsch', file: 'de.json' },
+      { code: 'nl', name: 'Nederlands', file: 'nl.json' },
+    ],
     langDir: '../app/i18n/locales',
+    // Locale detection/restore is the i18n-persist plugin's job (localStorage,
+    // WebView-safe). The module's own detection uses a cookie, which the
+    // Capacitor WebView drops on restart.
+    detectBrowserLanguage: false,
   },
   fonts: {
     families: [
