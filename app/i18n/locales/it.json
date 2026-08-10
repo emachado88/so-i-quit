@@ -93,5 +93,7 @@
   "settings.title": "Impostazioni",
   "tabs.habits": "Abitudini",
   "tabs.progress": "Progresso",
-  "tabs.settings": "Impostazioni"
+  "tabs.settings": "Impostazioni",
+  "settings.exactAlarmHint": "Per celebrazioni puntuali, consenti gli allarmi esatti per So I Quit nelle impostazioni di sistema.",
+  "settings.exactAlarmAction": "Apri impostazioni di sistema"
 }

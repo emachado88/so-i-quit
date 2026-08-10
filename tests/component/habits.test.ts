@@ -161,7 +161,9 @@ describe('pages/habits', () => {
 
   it('adds a custom habit with normalized name', async () => {
     const wrapper = await mountPage()
-    await buttonByText(wrapper, '+')!.trigger('click')
+    // The custom button shows "+ Add another" — target its aria-label,
+    // which is stable across translations.
+    await wrapper.find('[aria-label="Add custom habit"]').trigger('click')
     await wrapper.find('input[type="text"]').setValue('coffee')
     await buttonByText(wrapper, 'Add')!.trigger('click')
 

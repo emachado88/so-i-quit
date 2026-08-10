@@ -93,5 +93,7 @@
   "settings.title": "Settings",
   "tabs.habits": "Habits",
   "tabs.progress": "Progress",
-  "tabs.settings": "Settings"
+  "tabs.settings": "Settings",
+  "settings.exactAlarmHint": "For on-time celebrations, allow exact alarms for So I Quit in system settings.",
+  "settings.exactAlarmAction": "Open system settings"
 }

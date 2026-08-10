@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   setLocale: vi.fn(),
   requestPermission: vi.fn(async () => false),
   cancelAll: vi.fn(async () => {}),
+  permissionStatus: vi.fn(async () => 'undetermined'),
+  exactAlarm: vi.fn(async () => true),
+  reconcileAll: vi.fn(async () => {}),
 }))
 
 vi.mock('../../app/composables/useThemeMode', () => ({
@@ -30,6 +33,9 @@ vi.mock('../../app/composables/useLocaleSwitch', () => ({
 vi.mock('../../app/utils/notifications', () => ({
   requestNotificationPermission: mocks.requestPermission,
   cancelAllMilestoneNotifications: mocks.cancelAll,
+  getNotificationPermissionStatus: mocks.permissionStatus,
+  checkExactNotificationSetting: mocks.exactAlarm,
+  reconcileAllHabitNotifications: mocks.reconcileAll,
 }))
 
 installStorageMock()
@@ -143,6 +149,31 @@ describe('pages/settings', () => {
     expect(wrapper.text()).toContain(
       'Notifications are turned off in your system settings',
     )
+  })
+
+  it('shows the exact-alarm hint when notifications are on and exact alarms are denied', async () => {
+    mocks.requestPermission.mockResolvedValue(true)
+    mocks.exactAlarm.mockResolvedValue(false)
+    const wrapper = await mountPage()
+
+    await wrapper.find('[role="switch"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Open system settings')
+    expect(wrapper.text()).toContain(
+      'allow exact alarms for So I Quit in system settings',
+    )
+  })
+
+  it('hides the exact-alarm hint when exact alarms are granted', async () => {
+    mocks.requestPermission.mockResolvedValue(true)
+    mocks.exactAlarm.mockResolvedValue(true)
+    const wrapper = await mountPage()
+
+    await wrapper.find('[role="switch"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Open system settings')
   })
 
   it('enables notifications when granted and cancels all on disable', async () => {

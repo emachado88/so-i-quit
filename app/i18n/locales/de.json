@@ -93,5 +93,7 @@
   "settings.title": "Einstellungen",
   "tabs.habits": "Gewohnheiten",
   "tabs.progress": "Fortschritt",
-  "tabs.settings": "Einstellungen"
+  "tabs.settings": "Einstellungen",
+  "settings.exactAlarmHint": "Für pünktliche Feiern erlaube exakte Wecker für So I Quit in den Systemeinstellungen.",
+  "settings.exactAlarmAction": "Systemeinstellungen öffnen"
 }

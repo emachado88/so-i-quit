@@ -93,5 +93,7 @@
   "settings.title": "设置",
   "tabs.habits": "习惯",
   "tabs.progress": "进度",
-  "tabs.settings": "设置"
+  "tabs.settings": "设置",
+  "settings.exactAlarmHint": "为了准时庆祝，请在系统设置中允许 So I Quit 使用精确闹钟。",
+  "settings.exactAlarmAction": "打开系统设置"
 }

@@ -93,5 +93,7 @@
   "settings.title": "Instellingen",
   "tabs.habits": "Gewoonten",
   "tabs.progress": "Voortgang",
-  "tabs.settings": "Instellingen"
+  "tabs.settings": "Instellingen",
+  "settings.exactAlarmHint": "Voor tijdige vieringen: sta exacte alarmen toe voor So I Quit in de systeeminstellingen.",
+  "settings.exactAlarmAction": "Systeeminstellingen openen"
 }

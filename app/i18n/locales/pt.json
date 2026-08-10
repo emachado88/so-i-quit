@@ -93,5 +93,7 @@
   "settings.title": "Definições",
   "tabs.habits": "Hábitos",
   "tabs.progress": "Progresso",
-  "tabs.settings": "Definições"
+  "tabs.settings": "Definições",
+  "settings.exactAlarmHint": "Para celebrações atempadas, permite alarmes exatos para So I Quit nas definições do sistema.",
+  "settings.exactAlarmAction": "Abrir definições do sistema"
 }

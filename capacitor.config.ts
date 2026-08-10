@@ -15,6 +15,13 @@ const config: CapacitorConfig = {
     : {
         androidScheme: "https",
       },
+  plugins: {
+    LocalNotifications: {
+      // Status-bar icon for milestone notifications (res/drawable/ic_stat_milestone).
+      smallIcon: "ic_stat_milestone",
+      iconColor: "#1A6B5C",
+    },
+  },
 };
 
 export default config;

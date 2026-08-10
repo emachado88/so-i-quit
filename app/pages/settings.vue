@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useLocaleSwitch } from '../composables/useLocaleSwitch'
@@ -8,11 +8,17 @@ import CurrencyPicker from '../components/settings/CurrencyPicker.vue'
 import LangPicker from '../components/settings/LangPicker.vue'
 import NotificationToggle from '../components/settings/NotificationToggle.vue'
 import SegmentedTheme from '../components/settings/SegmentedTheme.vue'
+import ExactAlarmHint from '../components/notifications/ExactAlarmHint.vue'
 import Snackbar from '../components/ui/Snackbar.vue'
 import { CURRENCY_SYMBOLS } from '../utils/currencies'
+import { getHabits } from '../utils/habits'
 import {
   cancelAllMilestoneNotifications,
+  checkExactNotificationSetting,
+  getNotificationPermissionStatus,
+  reconcileAllHabitNotifications,
   requestNotificationPermission,
+  type NotificationPermissionStatus,
 } from '../utils/notifications'
 import {
   getSettings,
@@ -35,12 +41,65 @@ const settings = ref<AppSettings>(getSettings())
 const langPickerOpen = ref(false)
 const currencyPickerOpen = ref(false)
 const notificationsDenied = ref(false)
+const exactAlarmDenied = ref(false)
 const snackbarMessage = ref<string | null>(null)
+/** OS-level notification permission; null while unknown (browser). */
+const osPermission = ref<NotificationPermissionStatus | null>(null)
 
 const refresh = (): void => {
   settings.value = getSettings()
 }
 onMounted(refresh)
+
+// ── OS permission sync ──
+
+/**
+ * Keep the toggle in sync with the OS-level permission: re-check whenever
+ * the screen mounts or the app returns to the foreground (e.g. the user
+ * toggled notifications in system settings and came back). When the OS
+ * permission is revoked while the preference is on, pending schedules are
+ * dead — cancel them. Restored later: reconcile rebuilds everything
+ * (RN parity).
+ */
+let previousOsPermission: NotificationPermissionStatus | null = null
+
+const refreshOsPermission = async (): Promise<void> => {
+  const enabled = getSettings().milestoneNotificationsEnabled
+  try {
+    const status = await getNotificationPermissionStatus()
+    osPermission.value = status
+    if (status === 'denied' && enabled && previousOsPermission !== 'denied') {
+      await cancelAllMilestoneNotifications()
+    } else if (
+      status !== 'denied' &&
+      enabled &&
+      previousOsPermission === 'denied'
+    ) {
+      await reconcileAllHabitNotifications(getHabits(), t, new Date())
+    }
+    previousOsPermission = status
+
+    // Exact alarms (Android 12+ special access) — hint only when the user
+    // opted in and the OS blocks exact scheduling.
+    exactAlarmDenied.value =
+      enabled && !(await checkExactNotificationSetting())
+  } catch {
+    // Permission API unavailable (e.g. web) — leave state untouched.
+  }
+}
+
+onMounted(() => {
+  void refreshOsPermission()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+const handleVisibilityChange = (): void => {
+  if (document.visibilityState === 'visible') void refreshOsPermission()
+}
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 
 // ── Appearance ──
 
@@ -114,8 +173,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
     } else {
       await cancelAllMilestoneNotifications()
       saveMilestoneNotificationsEnabled(false)
+      exactAlarmDenied.value = false
     }
     refresh()
+    void refreshOsPermission()
   } catch {
     snackbarMessage.value = t('settings.failedNotifications')
   }
@@ -186,6 +247,7 @@ const handleNotificationsToggle = async (): Promise<void> => {
       >
         {{ t('settings.milestoneNotificationsDenied') }}
       </p>
+      <ExactAlarmHint v-if="exactAlarmDenied" />
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">

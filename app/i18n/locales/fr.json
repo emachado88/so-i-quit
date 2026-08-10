@@ -93,5 +93,7 @@
   "settings.title": "Paramètres",
   "tabs.habits": "Habitudes",
   "tabs.progress": "Progrès",
-  "tabs.settings": "Paramètres"
+  "tabs.settings": "Paramètres",
+  "settings.exactAlarmHint": "Pour des célébrations à l'heure, autorisez les alarmes exactes pour So I Quit dans les réglages du système.",
+  "settings.exactAlarmAction": "Ouvrir les réglages du système"
 }
