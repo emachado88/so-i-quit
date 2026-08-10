@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette (ported from RN constants/theme.ts) */
+  --color-primary: #1a6b5c;
+  --color-primary-hover: #2a8f7a;
+  --color-depth: #12504a;
+  --color-accent: #d4922a;
+  --color-subtle-fill: #e5a94a;
+  --color-vitality: #e8735a;
+  --color-success: #2d9d6a;
+  --color-danger: #d94f4f;
+
+  /* Light surfaces */
+  --color-bg: #f7f6f3;
+  --color-surface: #ffffff;
+  --color-card: #f0eeea;
+  --color-border: #e2e0dc;
+  --color-muted: #8a8680;
+  --color-ink: #1c1b1a;
+
+  /* Fonts */
+  --font-display: "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  /* Dark surfaces — overriding the tokens re-themes the whole app */
+  --color-bg: #0f0e0d;
+  --color-surface: #1a1918;
+  --color-card: #242321;
+  --color-border: #2e2d2b;
+  --color-muted: #7a7670;
+  --color-ink: #f0eeea;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
