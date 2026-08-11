@@ -132,7 +132,7 @@ describe('pages/index', () => {
     const wrapper = await mountPage()
     expect(wrapper.text()).toContain('Ready to get better?')
     expect(wrapper.text()).toContain(
-      'Add your first habit and start counting every smoke-free, alcohol-free day.',
+      'Add your first habit and start tracking your quality of life improvements.',
     )
 
     await cardButtonByText(wrapper, 'Add your first habit')!.trigger('click')
