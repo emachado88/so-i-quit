@@ -110,7 +110,6 @@ onUnmounted(() => {
   <div
     v-if="visible"
     class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4 sm:items-center"
-    @click.self="emit('cancel')"
   >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <p class="text-xs font-bold uppercase tracking-widest text-primary">

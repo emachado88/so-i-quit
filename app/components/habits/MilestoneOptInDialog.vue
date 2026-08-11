@@ -39,7 +39,6 @@ onUnmounted(() => {
   <div
     v-if="visible"
     class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4"
-    @click.self="emit('not-now')"
   >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <h3 class="text-lg font-bold text-ink">

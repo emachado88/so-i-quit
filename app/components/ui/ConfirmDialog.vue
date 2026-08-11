@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { registerBackHandler } from "../../utils/back-handler";
@@ -38,7 +37,6 @@ onUnmounted(() => {
 <template>
   <div
     class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4 sm:items-center"
-    @click.self="emit('cancel')"
   >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <h3 class="text-lg font-bold text-ink">{{ title }}</h3>

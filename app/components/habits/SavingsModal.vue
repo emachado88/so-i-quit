@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from "vue";
-
 import { registerBackHandler } from "../../utils/back-handler";
 import { CURRENCY_SYMBOLS } from "../../utils/currencies";
 import { normalizeSavings } from "../../utils/domain";
@@ -82,7 +80,6 @@ onUnmounted(() => {
   <div
     v-if="visible"
     class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4 sm:items-center"
-    @click.self="emit('dismiss')"
   >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <h3 class="text-lg font-bold text-ink">
