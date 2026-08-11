@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { Clock3, Coins, MoreHorizontal, Trash2 } from 'lucide-vue-next'
+
+import { registerBackHandler } from '../../utils/back-handler'
 
 const { t } = useI18n()
 
@@ -19,6 +21,30 @@ const action = (emitName: 'edit-date' | 'edit-savings' | 'delete'): void => {
   open.value = false
   emit(emitName)
 }
+
+// Hardware back (Android): close the menu — same as tapping outside.
+// Always mounted (one per habit card), so registration follows `open`.
+let removeBackHandler: (() => void) | null = null
+
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        open.value = false
+        return true
+      })
+    } else if (!isOpen && removeBackHandler) {
+      removeBackHandler()
+      removeBackHandler = null
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  removeBackHandler?.()
+})
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 
+import { registerBackHandler } from "../../utils/back-handler";
 import { CURRENCY_SYMBOLS } from "../../utils/currencies";
 import { normalizeSavings } from "../../utils/domain";
 import { useI18n } from "vue-i18n";
@@ -13,8 +14,15 @@ const props = withDefaults(
     value: string | null;
     currency: string;
     optional?: boolean;
+    /**
+     * Register a hardware-back handler that dismisses this modal. Only the
+     * STANDALONE usage passes it (edit-savings on the habits screen) — the
+     * wizard renders its savings step with this modal and owns back
+     * handling itself (step back to the time step, not dismiss).
+     */
+    handleBack?: boolean;
   }>(),
-  { optional: false },
+  { optional: false, handleBack: false },
 );
 const emit = defineEmits<{ save: [savings: string | null]; dismiss: [] }>();
 
@@ -42,6 +50,32 @@ const handleSave = (): void => {
 const handleSkip = (): void => {
   emit("save", props.value);
 };
+
+// ── Hardware back (Android) ──
+//
+// Standalone usage only (`handle-back` prop): back dismisses the modal —
+// the same as tapping outside or Cancel.
+let removeBackHandler: (() => void) | null = null;
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && props.handleBack && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        emit("dismiss");
+        return true;
+      });
+    } else if ((!visible || !props.handleBack) && removeBackHandler) {
+      removeBackHandler();
+      removeBackHandler = null;
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  removeBackHandler?.();
+});
 </script>
 
 <template>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { registerBackHandler } from "../../utils/back-handler";
 import SavingsModal from "./SavingsModal.vue";
 
 /**
@@ -74,6 +75,40 @@ const goToSavingsOrFinish = (): void => {
     emit("finish", date, null);
   }
 };
+
+// ── Hardware back (Android) ──
+//
+// The wizard owns the whole stepper (including the savings sub-step, which
+// is rendered as a SavingsModal without `handle-back` so it does not
+// register its own handler). Back steps to the previous step and cancels
+// from the first one — mirroring the RN app's modal back behavior.
+let removeBackHandler: (() => void) | null = null;
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        if (step.value === "savings") {
+          step.value = "time";
+        } else if (step.value === "time") {
+          step.value = "date";
+        } else {
+          emit("cancel");
+        }
+        return true;
+      });
+    } else if (!visible && removeBackHandler) {
+      removeBackHandler();
+      removeBackHandler = null;
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  removeBackHandler?.();
+});
 </script>
 
 <template>

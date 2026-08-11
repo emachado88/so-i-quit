@@ -37,7 +37,10 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     if (target && target !== route.path) {
       // Awaiting inside an async plugin defers the app mount until the
       // redirect lands — no flash of the default locale.
-      await navigateTo(target)
+      // `replace` (not push): the boot URL is transient — keeping it in
+      // history would make the first hardware-back press bounce back to
+      // the root instead of exiting the app.
+      await navigateTo(target, { replace: true })
     }
   }
 })

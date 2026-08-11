@@ -1,10 +1,38 @@
 <script setup lang="ts">
+import { onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
+
+import { registerBackHandler } from "../../utils/back-handler";
 
 const { t } = useI18n();
 
-defineProps<{ visible: boolean }>();
+const props = defineProps<{ visible: boolean }>();
 const emit = defineEmits<{ enable: []; "not-now": [] }>();
+
+// Hardware back (Android): treat it like "Not now" — dismiss without
+// enabling notifications. The dialog is always mounted, so registration
+// follows the `visible` prop.
+let removeBackHandler: (() => void) | null = null;
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        emit("not-now");
+        return true;
+      });
+    } else if (!visible && removeBackHandler) {
+      removeBackHandler();
+      removeBackHandler = null;
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  removeBackHandler?.();
+});
 </script>
 
 <template>

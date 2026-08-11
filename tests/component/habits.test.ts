@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { createI18n } from 'vue-i18n'
-import { flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick, type ComponentPublicInstance } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import en from '../../app/i18n/locales/en.json'
 import HabitsPage from '../../app/pages/habits.vue'
+import { handleBackButton } from '../../app/utils/back-handler'
 import { getHabits, saveHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
 import { getSettings } from '../../app/utils/settings'
@@ -38,19 +39,26 @@ const makeHabit = (overrides: Partial<Habit> = {}): Habit => ({
   ...overrides,
 })
 
-const mountPage = async () => {
+// Tracked so afterEach can unmount — components register/unregister back
+// handlers on mount/unmount, and leaking mounted wrappers between tests
+// would leak handlers into the shared stack.
+type PageWrapper = VueWrapper<ComponentPublicInstance>
+const wrappers: PageWrapper[] = []
+
+const mountPage = async (): Promise<PageWrapper> => {
   const wrapper = mount(HabitsPage, { global: { plugins: [i18n] } })
   await nextTick()
+  wrappers.push(wrapper)
   return wrapper
 }
 
-const buttonByText = (wrapper: Awaited<ReturnType<typeof mountPage>>, text: string) =>
+const buttonByText = (wrapper: PageWrapper, text: string) =>
   wrapper.findAll('button').find((b) => b.text().trim() === text)
 
-const lastButtonByText = (wrapper: Awaited<ReturnType<typeof mountPage>>, text: string) =>
+const lastButtonByText = (wrapper: PageWrapper, text: string) =>
   [...wrapper.findAll('button')].reverse().find((b) => b.text().trim() === text)
 
-const openMenu = (wrapper: Awaited<ReturnType<typeof mountPage>>) =>
+const openMenu = (wrapper: PageWrapper) =>
   wrapper.find('[aria-label^="Open menu"]').trigger('click')
 
 /**
@@ -88,6 +96,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.body.innerHTML = ''
+  for (const w of wrappers.splice(0)) w.unmount()
 })
 
 describe('pages/habits', () => {
@@ -252,5 +261,108 @@ describe('pages/habits', () => {
     const wrapper = await mountPage()
     await nextTick()
     expect(wrapper.text()).toContain('Failed to load habits')
+  })
+
+  // ── Hardware back (Android) ──
+  //
+  // handleBackButton() is the real util: the components register on
+  // mount/visible, so these tests exercise the actual wiring.
+
+  it('hardware back closes the wizard from the first step (new habit dropped)', async () => {
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    expect(wrapper.find('#wizard-date').exists()).toBe(true)
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.find('#wizard-date').exists()).toBe(false)
+    // Same semantics as tapping Cancel: the pre-created habit is dropped.
+    expect(getHabits()).toEqual([])
+  })
+
+  it('hardware back steps the wizard back, then cancels from the date step', async () => {
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await wrapper.find('#wizard-date').setValue('2025-05-31')
+    await buttonByText(wrapper, 'Confirm')!.trigger('click')
+    expect(wrapper.find('#wizard-time').exists()).toBe(true)
+
+    // time → date
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+    expect(wrapper.find('#wizard-date').exists()).toBe(true)
+    expect(wrapper.find('#wizard-time').exists()).toBe(false)
+    expect(getHabits()).toHaveLength(1) // wizard still open → habit kept
+
+    // date → cancel (habit dropped, like the Cancel button)
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+    expect(wrapper.find('#wizard-date').exists()).toBe(false)
+    expect(getHabits()).toEqual([])
+  })
+
+  it('hardware back dismisses the delete confirmation without deleting', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Delete')!.trigger('click')
+    await nextTick()
+    expect(wrapper.text()).toContain('Are you sure you want to delete Alcohol?')
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain(
+      'Are you sure you want to delete Alcohol?',
+    )
+    expect(getHabits()).toHaveLength(1)
+  })
+
+  it('hardware back closes the habit menu', async () => {
+    saveHabits([makeHabit({})])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    expect(
+      wrapper.findAll('button').some((b) => b.text() === 'Edit date'),
+    ).toBe(true)
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(
+      wrapper.findAll('button').some((b) => b.text() === 'Edit date'),
+    ).toBe(false)
+  })
+
+  it('hardware back dismisses the edit-savings modal without saving', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z', savings: '3' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit savings')!.trigger('click')
+    expect(wrapper.find('#savings-amount').exists()).toBe(true)
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.find('#savings-amount').exists()).toBe(false)
+    expect(getHabits()[0].savings).toBe('3') // untouched
+  })
+
+  it('hardware back dismisses the milestone opt-in like "Not now"', async () => {
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    expect(wrapper.text()).toContain('Celebrate your milestones?')
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('Celebrate your milestones?')
+    // Preference untouched — opting out via back does not enable or prompt again.
+    expect(getSettings().milestoneNotificationsEnabled).toBe(false)
   })
 })

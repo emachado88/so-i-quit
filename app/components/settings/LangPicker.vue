@@ -1,16 +1,42 @@
 <script setup lang="ts">
+import { onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { registerBackHandler } from '../../utils/back-handler'
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
   type SupportedLanguage,
 } from '../../utils/settings'
 
-defineProps<{ visible: boolean; current: string }>()
+const props = defineProps<{ visible: boolean; current: string }>()
 const emit = defineEmits<{ select: [code: string]; dismiss: [] }>()
 
 const { t } = useI18n()
+
+// Hardware back (Android): dismiss the picker — same as tapping outside or
+// Cancel. Always mounted, so registration follows the `visible` prop.
+let removeBackHandler: (() => void) | null = null
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        emit('dismiss')
+        return true
+      })
+    } else if (!visible && removeBackHandler) {
+      removeBackHandler()
+      removeBackHandler = null
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  removeBackHandler?.()
+})
 </script>
 
 <template>

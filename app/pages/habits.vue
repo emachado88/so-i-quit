@@ -374,6 +374,7 @@ const handleCustomHabitInputBlur = (): void => {
       :visible="true"
       :value="editSavings.currentValue"
       :currency="settingsCurrency"
+      handle-back
       @save="handleEditSavingsSave"
       @dismiss="editSavings = null"
     />

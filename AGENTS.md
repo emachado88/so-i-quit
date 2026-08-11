@@ -52,6 +52,7 @@ app/
     currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY
     domain.ts              # daysSince, breakdown, parseSavings, formatAmount (Intl), formatDate(Time), getHabitName
     notifications.ts       # Capacitor local-notifications wrapper (native guard, exact alarms, reconcile, taps)
+    back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 99 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
@@ -161,7 +162,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 
 ### Locale Persistence (i18n-persist plugin)
 - With `prefix_except_default` the active locale lives in the **URL**, and the WebView always boots at the root URL → without the plugin, language resets every launch
-- `app/plugins/i18n-persist.client.ts` mirrors locale to `settings-v1` and, on boot at `/`, redirects to the saved locale's prefix. The async plugin defers mount until the redirect lands — no flash of the default locale
+- `app/plugins/i18n-persist.client.ts` mirrors locale to `settings-v1` and, on boot at `/`, redirects to the saved locale's prefix (`replace`, so the boot URL doesn't linger in history and the first hardware-back press exits instead of bouncing to `/`). The async plugin defers mount until the redirect lands — no flash of the default locale
 - `detectBrowserLanguage: false` in nuxt.config — the module's cookie-based detection is useless in the WebView
 
 ### i18n Interpolation
@@ -181,6 +182,13 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - Fill is driven by the **Web Animations API** (`el.animate` on `strokeDashoffset`), not CSS transitions — Chromium starts SVG presentation-attribute transitions from 0 on insert ("shrink from 100%" flash), and they can be swallowed if the attribute lands before first paint
 - The ring mounts empty and animates up; data arriving later re-animates from the current offset (no full-ring flash)
 - Test selector for the fill bar: `circle.stroke-primary-hover` (the class is a token, `stroke-success` was renamed)
+
+### Hardware Back Button (Android)
+- The WebView does **not** navigate history on back: without a `backButton` listener the OS default applies and the app is sent to the background even when the router can go back. A root listener in `app.vue` resolves every press: overlays first → `router.back()` → `App.exitApp()`
+- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→time→date→cancel), `ConfirmDialog` dismisses (covers delete + relapse), pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
+- `SavingsModal` takes a `handle-back` prop because the wizard renders it for its savings step and owns back handling itself (step back, not dismiss)
+- `canGoBack` comes from the native event (WebView history). Tab switches push history via `NuxtLink`, so back walks the tabs; at the root it exits
+- The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
 
 ### Misc
 - **Total savings card is pinned above the tab bar** (`fixed`), not part of the scroll

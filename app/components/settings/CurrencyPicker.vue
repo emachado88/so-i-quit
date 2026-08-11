@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { registerBackHandler } from '../../utils/back-handler'
 import { getCurrencyList } from '../../utils/currencies'
 
 const props = defineProps<{ visible: boolean; current: string }>()
@@ -17,6 +18,30 @@ watch(
     if (visible) search.value = ''
   },
 )
+
+// Hardware back (Android): dismiss the picker — same as tapping outside or
+// Cancel. Always mounted, so registration follows the `visible` prop.
+let removeBackHandler: (() => void) | null = null
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        emit('dismiss')
+        return true
+      })
+    } else if (!visible && removeBackHandler) {
+      removeBackHandler()
+      removeBackHandler = null
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  removeBackHandler?.()
+})
 
 const options = computed(() => {
   const query = search.value.trim().toLowerCase()

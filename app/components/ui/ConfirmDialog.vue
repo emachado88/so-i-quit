@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
+
+import { registerBackHandler } from "../../utils/back-handler";
 
 const { t } = useI18n();
 
@@ -14,6 +17,22 @@ withDefaults(
   { destructive: false },
 );
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
+
+// Hardware back (Android): dismiss the dialog — the same as tapping
+// outside or Cancel. The dialog is mounted via v-if, so mount/unmount
+// track its visibility (covers both the delete and relapse confirmations).
+let removeBackHandler: (() => void) | null = null;
+
+onMounted(() => {
+  removeBackHandler = registerBackHandler(() => {
+    emit("cancel");
+    return true;
+  });
+});
+
+onUnmounted(() => {
+  removeBackHandler?.();
+});
 </script>
 
 <template>

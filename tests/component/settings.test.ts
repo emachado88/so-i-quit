@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
-import { flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick, type ComponentPublicInstance } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import en from '../../app/i18n/locales/en.json'
 import SettingsPage from '../../app/pages/settings.vue'
+import { handleBackButton } from '../../app/utils/back-handler'
 import { getSettings } from '../../app/utils/settings'
 import { installStorageMock, seedStorage } from '../helpers'
 
@@ -57,21 +58,27 @@ beforeEach(() => {
   mocks.requestPermission.mockResolvedValue(false)
 })
 
+// Tracked so afterEach can unmount — the pickers register/unregister back
+// handlers on visible, and leaking mounted wrappers between tests would
+// leak handlers into the shared stack.
+type PageWrapper = VueWrapper<ComponentPublicInstance>
+const wrappers: PageWrapper[] = []
+
 afterEach(() => {
   document.body.innerHTML = ''
+  for (const w of wrappers.splice(0)) w.unmount()
 })
 
-const mountPage = async () => {
+const mountPage = async (): Promise<PageWrapper> => {
   const wrapper = mount(SettingsPage, { global: { plugins: [i18n] } })
   await nextTick()
   await flushPromises()
+  wrappers.push(wrapper)
   return wrapper
 }
 
-const buttonByLabel = (
-  wrapper: Awaited<ReturnType<typeof mountPage>>,
-  label: string,
-) => wrapper.find(`[aria-label="${label}"]`)
+const buttonByLabel = (wrapper: PageWrapper, label: string) =>
+  wrapper.find(`[aria-label="${label}"]`)
 
 describe('pages/settings', () => {
   it('renders all sections with current values', async () => {
@@ -250,5 +257,35 @@ describe('pages/settings', () => {
     seedStorage('settings-v1', JSON.stringify({ currency: 'USD' }))
     const wrapper = await mountPage()
     expect(wrapper.text()).toContain('$ USD')
+  })
+
+  // ── Hardware back (Android) ──
+  //
+  // handleBackButton() is the real util: the pickers register on visible,
+  // so these tests exercise the actual wiring.
+
+  it('hardware back dismisses the currency picker', async () => {
+    seedStorage('settings-v1', JSON.stringify({ currency: 'EUR' }))
+    const wrapper = await mountPage()
+    await buttonByLabel(wrapper, 'Open currency picker').trigger('click')
+    expect(wrapper.find('#currency-search').exists()).toBe(true)
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.find('#currency-search').exists()).toBe(false)
+    expect(getSettings().currency).toBe('EUR') // untouched
+  })
+
+  it('hardware back dismisses the language picker', async () => {
+    const wrapper = await mountPage()
+    await buttonByLabel(wrapper, 'Open language picker').trigger('click')
+    expect(wrapper.text()).toContain('中文')
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('中文')
+    expect(getSettings().language).toBe('en') // untouched
   })
 })
