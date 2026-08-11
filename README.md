@@ -125,7 +125,7 @@ docs/ui-sketch.html        # Wireframe — visual contract
 9. ✅ Progress screen (counters + ring + celebration)
 10. ✅ Settings screen
 11. ✅ Local notifications (Capacitor)
-12. ⏳ Haptics + Sentry + polish
+12. ✅ Haptics + Sentry + polish
 13. ⏳ Test suite gates (80% coverage) + ESLint + QA checklist + final docs
 
 ## License

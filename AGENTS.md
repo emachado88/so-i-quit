@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. **This branch (`rewrite-nuxt-cap`) is a full rewrite from React Native/Expo to Nuxt 4 SPA + Capacitor (Android)** — the RN app still lives on `master` until the rewrite lands. Visual contract: `docs/ui-sketch.html`. Work is executed ticket-by-ticket from `.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md` (Tickets 1–11 done; 12–13 pending).
+A habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. **This branch (`rewrite-nuxt-cap`) is a full rewrite from React Native/Expo to Nuxt 4 SPA + Capacitor (Android)** — the RN app still lives on `master` until the rewrite lands. Visual contract: `docs/ui-sketch.html`. Work is executed ticket-by-ticket from `.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md` (Tickets 1–12 done; 13 pending).
 
 **Always mobile** (user decision — no `MOBILE_BUILD` flag): `ssr: false`, everything persisted in localStorage (the WebView drops cookies), domain logic as pure TS modules tested with Vitest. The web build exists only for the dev loop.
 
@@ -15,10 +15,11 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 - **@nuxt/fonts** — Inter 400–900 from Google
 - **lucide-vue-next** — icons
 - **dayjs** — calendar math for milestone targets
-- **Capacitor 8** — `@capacitor/core|cli|android|app|local-notifications`; `android/` is committed; `dist/` (cloudflare_pages preset output) is the webDir
+- **Capacitor 8** — `@capacitor/core|cli|android|app|local-notifications|haptics`; `android/` is committed; `dist/` (cloudflare_pages preset output) is the webDir
+- **@sentry/vue** — opt-in error tracking via `NUXT_PUBLIC_SENTRY_DSN` (no DSN → plugin is a no-op)
 - **Vitest 4 + @vue/test-utils + happy-dom** — unit tests in node env, component tests in happy-dom
-- **@nuxt/test-utils**, **unplugin-auto-import** (Vue auto-imports in tests)
-- **Not yet installed** (Tickets 12–13): `@capacitor/haptics`, `@sentry/vue`, ESLint
+- **@nuxt/test-utils**, **unplugin-auto-import** (Vue auto-imports in tests; `nuxt/app` composables used by components under test resolve and are mocked per file)
+- **Not yet installed** (Ticket 13): ESLint
 
 ## Project Structure
 
@@ -31,7 +32,7 @@ app/
     habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, milestone opt-in
     settings.vue           # Settings — theme, language, currency, milestone notifications
   components/              # auto-imported (pathPrefix: false)
-    ui/                    # TabBar, Snackbar, ConfirmDialog
+    ui/                    # TabBar, Snackbar, ConfirmDialog, ErrorBoundary
     habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, MilestoneOptInDialog, RelapseConfirm
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
@@ -42,6 +43,7 @@ app/
     useLocaleSwitch.ts     # i18n locale switching
   plugins/
     i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe, see Pitfalls)
+    sentry.client.ts       # @sentry/vue init — no-op unless NUXT_PUBLIC_SENTRY_DSN is set
   utils/                   # pure TS, no Vue imports — keeps them node-testable
     types.ts               # Habit, Milestone, AppSettings, Theme, MilestoneUnit
     storage.ts             # localStorage readJSON/writeJSON composable; keys "habits", "milestones-v1", "settings-v1"
@@ -52,8 +54,9 @@ app/
     currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY
     domain.ts              # daysSince, breakdown, parseSavings, formatAmount (Intl), formatDate(Time), getHabitName
     notifications.ts       # Capacitor local-notifications wrapper (native guard, exact alarms, reconcile, taps)
+    haptics.ts             # Capacitor haptics wrapper (native guard; light tabs / medium confirms / success milestones)
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
-  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 99 keys each
+  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 104 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
   app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS
@@ -81,7 +84,7 @@ vitest.config.ts           # vue + AutoImport plugins; node env; include tests/*
 - **Relative imports only** for project modules — no `@/`/`~/` alias usage in app code (e.g. `../composables/useNow`, `./storage`)
 - Components are auto-imported (`pathPrefix: false`), but pages often import them explicitly with relative paths — either is fine; keep it consistent within a file
 - Group: Vue/Nuxt → i18n → project modules → local
-- **Tests are different:** Vitest has NO Nuxt auto-imports — only Vue ones (via `unplugin-auto-import` in `vitest.config.ts`). Nuxt APIs (`useLocalePath`, `navigateTo`, …) must be mocked per-file (see Testing)
+- **Tests are different:** Vitest has NO Nuxt auto-imports — only Vue ones (via `unplugin-auto-import` in `vitest.config.ts`). Nuxt APIs used INSIDE components under test (`useLocalePath`, `useRoute`) resolve from `nuxt/app` via the vitest AutoImport and are mocked per-file; composables used in pages are wrapped and mocked (see Testing)
 
 ### Formatting (mixed tree — match the file you're editing)
 - `app/utils/*.ts` (ported code): single quotes, no semicolons
@@ -150,7 +153,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - **Component** (`tests/component/`): `// @vitest-environment happy-dom` header + `mount` from `@vue/test-utils` (RTL is not used on this branch)
 - **`tests/helpers.ts`:** `installStorageMock()` stubs a real `localStorage` global via `vi.stubGlobal` (no module mocking — the storage layer guards with `typeof localStorage === 'undefined'`); `seedStorage(key, value)` arranges raw values (corrupt JSON, edge cases)
 - **Component test boilerplate:** `createI18n({ legacy: false, locale: 'en', messages: { en } })` from `app/i18n/locales/en.json` + `createRouter` with `createMemoryHistory`; `vi.mock` for `useNow` (hoisted ref for clock control) and `notifications` (foreground handlers)
-- `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue'] })` — components get Vue auto-imports in tests; **Nuxt auto-imports (`useLocalePath`, `navigateTo`, …) are NOT available in tests** — mock them per-file
+- `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute'] }] })` — components get Vue auto-imports in tests, and the Nuxt composables they call inline resolve from the real `nuxt/app` module; **mock that module per test file** (`vi.mock('nuxt/app', ...)`) — other Nuxt APIs (`navigateTo`, …) are still NOT available in tests
 - Coverage gate (80%) and ESLint are pending (Ticket 13)
 
 ## Key Decisions & Pitfalls
@@ -178,6 +181,10 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - App foreground is tracked via `App.addListener('appStateChange')` — DOM `visibilitychange` alone is unreliable in the WebView (the DOM visibility doesn't change when the app backgrounds)
 - Tap on a notification routes to Progress, including cold starts (the plugin retains the launch intent action until the JS listener registers)
 - Notification ids: deterministic djb2 hash → `reconcileHabitNotifications` can rebuild the expected id and check it against pending without storing a map
+
+### Haptics & Sentry (Ticket 12)
+- `app/utils/haptics.ts` wraps `@capacitor/haptics` behind the same native guard as notifications (browser = silent no-op). Feedback map: **light** on tab presses (`pointerdown`), **medium** on primary confirmations (wizard confirm, savings save, opt-in Enable, exact-alarm Go-to-settings, ConfirmDialog confirm — delete/relapse, add-custom-habit, empty-state CTA), **success** notification feedback when a milestone celebration is queued (watcher on the queue in `app/pages/index.vue`)
+- Sentry is **opt-in**: `NUXT_PUBLIC_SENTRY_DSN` feeds `runtimeConfig.public.sentryDsn`; without a DSN `plugins/sentry.client.ts` returns early (no SDK init, no network). The Vue integration installs the global error handler; `components/ui/ErrorBoundary.vue` wraps `<NuxtPage />` in the layout — render crashes show a branded fallback (+ reload) and report once (`errorCaptured` returns `false` to stop bubbling). Note: the SDK still ships in the bundle without a DSN
 
 ### Milestone Ring Animation
 - Fill is driven by the **Web Animations API** (`el.animate` on `strokeDashoffset`), not CSS transitions — Chromium starts SVG presentation-attribute transitions from 0 on insert ("shrink from 100%" flash), and they can be swallowed if the attribute lands before first paint
@@ -217,7 +224,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 9. ✅ Progress screen (counters + ring + celebration)
 10. ✅ Settings screen
 11. ✅ Local notifications (Capacitor)
-12. ⏳ Haptics + Sentry + polish
+12. ✅ Haptics + Sentry + polish
 13. ⏳ Test suite gates (80% coverage in vitest.config) + ESLint + QA checklist + final docs
 
 ## Brand
