@@ -54,4 +54,11 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'cloudflare_pages',
   },
+  // Sentry is opt-in: set NUXT_PUBLIC_SENTRY_DSN at build time to enable.
+  // Without a DSN the sentry plugin is a no-op (see plugins/sentry.client.ts).
+  runtimeConfig: {
+    public: {
+      sentryDsn: '',
+    },
+  },
 })

@@ -6,6 +6,36 @@ LOCALES = pathlib.Path('app/i18n/locales')
 
 # key -> translations (EN first, then pt/fr/es/it/zh/de/nl in file order)
 NEW_KEYS = {
+    'error.title': {
+        'en': 'Something went wrong',
+        'pt': 'Algo correu mal',
+        'fr': 'Une erreur est survenue',
+        'es': 'Algo salió mal',
+        'it': 'Qualcosa è andato storto',
+        'zh': '出错了',
+        'de': 'Etwas ist schiefgelaufen',
+        'nl': 'Er ging iets mis',
+    },
+    'error.body': {
+        'en': 'The screen could not be rendered. Your data is safe — reload to try again.',
+        'pt': 'O ecrã não pôde ser apresentado. Os teus dados estão seguros — recarrega para tentar novamente.',
+        'fr': "L'écran n'a pas pu être affiché. Vos données sont en sécurité — rechargez pour réessayer.",
+        'es': 'La pantalla no pudo mostrarse. Tus datos están a salvo: recarga para intentarlo de nuevo.',
+        'it': 'La schermata non può essere visualizzata. I tuoi dati sono al sicuro: ricarica per riprovare.',
+        'zh': '无法显示此屏幕。你的数据是安全的——重新加载即可重试。',
+        'de': 'Der Bildschirm konnte nicht gerendert werden. Deine Daten sind sicher – lade neu, um es erneut zu versuchen.',
+        'nl': 'Het scherm kon niet worden weergegeven. Je gegevens zijn veilig — herlaad om het opnieuw te proberen.',
+    },
+    'error.reload': {
+        'en': 'Reload',
+        'pt': 'Recarregar',
+        'fr': 'Recharger',
+        'es': 'Recargar',
+        'it': 'Ricarica',
+        'zh': '重新加载',
+        'de': 'Neu laden',
+        'nl': 'Herladen',
+    },
     'habits.date': {
         'en': 'Date',
         'pt': 'Data',
