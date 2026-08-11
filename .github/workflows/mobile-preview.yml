@@ -6,12 +6,26 @@
 #     device IPA needs an Apple Developer account + certificates — add a
 #     signing job (secrets: P12, provisioning profile) when that exists.
 #
-# Triggers: workflow_dispatch (manual, any branch) + pull_request (artifacts
-# land in the run's Summary page for PR QA). Same concurrency pattern as CI.
+# Trigger: workflow_dispatch only — previews are on-demand, not per-PR. The
+# `ci` workflow already gates PRs (lint/tsc/test/build), and macOS runner
+# minutes are expensive. The `platforms` input picks which jobs run, so a
+# quick Android-only preview never touches the macOS job.
+#
+# Artifact names embed the app version read from package.json (keep it in
+# sync with android/app/build.gradle versionName + iOS MARKETING_VERSION).
 name: Mobile Preview
 
 on:
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: Platforms to build
+        type: choice
+        default: both
+        options:
+          - android
+          - ios
+          - both
 
 concurrency:
   group: mobile-preview-${{ github.ref }}
@@ -25,6 +39,7 @@ jobs:
     name: Android (preview APK)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ inputs.platforms == 'android' || inputs.platforms == 'both' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +47,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
 
       - name: Set up Java
@@ -57,17 +72,26 @@ jobs:
         working-directory: android
         run: ./gradlew assemblePreview
 
+      - name: Read app version
+        id: version
+        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK
+        working-directory: android/app/build/outputs/apk/preview
+        run: mv app-preview.apk so-i-quit-${{ steps.version.outputs.version }}-preview.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: so-i-quit-android-preview
-          path: android/app/build/outputs/apk/preview/app-preview.apk
+          name: so-i-quit-${{ steps.version.outputs.version }}-preview
+          path: android/app/build/outputs/apk/preview/so-i-quit-${{ steps.version.outputs.version }}-preview.apk
           if-no-files-found: error
 
   ios:
     name: iOS (simulator .app)
     runs-on: macos-15 # Xcode required — does not exist on Linux runners
     timeout-minutes: 40
+    if: ${{ inputs.platforms == 'ios' || inputs.platforms == 'both' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +99,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
 
       - name: Install dependencies
@@ -97,13 +121,17 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Read app version
+        id: version
+        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+
       - name: Package .app
         working-directory: ios/App/build/Build/Products/Debug-iphonesimulator
-        run: zip -r so-i-quit-ios-simulator.zip App.app
+        run: zip -r so-i-quit-${{ steps.version.outputs.version }}-simulator.zip App.app
 
       - name: Upload .app
         uses: actions/upload-artifact@v4
         with:
-          name: so-i-quit-ios-simulator
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-ios-simulator.zip
+          name: so-i-quit-${{ steps.version.outputs.version }}-simulator
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-${{ steps.version.outputs.version }}-simulator.zip
           if-no-files-found: error

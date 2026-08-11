@@ -90,7 +90,7 @@ The `android/` and `ios/` projects are committed; build artifacts are gitignored
 
 ### CI preview installers
 
-`.github/workflows/mobile-preview.yml` builds on every PR (+ manual `workflow_dispatch`):
+`.github/workflows/mobile-preview.yml` is manual-only (`workflow_dispatch`, any branch — previews are on-demand, not per-PR; `ci` already gates PRs). A `platforms` input picks android/ios/both:
 
 - **Android** — `assemblePreview` APK (installable on any device, `com.soiquit.app.preview`)
 - **iOS** — unsigned simulator `.app` (zipped; install via Xcode/simctl)
