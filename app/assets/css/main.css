@@ -68,6 +68,9 @@ body {
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  /* Kill the double-tap-to-zoom gesture (pan stays, pinch is already
+     disabled via the user-scalable=no viewport in nuxt.config.ts). */
+  touch-action: manipulation;
 }
 
 *:not(input) {
