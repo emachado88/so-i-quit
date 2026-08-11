@@ -11,8 +11,12 @@ export default defineNuxtConfig({
     head: {
       // viewport-fit=cover → Capacitor keeps the WebView edge-to-edge (no
       // native margins); the shell offsets content with env(safe-area-inset-*).
+      // maximum-scale=1 + user-scalable=no → no pinch/double-tap zoom. Safari
+      // ignores these since iOS 10, but WKWebView (Capacitor) honors them —
+      // without them the app is pinch-zoomable. (See also touch-action:
+      // manipulation in main.css, which kills the double-tap zoom gesture.)
       viewport:
-        'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
+        'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content',
     },
   },
   css: ['~/assets/css/main.css'],
