@@ -36,10 +36,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="visible"
-    class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4"
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="opacity-0 scale-105"
+    enter-to-class="opacity-100 scale-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="opacity-100 scale-100"
+    leave-to-class="opacity-0 scale-105"
   >
+    <div
+      v-if="visible"
+      class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4"
+    >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <h3 class="text-lg font-bold text-ink">
         {{ t("milestone.notificationsOptInTitle") }}
@@ -64,5 +72,6 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-  </div>
+    </div>
+  </Transition>
 </template>

@@ -5,8 +5,9 @@ import { registerBackHandler } from "../../utils/back-handler";
 
 const { t } = useI18n();
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    visible: boolean;
     title: string;
     message: string;
     confirmLabel: string;
@@ -18,16 +19,25 @@ withDefaults(
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
 
 // Hardware back (Android): dismiss the dialog — the same as tapping
-// outside or Cancel. The dialog is mounted via v-if, so mount/unmount
-// track its visibility (covers both the delete and relapse confirmations).
+// outside or Cancel. Always mounted, so registration follows the
+// `visible` prop.
 let removeBackHandler: (() => void) | null = null;
 
-onMounted(() => {
-  removeBackHandler = registerBackHandler(() => {
-    emit("cancel");
-    return true;
-  });
-});
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && !removeBackHandler) {
+      removeBackHandler = registerBackHandler(() => {
+        emit("cancel");
+        return true;
+      });
+    } else if (!visible && removeBackHandler) {
+      removeBackHandler();
+      removeBackHandler = null;
+    }
+  },
+  { immediate: true },
+);
 
 onUnmounted(() => {
   removeBackHandler?.();
@@ -35,9 +45,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 p-4 sm:items-center"
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="opacity-0 scale-105"
+    enter-to-class="opacity-100 scale-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="opacity-100 scale-100"
+    leave-to-class="opacity-0 scale-105"
   >
+    <div
+      v-if="visible"
+      class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
+    >
     <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
       <h3 class="text-lg font-bold text-ink">{{ title }}</h3>
       <p class="mt-1 text-sm leading-relaxed text-muted">{{ message }}</p>
@@ -59,5 +78,6 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-  </div>
+    </div>
+  </Transition>
 </template>

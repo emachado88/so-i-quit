@@ -11,7 +11,7 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>()
 
 <template>
   <ConfirmDialog
-    v-if="visible"
+    :visible="visible"
     :title="t('habits.logRelapse')"
     :message="t('habits.relapseConfirm', { name })"
     :confirm-label="t('habits.logRelapse')"

@@ -191,6 +191,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
 
 ### Misc
+- **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
 - **Total savings card is pinned above the tab bar** (`fixed`), not part of the scroll
 - Milestone chips scroll fade uses a **pseudo-element** (`::after` gradient), not an overlay element
 - `capacitor.config.ts` reads `CAP_LIVE_URL` — dev-only; sets the dev appId/name, `server.url` + `cleartext: true`. Never commit a URL

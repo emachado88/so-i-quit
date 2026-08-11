@@ -357,22 +357,20 @@ const handleCustomHabitInputBlur = (): void => {
 
     <!-- Wizard (new / reset / edit-date) -->
     <WizardModal
-      v-if="wizard && wizardHabit"
-      :visible="true"
-      :flow="wizard.flow"
+      :visible="!!(wizard && wizardHabit)"
+      :flow="wizard?.flow ?? 'new'"
       :habit-name="wizardName"
-      :initial-savings="wizard.initialSavings"
+      :initial-savings="wizard?.initialSavings ?? null"
       :currency="settingsCurrency"
-      :with-savings="wizard.withSavings"
+      :with-savings="wizard?.withSavings ?? true"
       @finish="handleWizardFinish"
       @cancel="handleWizardCancel"
     />
 
     <!-- Edit savings -->
     <SavingsModal
-      v-if="editSavings"
-      :visible="true"
-      :value="editSavings.currentValue"
+      :visible="!!editSavings"
+      :value="editSavings?.currentValue ?? null"
       :currency="settingsCurrency"
       handle-back
       @save="handleEditSavingsSave"
@@ -381,19 +379,24 @@ const handleCustomHabitInputBlur = (): void => {
 
     <!-- Relapse confirm -->
     <RelapseConfirm
-      v-if="relapsePending"
-      :visible="true"
-      :name="getHabitName(relapsePending, t)"
+      :visible="!!relapsePending"
+      :name="relapsePending ? getHabitName(relapsePending, t) : ''"
       @confirm="handleRelapseConfirm"
       @cancel="relapsePending = null"
     />
 
     <!-- Delete confirm -->
     <ConfirmDialog
-      v-if="deletePending"
-      :title="t('habits.deleteTitle', { name: getHabitName(deletePending, t) })"
+      :visible="!!deletePending"
+      :title="
+        deletePending
+          ? t('habits.deleteTitle', { name: getHabitName(deletePending, t) })
+          : ''
+      "
       :message="
-        t('habits.deleteConfirm', { name: getHabitName(deletePending, t) })
+        deletePending
+          ? t('habits.deleteConfirm', { name: getHabitName(deletePending, t) })
+          : ''
       "
       :confirm-label="t('habits.delete')"
       destructive
