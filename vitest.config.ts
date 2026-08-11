@@ -13,7 +13,7 @@ export default defineConfig({
     // useLocalePath/useRoute) resolve from the real `nuxt/app` module and
     // are vi.mocked per test file.
     AutoImport({
-      imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute'] }],
+      imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute', 'useRuntimeConfig'] }],
       dts: false,
     }),
   ],

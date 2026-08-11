@@ -33,6 +33,8 @@ import {
 import type { AppSettings, Theme } from '../utils/types'
 
 const { t, locale } = useI18n()
+// App version injected by Nuxt from package.json — single source of truth.
+const version = useRuntimeConfig().app.version
 const themeMode = useThemeMode()
 const localeSwitch = useLocaleSwitch()
 
@@ -288,7 +290,7 @@ const handleNotificationsToggle = async (): Promise<void> => {
     <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <div class="flex items-center gap-3 px-4 py-3.5">
         <span class="text-sm font-semibold text-ink">So I Quit</span>
-        <span class="ml-auto text-[13.5px] font-semibold text-muted">v0.2.0</span>
+        <span class="ml-auto text-[13.5px] font-semibold text-muted">v{{ version }}</span>
       </div>
     </section>
 

@@ -49,6 +49,13 @@ vi.mock('../../app/utils/notifications', () => ({
   addAppForegroundListener: mocks.foreground,
 }))
 
+// settings.vue reads the app version via useRuntimeConfig (Nuxt injects it
+// from package.json); the real nuxt/app module needs the Nuxt build context,
+// so it's fully stubbed like in the other component tests.
+vi.mock('nuxt/app', () => ({
+  useRuntimeConfig: () => ({ app: { version: '1.0.0-beta' } }),
+}))
+
 installStorageMock()
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
@@ -93,7 +100,7 @@ describe('pages/settings', () => {
     expect(text).toContain('Currency')
     expect(text).toContain('Milestone notifications')
     expect(text).toContain('So I Quit')
-    expect(text).toContain('v0.2.0')
+    expect(text).toContain('v1.0.0-beta')
   })
 
   it('switches the theme: saves + applies through the color-mode wrapper', async () => {
