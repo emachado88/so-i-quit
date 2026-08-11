@@ -62,8 +62,8 @@ const openMenu = (wrapper: PageWrapper) =>
   wrapper.find('[aria-label^="Open menu"]').trigger('click')
 
 /**
- * Complete the wizard: date → time → savings (or skip savings).
- * `withSavings: false` finishes right after the time step (edit-date flow).
+ * Complete the wizard: date + time on one step → savings (or skip savings).
+ * `withSavings: false` finishes right after the datetime step (edit-date flow).
  */
 const completeWizard = async (
   wrapper: Awaited<ReturnType<typeof mountPage>>,
@@ -76,7 +76,6 @@ const completeWizard = async (
   } = {},
 ) => {
   await wrapper.find('#wizard-date').setValue(date)
-  await buttonByText(wrapper, 'Confirm')!.trigger('click')
   await wrapper.find('#wizard-time').setValue(time)
   await buttonByText(wrapper, 'Confirm')!.trigger('click')
   if (!withSavings) return
@@ -124,6 +123,20 @@ describe('pages/habits', () => {
 
     expect(getHabits()).toHaveLength(1)
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
+  })
+
+  it('wizard confirm stays disabled until both date and time are filled', async () => {
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+
+    const confirm = () => buttonByText(wrapper, 'Confirm')!
+    expect(confirm().attributes('disabled')).toBeDefined()
+
+    await wrapper.find('#wizard-date').setValue('2025-05-31')
+    expect(confirm().attributes('disabled')).toBeDefined()
+
+    await wrapper.find('#wizard-time').setValue('10:00')
+    expect(confirm().attributes('disabled')).toBeUndefined()
   })
 
   it('completes the wizard: date + time + savings persist and opt-in appears once', async () => {
@@ -281,21 +294,22 @@ describe('pages/habits', () => {
     expect(getHabits()).toEqual([])
   })
 
-  it('hardware back steps the wizard back, then cancels from the date step', async () => {
+  it('hardware back steps the wizard back, then cancels from the datetime step', async () => {
     const wrapper = await mountPage()
     await buttonByText(wrapper, 'Alcohol')!.trigger('click')
     await wrapper.find('#wizard-date').setValue('2025-05-31')
+    await wrapper.find('#wizard-time').setValue('10:00')
     await buttonByText(wrapper, 'Confirm')!.trigger('click')
-    expect(wrapper.find('#wizard-time').exists()).toBe(true)
+    expect(wrapper.find('#savings-amount').exists()).toBe(true)
 
-    // time → date
+    // savings → datetime
     expect(handleBackButton()).toBe(true)
     await nextTick()
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
-    expect(wrapper.find('#wizard-time').exists()).toBe(false)
+    expect(wrapper.find('#savings-amount').exists()).toBe(false)
     expect(getHabits()).toHaveLength(1) // wizard still open → habit kept
 
-    // date → cancel (habit dropped, like the Cancel button)
+    // datetime → cancel (habit dropped, like the Cancel button)
     expect(handleBackButton()).toBe(true)
     await nextTick()
     expect(wrapper.find('#wizard-date').exists()).toBe(false)

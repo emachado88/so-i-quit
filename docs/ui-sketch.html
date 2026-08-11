@@ -240,27 +240,16 @@
     </button>
   </nav>
 
-  <!-- ── WIZARD: date ── -->
+  <!-- ── WIZARD: date + time ── -->
   <div class="overlay" id="wizard-date">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="steps"><i class="on"></i><i></i><i></i></div>
+      <div class="steps"><i class="on"></i><i></i></div>
       <h3 data-i18n="wizard.dateTitle">When did you stop?</h3>
-      <p class="desc" data-i18n="wizard.dateDesc">Pick the day — this is when the clock starts.</p>
+      <p class="desc" data-i18n="wizard.dateDesc">Pick the day and time — this is when the clock starts.</p>
       <div class="dt"><label data-i18n="wizard.date">Date</label><input type="date" value="2026-04-08" max="2026-08-10"></div>
-      <div class="btnrow"><button class="pill solid" onclick="go('wizard-time')" data-i18n="wizard.next">Next</button></div>
-    </div>
-  </div>
-
-  <!-- ── WIZARD: time ── -->
-  <div class="overlay" id="wizard-time">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="steps"><i class="on"></i><i class="on"></i><i></i></div>
-      <h3 data-i18n="wizard.timeTitle">What time?</h3>
-      <p class="desc" data-i18n="wizard.timeDesc">Down to the minute — exactness matters here.</p>
       <div class="dt"><label data-i18n="wizard.time">Time</label><input type="time" value="20:30"></div>
-      <div class="btnrow"><button class="pill ghost2" onclick="go('wizard-date')" data-i18n="wizard.back">Back</button><button class="pill solid" onclick="go('savings')" data-i18n="wizard.next">Next</button></div>
+      <div class="btnrow"><button class="pill solid" onclick="go('savings')" data-i18n="wizard.next">Next</button></div>
     </div>
   </div>
 
@@ -268,7 +257,7 @@
   <div class="overlay" id="savings">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+      <div class="steps"><i class="on"></i><i class="on"></i></div>
       <h3 data-i18n="savings.title">Daily savings <span style="font-weight:600;color:var(--muted);font-size:13px">(optional)</span></h3>
       <p class="desc" data-i18n="savings.desc">How much do you save per day by quitting?</p>
       <div class="amount"><input type="text" inputmode="decimal" placeholder="0.00"><span class="suffix">€ /day</span></div>

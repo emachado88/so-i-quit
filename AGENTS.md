@@ -28,7 +28,7 @@ app/
   layouts/default.vue      # Shell: max-w-107.5 (430px) mx-auto, safe-area padding, TabBar fixed bottom
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
-    habits.vue             # Habits — CRUD, wizard (date→time→savings), relapse, milestone opt-in
+    habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, milestone opt-in
     settings.vue           # Settings — theme, language, currency, milestone notifications
   components/              # auto-imported (pathPrefix: false)
     ui/                    # TabBar, Snackbar, ConfirmDialog
@@ -185,7 +185,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 
 ### Hardware Back Button (Android)
 - The WebView does **not** navigate history on back: without a `backButton` listener the OS default applies and the app is sent to the background even when the router can go back. A root listener in `app.vue` resolves every press: overlays first → `router.back()` → `App.exitApp()`
-- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→time→date→cancel), `ConfirmDialog` dismisses (covers delete + relapse), pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
+- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→datetime→cancel), `ConfirmDialog` dismisses (covers delete + relapse), pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
 - `SavingsModal` takes a `handle-back` prop because the wizard renders it for its savings step and owns back handling itself (step back, not dismiss)
 - `canGoBack` comes from the native event (WebView history). Tab switches push history via `NuxtLink`, so back walks the tabs; at the root it exits
 - The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
