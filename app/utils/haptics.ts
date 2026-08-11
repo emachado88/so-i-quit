@@ -25,7 +25,8 @@ export const impact = (style: ImpactStyle = ImpactStyle.Light): void => {
   if (!isNative()) return
   try {
     void Haptics.impact({ style }).catch(() => {})
-  } catch {
+  }
+  catch {
     // Plugin unavailable — feedback is best-effort.
   }
 }
@@ -35,7 +36,8 @@ export const notify = (type: NotificationType = NotificationType.Success): void 
   if (!isNative()) return
   try {
     void Haptics.notification({ type }).catch(() => {})
-  } catch {
+  }
+  catch {
     // Best effort.
   }
 }
@@ -45,7 +47,8 @@ export const vibrate = (duration = 300): void => {
   if (!isNative()) return
   try {
     void Haptics.vibrate({ duration }).catch(() => {})
-  } catch {
+  }
+  catch {
     // Best effort.
   }
 }

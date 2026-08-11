@@ -77,7 +77,7 @@ const daysAgo = (days: number): string =>
   new Date(Date.now() - days * 86_400_000).toISOString()
 
 const makeMilestones = (habit: Habit, now: Date): Milestone[] =>
-  generateMilestones(habit, now).map((milestone) => ({
+  generateMilestones(habit, now).map(milestone => ({
     ...milestone,
     reachedAt: isMilestoneReached(habit, milestone, now)
       ? now.toISOString()
@@ -125,7 +125,7 @@ const mountPage = async () => {
 const cardButtonByText = (
   wrapper: Awaited<ReturnType<typeof mountPage>>,
   text: string,
-) => wrapper.findAll('button').find((b) => b.text().trim() === text)
+) => wrapper.findAll('button').find(b => b.text().trim() === text)
 
 describe('pages/index', () => {
   it('shows the empty state and navigates to Habits on CTA', async () => {
@@ -181,7 +181,7 @@ describe('pages/index', () => {
     const early = new Date(Date.now() - 10 * 86_400_000 + 3_600_000)
     saveMilestonesForHabit(
       habit.id,
-      generateMilestones(habit, early).map((milestone) => ({
+      generateMilestones(habit, early).map(milestone => ({
         ...milestone,
         reachedAt: null,
       })),
@@ -210,7 +210,7 @@ describe('pages/index', () => {
     const firstHour = new Date(Date.now() - 1.5 * 86_400_000 + 3_600_000)
     saveMilestonesForHabit(
       habit.id,
-      generateMilestones(habit, firstHour).map((milestone) => ({
+      generateMilestones(habit, firstHour).map(milestone => ({
         ...milestone,
         reachedAt: null,
       })),
@@ -246,7 +246,7 @@ describe('pages/index', () => {
     const firstHour = new Date(Date.now() - 1.5 * 86_400_000 + 3_600_000)
     saveMilestonesForHabit(
       habit.id,
-      generateMilestones(habit, firstHour).map((milestone) => ({
+      generateMilestones(habit, firstHour).map(milestone => ({
         ...milestone,
         reachedAt: null,
       })),
@@ -321,7 +321,7 @@ describe('components/progress/HabitProgressCard', () => {
       props: { habit, milestones: [], now: NOW, currency: 'EUR' },
       global: { plugins: [i18n] },
     })
-    expect(wrapper.text()).toContain("You've started, keep going")
+    expect(wrapper.text()).toContain('You\'ve started, keep going')
   })
 
   it('keeps the ring empty while milestone data has not loaded yet', () => {

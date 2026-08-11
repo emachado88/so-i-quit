@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useI18n } from "vue-i18n";
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { getHabitName } from "../utils/domain";
-import { addHabit, deleteHabit, getHabits, updateHabit } from "../utils/habits";
-import { impact, ImpactStyle } from "../utils/haptics";
+import { getHabitName } from '../utils/domain'
+import { addHabit, deleteHabit, getHabits, updateHabit } from '../utils/habits'
+import { impact, ImpactStyle } from '../utils/haptics'
 import {
   deleteMilestonesForHabit,
   ensureMilestonesForHabit,
   getMilestonesForHabit,
   saveMilestonesForHabit,
-} from "../utils/milestones-store";
+} from '../utils/milestones-store'
 import {
   addAppForegroundListener,
   cancelAllMilestoneNotifications,
@@ -20,283 +20,291 @@ import {
   reconcileAllHabitNotifications,
   reconcileHabitNotifications,
   requestNotificationPermission,
-} from "../utils/notifications";
+} from '../utils/notifications'
 import {
   getSettings,
   saveMilestoneNotificationsEnabled,
   saveMilestoneNotificationsPrompted,
-} from "../utils/settings";
-import type { Habit } from "../utils/types";
-import ConfirmDialog from "../components/ui/ConfirmDialog.vue";
-import Snackbar from "../components/ui/Snackbar.vue";
-import HabitCard from "../components/habits/HabitCard.vue";
-import MilestoneOptInDialog from "../components/habits/MilestoneOptInDialog.vue";
-import RelapseConfirm from "../components/habits/RelapseConfirm.vue";
-import SavingsModal from "../components/habits/SavingsModal.vue";
-import WizardModal from "../components/habits/WizardModal.vue";
-import ExactAlarmDialog from "../components/notifications/ExactAlarmDialog.vue";
+} from '../utils/settings'
+import type { Habit } from '../utils/types'
+import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
+import Snackbar from '../components/ui/Snackbar.vue'
+import HabitCard from '../components/habits/HabitCard.vue'
+import MilestoneOptInDialog from '../components/habits/MilestoneOptInDialog.vue'
+import RelapseConfirm from '../components/habits/RelapseConfirm.vue'
+import SavingsModal from '../components/habits/SavingsModal.vue'
+import WizardModal from '../components/habits/WizardModal.vue'
+import ExactAlarmDialog from '../components/notifications/ExactAlarmDialog.vue'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 // ── State ──
 
-const habits = ref<Habit[]>([]);
-const customHabitName = ref("");
-const showCustomInput = ref(false);
-const snackbarMessage = ref<string | null>(null);
+const habits = ref<Habit[]>([])
+const customHabitName = ref('')
+const showCustomInput = ref(false)
+const snackbarMessage = ref<string | null>(null)
 
 interface WizardState {
-  flow: "new" | "reset" | "edit";
-  habitId: string;
-  initialSavings: string | null;
-  withSavings: boolean;
+  flow: 'new' | 'reset' | 'edit'
+  habitId: string
+  initialSavings: string | null
+  withSavings: boolean
 }
-const wizard = ref<WizardState | null>(null);
+const wizard = ref<WizardState | null>(null)
 const editSavings = ref<{
-  habitId: string;
-  currentValue: string | null;
-} | null>(null);
-const deletePending = ref<Habit | null>(null);
-const relapsePending = ref<Habit | null>(null);
-const optInVisible = ref(false);
-const pendingOptInHabitId = ref<string | null>(null);
-const exactAlarmVisible = ref(false);
-const customHabitInput = ref<HTMLInputElement | null>(null);
+  habitId: string
+  currentValue: string | null
+} | null>(null)
+const deletePending = ref<Habit | null>(null)
+const relapsePending = ref<Habit | null>(null)
+const optInVisible = ref(false)
+const pendingOptInHabitId = ref<string | null>(null)
+const exactAlarmVisible = ref(false)
+const customHabitInput = ref<HTMLInputElement | null>(null)
 
-const settingsCurrency = computed(() => getSettings().currency);
+const settingsCurrency = computed(() => getSettings().currency)
 
 const hasAlcohol = computed(() =>
-  habits.value.some((h) => h.key === "habits.alcohol"),
-);
+  habits.value.some(h => h.key === 'habits.alcohol'),
+)
 const hasTobacco = computed(() =>
-  habits.value.some((h) => h.key === "habits.tobacco"),
-);
+  habits.value.some(h => h.key === 'habits.tobacco'),
+)
 
 // ── Data ──
 
 const loadHabits = (): void => {
   try {
-    habits.value = getHabits();
-  } catch {
-    snackbarMessage.value = t("habits.failedToLoad");
+    habits.value = getHabits()
   }
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToLoad')
+  }
+}
 
-onMounted(loadHabits);
+onMounted(loadHabits)
 
 // ── Add ──
 
-const handleAddHabit = (type: "alcohol" | "tobacco" | "Other"): void => {
-  if (type === "Other") {
-    showCustomInput.value = true;
-    nextTick(() => customHabitInput.value?.focus());
-    return;
+const handleAddHabit = (type: 'alcohol' | 'tobacco' | 'Other'): void => {
+  if (type === 'Other') {
+    showCustomInput.value = true
+    nextTick(() => customHabitInput.value?.focus())
+    return
   }
-  const key = type === "alcohol" ? "habits.alcohol" : "habits.tobacco";
+  const key = type === 'alcohol' ? 'habits.alcohol' : 'habits.tobacco'
   try {
-    const created = addHabit({ key, name: "", date: null, savings: null });
-    loadHabits();
-    startWizard("new", created.id, null);
-  } catch {
-    snackbarMessage.value = t("habits.failedToAdd", { name: t(key) });
+    const created = addHabit({ key, name: '', date: null, savings: null })
+    loadHabits()
+    startWizard('new', created.id, null)
   }
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToAdd', { name: t(key) })
+  }
+}
 
 const handleAddCustomHabit = (): void => {
-  const trimmed = customHabitName.value.trim();
-  const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  const trimmed = customHabitName.value.trim()
+  const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
   if (!normalized) {
-    snackbarMessage.value = t("habits.enterName");
-    return;
+    snackbarMessage.value = t('habits.enterName')
+    return
   }
-  impact(ImpactStyle.Medium);
+  impact(ImpactStyle.Medium)
   try {
-    const created = addHabit({ name: normalized, date: null, savings: null });
-    customHabitName.value = "";
-    showCustomInput.value = false;
-    loadHabits();
-    startWizard("new", created.id, null);
-  } catch {
-    snackbarMessage.value = t("habits.failedToAddCustom");
+    const created = addHabit({ name: normalized, date: null, savings: null })
+    customHabitName.value = ''
+    showCustomInput.value = false
+    loadHabits()
+    startWizard('new', created.id, null)
   }
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToAddCustom')
+  }
+}
 
 // ── Wizard ──
 
 const startWizard = (
-  flow: WizardState["flow"],
+  flow: WizardState['flow'],
   habitId: string,
   initialSavings: string | null,
   withSavings = true,
 ): void => {
-  wizard.value = { flow, habitId, initialSavings, withSavings };
-};
+  wizard.value = { flow, habitId, initialSavings, withSavings }
+}
 
 const wizardHabit = computed(() =>
   wizard.value
-    ? (habits.value.find((h) => h.id === wizard.value!.habitId) ?? null)
+    ? (habits.value.find(h => h.id === wizard.value!.habitId) ?? null)
     : null,
-);
+)
 
 const wizardName = computed(() =>
-  wizardHabit.value ? getHabitName(wizardHabit.value, t) : "",
-);
+  wizardHabit.value ? getHabitName(wizardHabit.value, t) : '',
+)
 
 const handleWizardCancel = (): void => {
-  const current = wizard.value;
-  if (current && current.flow === "new") {
+  const current = wizard.value
+  if (current && current.flow === 'new') {
     // The habit was created before the wizard — drop it when cancelled.
     try {
-      deleteHabit(current.habitId);
-    } catch {
+      deleteHabit(current.habitId)
+    }
+    catch {
       // ignore — habit may already be gone
     }
-    loadHabits();
+    loadHabits()
   }
-  wizard.value = null;
-};
+  wizard.value = null
+}
 
 const handleWizardFinish = async (
   date: Date,
   savings: string | null,
 ): Promise<void> => {
-  const current = wizard.value;
-  if (!current) return;
-  const habitId = current.habitId;
+  const current = wizard.value
+  if (!current) return
+  const habitId = current.habitId
   try {
     // Reset flow: tear down the previous streak before the date changes.
-    if (current.flow === "reset") {
-      await cancelHabitNotifications(getMilestonesForHabit(habitId));
-      deleteMilestonesForHabit(habitId);
+    if (current.flow === 'reset') {
+      await cancelHabitNotifications(getMilestonesForHabit(habitId))
+      deleteMilestonesForHabit(habitId)
     }
 
-    const updates: Partial<Habit> = { date: date.toISOString() };
-    if (current.flow !== "edit") updates.savings = savings;
-    updateHabit(habitId, updates);
-    loadHabits();
+    const updates: Partial<Habit> = { date: date.toISOString() }
+    if (current.flow !== 'edit') updates.savings = savings
+    updateHabit(habitId, updates)
+    loadHabits()
 
     // Initialize/refresh the current streak's milestones, then schedule
     // future targets only when the user opted in.
-    const habit = getHabits().find((h) => h.id === habitId);
+    const habit = getHabits().find(h => h.id === habitId)
     if (habit?.date) {
-      const now = new Date();
-      ensureMilestonesForHabit(habit, now);
+      const now = new Date()
+      ensureMilestonesForHabit(habit, now)
       if (getSettings().milestoneNotificationsEnabled) {
-        const stored = getMilestonesForHabit(habit.id);
+        const stored = getMilestonesForHabit(habit.id)
         saveMilestonesForHabit(
           habit.id,
           await reconcileHabitNotifications(habit, stored, t, now),
-        );
+        )
       }
     }
 
     // First completed wizard: show the one-time opt-in prompt.
     if (
-      current.flow === "new" &&
-      !getSettings().milestoneNotificationsPrompted
+      current.flow === 'new'
+      && !getSettings().milestoneNotificationsPrompted
     ) {
-      saveMilestoneNotificationsPrompted(true);
-      pendingOptInHabitId.value = habitId;
-      optInVisible.value = true;
+      saveMilestoneNotificationsPrompted(true)
+      pendingOptInHabitId.value = habitId
+      optInVisible.value = true
     }
-  } catch {
-    snackbarMessage.value = t("habits.failedToSave");
   }
-  wizard.value = null;
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToSave')
+  }
+  wizard.value = null
+}
 
 // ── Edit savings ──
 
 const handleEditSavingsSave = (savings: string | null): void => {
-  const target = editSavings.value;
-  if (!target) return;
+  const target = editSavings.value
+  if (!target) return
   try {
-    updateHabit(target.habitId, { savings });
-    loadHabits();
-  } catch {
-    snackbarMessage.value = t("habits.failedToUpdateSavings");
+    updateHabit(target.habitId, { savings })
+    loadHabits()
   }
-  editSavings.value = null;
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToUpdateSavings')
+  }
+  editSavings.value = null
+}
 
 // ── Delete ──
 
 const handleDeleteConfirm = async (): Promise<void> => {
-  const habit = deletePending.value;
-  if (!habit) return;
+  const habit = deletePending.value
+  if (!habit) return
   try {
     // Cancel pending schedules first; failures keep the milestone record so
     // ids can be retried (never silently lose ids).
-    await cancelHabitNotifications(getMilestonesForHabit(habit.id));
-    deleteMilestonesForHabit(habit.id);
-    deleteHabit(habit.id);
-    loadHabits();
-  } catch {
-    snackbarMessage.value = t("habits.failedToDelete", {
-      name: getHabitName(habit, t),
-    });
+    await cancelHabitNotifications(getMilestonesForHabit(habit.id))
+    deleteMilestonesForHabit(habit.id)
+    deleteHabit(habit.id)
+    loadHabits()
   }
-  deletePending.value = null;
-};
+  catch {
+    snackbarMessage.value = t('habits.failedToDelete', {
+      name: getHabitName(habit, t),
+    })
+  }
+  deletePending.value = null
+}
 
 // ── Relapse ──
 
 const handleRelapseConfirm = (): void => {
-  const habit = relapsePending.value;
-  if (!habit) return;
-  relapsePending.value = null;
-  startWizard("reset", habit.id, habit.savings);
-};
+  const habit = relapsePending.value
+  if (!habit) return
+  relapsePending.value = null
+  startWizard('reset', habit.id, habit.savings)
+}
 
 // ── Milestone opt-in ──
 
 const handleOptInEnable = async (): Promise<void> => {
-  const habitId = pendingOptInHabitId.value;
-  optInVisible.value = false;
-  pendingOptInHabitId.value = null;
+  const habitId = pendingOptInHabitId.value
+  optInVisible.value = false
+  pendingOptInHabitId.value = null
 
-  const granted = await requestNotificationPermission();
-  if (!granted) return; // keep preference disabled; in-app celebration still works
+  const granted = await requestNotificationPermission()
+  if (!granted) return // keep preference disabled; in-app celebration still works
 
-  saveMilestoneNotificationsEnabled(true);
+  saveMilestoneNotificationsEnabled(true)
   if (habitId) {
     try {
-      const habit = getHabits().find((h) => h.id === habitId);
+      const habit = getHabits().find(h => h.id === habitId)
       if (habit?.date) {
-        const stored = getMilestonesForHabit(habit.id);
+        const stored = getMilestonesForHabit(habit.id)
         saveMilestonesForHabit(
           habit.id,
           await reconcileHabitNotifications(habit, stored, t, new Date()),
-        );
+        )
       }
-    } catch {
-      snackbarMessage.value = t("habits.failedToSave");
+    }
+    catch {
+      snackbarMessage.value = t('habits.failedToSave')
     }
   }
 
   // Android 12+: exact alarms are a separate special access. Surface it
   // right after enabling — the Settings hint alone is easy to miss.
   if (!(await checkExactNotificationSetting())) {
-    exactAlarmVisible.value = true;
+    exactAlarmVisible.value = true
   }
-};
+}
 
 const handleOptInNotNow = (): void => {
-  optInVisible.value = false;
-  pendingOptInHabitId.value = null;
-};
+  optInVisible.value = false
+  pendingOptInHabitId.value = null
+}
 
 // ── Exact alarms (Android 12+ special access) ──
 
 const handleExactAlarmSkip = (): void => {
-  exactAlarmVisible.value = false;
-};
+  exactAlarmVisible.value = false
+}
 
 const handleExactAlarmGoSettings = (): void => {
   // Opens the system screen (ACTION_REQUEST_SCHEDULE_EXACT_ALARM); the
   // dialog stays open — the foreground listener re-checks on return.
-  void openExactNotificationSettings();
-};
+  void openExactNotificationSettings()
+}
 
 /**
  * Re-check after the user returns from system settings. Granted → dismiss
@@ -305,17 +313,18 @@ const handleExactAlarmGoSettings = (): void => {
  * keep the dialog open so they can retry or skip.
  */
 const handleExactAlarmForeground = async (): Promise<void> => {
-  if (!exactAlarmVisible.value) return;
+  if (!exactAlarmVisible.value) return
   try {
     if (await checkExactNotificationSetting()) {
-      exactAlarmVisible.value = false;
-      await cancelAllMilestoneNotifications();
-      await reconcileAllHabitNotifications(getHabits(), t, new Date());
+      exactAlarmVisible.value = false
+      await cancelAllMilestoneNotifications()
+      await reconcileAllHabitNotifications(getHabits(), t, new Date())
     }
-  } catch {
+  }
+  catch {
     // Permission API unavailable — leave the dialog open.
   }
-};
+}
 
 onMounted(() => {
   // Native app lifecycle: when the exact-alarm dialog is open, re-check the
@@ -323,22 +332,22 @@ onMounted(() => {
   // user just left system settings). `visibilitychange` is unreliable in the
   // WebView — DOM visibility doesn't change on app background.
   foregroundSub = addAppForegroundListener(() => {
-    void handleExactAlarmForeground();
-  });
-});
+    void handleExactAlarmForeground()
+  })
+})
 
-let foregroundSub: { remove: () => void } | null = null;
+let foregroundSub: { remove: () => void } | null = null
 
 onUnmounted(() => {
-  foregroundSub?.remove();
-  foregroundSub = null;
-});
+  foregroundSub?.remove()
+  foregroundSub = null
+})
 
 const handleCustomHabitInputBlur = (): void => {
   setTimeout(() => {
-    showCustomInput.value = false;
-  }, 100);
-};
+    showCustomInput.value = false
+  }, 100)
+}
 </script>
 
 <template>
@@ -378,7 +387,10 @@ const handleCustomHabitInputBlur = (): void => {
     </div>
 
     <!-- Custom name input -->
-    <div v-if="showCustomInput" class="flex items-center gap-2">
+    <div
+      v-if="showCustomInput"
+      class="flex items-center gap-2"
+    >
       <input
         ref="customHabitInput"
         v-model="customHabitName"
@@ -403,7 +415,10 @@ const handleCustomHabitInputBlur = (): void => {
     >
       {{ t("habits.noHabits") }}
     </div>
-    <div v-else class="flex flex-col gap-3">
+    <div
+      v-else
+      class="flex flex-col gap-3"
+    >
       <HabitCard
         v-for="habit in [...habits].reverse()"
         :key="habit.id"
@@ -482,6 +497,9 @@ const handleCustomHabitInputBlur = (): void => {
       @go-settings="handleExactAlarmGoSettings"
     />
 
-    <Snackbar :message="snackbarMessage" @dismiss="snackbarMessage = null" />
+    <Snackbar
+      :message="snackbarMessage"
+      @dismiss="snackbarMessage = null"
+    />
   </main>
 </template>

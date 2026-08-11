@@ -1,49 +1,49 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
+import { onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { formatAmount, formatDate } from "../../utils/domain";
+import { formatAmount, formatDate } from '../../utils/domain'
 
 const props = defineProps<{
-  total: number;
-  sinceDate: string | null;
-  currency: string;
-}>();
+  total: number
+  sinceDate: string | null
+  currency: string
+}>()
 
-const { t, locale } = useI18n();
+const { t, locale } = useI18n()
 
 /**
  * Money counter (ported from the RN CounterText): eases from the previous
  * display value to the new total (cubic ease-out, 300–1500 ms). Falls back
  * to a direct set when requestAnimationFrame is unavailable.
  */
-const display = ref(0);
-let raf = 0;
+const display = ref(0)
+let raf = 0
 
 watch(
   () => props.total,
   (to) => {
-    if (typeof requestAnimationFrame !== "function") {
-      display.value = to;
-      return;
+    if (typeof requestAnimationFrame !== 'function') {
+      display.value = to
+      return
     }
-    cancelAnimationFrame(raf);
-    const from = display.value;
-    if (from === to) return;
-    const duration = Math.min(1500, Math.max(300, Math.abs(to - from) * 15));
-    const start = performance.now();
+    cancelAnimationFrame(raf)
+    const from = display.value
+    if (from === to) return
+    const duration = Math.min(1500, Math.max(300, Math.abs(to - from) * 15))
+    const start = performance.now()
     const tick = (tickTime: number): void => {
-      const progress = Math.min((tickTime - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      display.value = from + (to - from) * eased;
-      if (progress < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+      const progress = Math.min((tickTime - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      display.value = from + (to - from) * eased
+      if (progress < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
   },
   { immediate: true },
-);
+)
 
-onUnmounted(() => cancelAnimationFrame(raf));
+onUnmounted(() => cancelAnimationFrame(raf))
 </script>
 
 <template>

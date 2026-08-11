@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { captureException, getClient } from "@sentry/vue";
-import { useI18n } from "vue-i18n";
+import { captureException, getClient } from '@sentry/vue'
+import { useI18n } from 'vue-i18n'
 
 /**
  * Render-error boundary: when a child (page) throws during render, show a
@@ -9,25 +9,25 @@ import { useI18n } from "vue-i18n";
  * `false` from errorCaptured stops the error from bubbling to Vue's global
  * handler, so the error is reported exactly once, here.
  */
-const { t } = useI18n();
+const { t } = useI18n()
 
-const hasError = ref(false);
-const errorDetail = ref("");
+const hasError = ref(false)
+const errorDetail = ref('')
 
 onErrorCaptured((err, _instance, info) => {
-  hasError.value = true;
-  errorDetail.value = err instanceof Error ? err.message : String(err);
+  hasError.value = true
+  errorDetail.value = err instanceof Error ? err.message : String(err)
   if (getClient()) {
-    captureException(err, { tags: { vueErrorInfo: info } });
+    captureException(err, { tags: { vueErrorInfo: info } })
   }
   // Swallow: the boundary owns rendering the fallback; returning false stops
   // the error from bubbling to Vue's global error handler (and double-reporting).
-  return false;
-});
+  return false
+})
 
 const reload = (): void => {
-  window.location.reload();
-};
+  window.location.reload()
+}
 </script>
 
 <template>

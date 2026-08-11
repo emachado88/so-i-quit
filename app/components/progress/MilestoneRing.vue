@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from 'vue'
 
 const props = withDefaults(
-  defineProps<{ progress: number; size?: number; strokeWidth?: number }>(),
+  defineProps<{ progress: number, size?: number, strokeWidth?: number }>(),
   { size: 74, strokeWidth: 7 },
-);
+)
 
-const clamped = computed(() => Math.min(Math.max(props.progress, 0), 1));
-const radius = computed(() => (props.size - props.strokeWidth) / 2);
-const circumference = computed(() => 2 * Math.PI * radius.value);
-const dashOffset = computed(() => circumference.value * (1 - clamped.value));
+const clamped = computed(() => Math.min(Math.max(props.progress, 0), 1))
+const radius = computed(() => (props.size - props.strokeWidth) / 2)
+const circumference = computed(() => 2 * Math.PI * radius.value)
+const dashOffset = computed(() => circumference.value * (1 - clamped.value))
 
 /**
  * Offset actually painted on the bar. Every fill change (mount included) is
@@ -19,44 +19,44 @@ const dashOffset = computed(() => circumference.value * (1 - clamped.value));
  * Chromium starts them from the default 0 on insert ("shrink from 100%"),
  * and they can be swallowed when the attribute lands before the first paint.
  */
-const renderedOffset = ref(circumference.value);
-const barRef = ref<SVGCircleElement | null>(null);
-let primed = false;
+const renderedOffset = ref(circumference.value)
+const barRef = ref<SVGCircleElement | null>(null)
+let primed = false
 
 /** Cancel any in-flight fill and animate from the current offset to `to`. */
 const animateTo = (to: number): void => {
-  const el = barRef.value;
-  if (!el) return;
+  const el = barRef.value
+  if (!el) return
   // Snapshot the visual position before cancelling: the computed style
   // reflects an in-flight animation, while the attribute only holds the end
   // value (reading it after cancel would snap back to the previous target).
-  const current = parseFloat(getComputedStyle(el).strokeDashoffset);
-  const from = Number.isFinite(current) ? current : renderedOffset.value;
-  if (typeof el.getAnimations === "function") {
-    for (const animation of el.getAnimations()) animation.cancel();
+  const current = parseFloat(getComputedStyle(el).strokeDashoffset)
+  const from = Number.isFinite(current) ? current : renderedOffset.value
+  if (typeof el.getAnimations === 'function') {
+    for (const animation of el.getAnimations()) animation.cancel()
   }
-  if (typeof el.animate === "function") {
+  if (typeof el.animate === 'function') {
     el.animate(
       [{ strokeDashoffset: `${from}` }, { strokeDashoffset: `${to}` }],
-      { duration: 1000, easing: "ease-out" },
-    );
+      { duration: 1000, easing: 'ease-out' },
+    )
   }
-  renderedOffset.value = to;
-};
+  renderedOffset.value = to
+}
 
 onMounted(() => {
   // Prime on the first frame. If the page's milestone data hasn't landed
   // yet, the target equals the empty ring — a visible no-op that the data
   // arrival (below) replaces with the real fill.
   requestAnimationFrame(() => {
-    primed = true;
-    animateTo(dashOffset.value);
-  });
-});
+    primed = true
+    animateTo(dashOffset.value)
+  })
+})
 
 watch(dashOffset, (value) => {
-  if (primed) animateTo(value);
-});
+  if (primed) animateTo(value)
+})
 </script>
 
 <template>

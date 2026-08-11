@@ -8,12 +8,12 @@ import HabitMenu from './HabitMenu.vue'
 
 const { t, locale } = useI18n()
 
-const props = defineProps<{ habit: Habit; currency: string }>()
+const props = defineProps<{ habit: Habit, currency: string }>()
 const emit = defineEmits<{
   'edit-date': []
   'edit-savings': []
-  delete: []
-  reset: []
+  'delete': []
+  'reset': []
 }>()
 
 const name = computed(() => getHabitName(props.habit, t))
@@ -41,9 +41,19 @@ const savingsLabel = computed(() =>
       />
     </div>
 
-    <div v-if="dateLabel || savingsLabel" class="mt-2">
-      <p class="text-sm font-medium text-ink">{{ dateLabel }}</p>
-      <p v-if="savingsLabel" class="text-sm text-muted">{{ savingsLabel }}</p>
+    <div
+      v-if="dateLabel || savingsLabel"
+      class="mt-2"
+    >
+      <p class="text-sm font-medium text-ink">
+        {{ dateLabel }}
+      </p>
+      <p
+        v-if="savingsLabel"
+        class="text-sm text-muted"
+      >
+        {{ savingsLabel }}
+      </p>
     </div>
 
     <button

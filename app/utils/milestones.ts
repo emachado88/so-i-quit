@@ -124,7 +124,7 @@ export const generateMilestones = (
     ...generateYearlyMilestoneDefinitions(habit, now, horizonYears),
   ]
 
-  const milestones: Milestone[] = definitions.map((def) => ({
+  const milestones: Milestone[] = definitions.map(def => ({
     id: getMilestoneId(habit.id, def.unit, def.amount),
     habitId: habit.id,
     unit: def.unit,
@@ -167,7 +167,8 @@ export const getPreviousMilestone = (
   for (const milestone of milestones) {
     if (isMilestoneReached(habit, milestone, now)) {
       previous = milestone
-    } else {
+    }
+    else {
       break
     }
   }
@@ -215,7 +216,7 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 
 const UNIT_LABEL_KEYS: Record<
   MilestoneUnit,
-  { one: string; other: string }
+  { one: string, other: string }
 > = {
   day: { one: 'milestone.day.one', other: 'milestone.day.other' },
   week: { one: 'milestone.week.one', other: 'milestone.week.other' },

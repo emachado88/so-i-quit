@@ -77,7 +77,7 @@ describe('utils/milestones-store', () => {
       expect(milestones.length).toBeGreaterThan(0)
       // Long-standing habit: historical targets marked reached but NOT queued
       expect(newlyReached).toEqual([])
-      const reached = milestones.filter((m) => m.reachedAt !== null)
+      const reached = milestones.filter(m => m.reachedAt !== null)
       expect(reached.length).toBeGreaterThan(0)
       // Persisted for later reads
       const stored = getMilestonesForHabit('h1')
@@ -99,7 +99,7 @@ describe('utils/milestones-store', () => {
       // A day later: exactly the newly crossed targets are reported
       const { newlyReached } = ensureMilestonesForHabit(h, new Date('2025-01-02T06:00:00Z'))
       expect(newlyReached.length).toBeGreaterThan(0)
-      const units = newlyReached.map((m) => `${m.unit}:${m.amount}`)
+      const units = newlyReached.map(m => `${m.unit}:${m.amount}`)
       expect(units).toContain('day:1')
     })
 
@@ -109,7 +109,7 @@ describe('utils/milestones-store', () => {
 
       const { milestones } = ensureMilestonesForHabit(h, new Date('2030-06-01T00:00:00Z'))
       // Horizon extended: year 12 only exists after the 2030 check
-      const year12 = milestones.find((m) => m.unit === 'year' && m.amount === 12)
+      const year12 = milestones.find(m => m.unit === 'year' && m.amount === 12)
       expect(year12).toBeDefined()
     })
   })

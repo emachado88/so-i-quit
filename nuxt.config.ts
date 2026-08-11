@@ -1,7 +1,12 @@
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
-  compatibilityDate: '2026-08-10',
+  modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts', '@nuxt/eslint'],
+  // Always mobile (user decision) — pure SPA, no SSR anywhere.
+  ssr: false,
+  // Component names without directory prefixes (TabBar, HabitCard, ...) —
+  // every component name in this app is unique.
+  components: [{ path: '~/components', pathPrefix: false }],
   app: {
     head: {
       // viewport-fit=cover → Capacitor keeps the WebView edge-to-edge (no
@@ -10,21 +15,35 @@ export default defineNuxtConfig({
         'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
     },
   },
-  modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
-  // Component names without directory prefixes (TabBar, HabitCard, ...) —
-  // every component name in this app is unique.
-  components: [{ path: '~/components', pathPrefix: false }],
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  // Always mobile (user decision) — pure SPA, no SSR anywhere.
-  ssr: false,
   colorMode: {
     preference: 'system',
     fallback: 'light',
     // localStorage: WebView resets cookies on restart
     storage: 'localStorage',
+  },
+
+  // Sentry is opt-in: set NUXT_PUBLIC_SENTRY_DSN at build time to enable.
+  // Without a DSN the sentry plugin is a no-op (see plugins/sentry.client.ts).
+  runtimeConfig: {
+    public: {
+      sentryDsn: '',
+    },
+  },
+  compatibilityDate: '2026-08-10',
+  // CF preset emits dist/ (needed as Capacitor webDir)
+  nitro: {
+    preset: 'cloudflare_pages',
+  },
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
+  eslint: { config: { stylistic: true } },
+  fonts: {
+    families: [
+      { name: 'Inter', provider: 'google', weights: [400, 500, 600, 700, 800, 900] },
+    ],
   },
   i18n: {
     strategy: 'prefix_except_default',
@@ -44,21 +63,5 @@ export default defineNuxtConfig({
     // WebView-safe). The module's own detection uses a cookie, which the
     // Capacitor WebView drops on restart.
     detectBrowserLanguage: false,
-  },
-  fonts: {
-    families: [
-      { name: 'Inter', provider: 'google', weights: [400, 500, 600, 700, 800, 900] },
-    ],
-  },
-  // CF preset emits dist/ (needed as Capacitor webDir)
-  nitro: {
-    preset: 'cloudflare_pages',
-  },
-  // Sentry is opt-in: set NUXT_PUBLIC_SENTRY_DSN at build time to enable.
-  // Without a DSN the sentry plugin is a no-op (see plugins/sentry.client.ts).
-  runtimeConfig: {
-    public: {
-      sentryDsn: '',
-    },
   },
 })

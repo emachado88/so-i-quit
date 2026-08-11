@@ -148,8 +148,8 @@ export const formatAmount = (
   maxFractionDigits: number = 2,
 ): string => {
   try {
-    const locale =
-      typeof navigator !== 'undefined' && navigator.language
+    const locale
+      = typeof navigator !== 'undefined' && navigator.language
         ? navigator.language
         : 'en-US'
     const parts = new Intl.NumberFormat(locale, {
@@ -161,9 +161,10 @@ export const formatAmount = (
     }).formatToParts(value)
 
     return parts
-      .map((p) => (p.type === 'currency' ? cleanSymbol(p.value) : p.value))
+      .map(p => (p.type === 'currency' ? cleanSymbol(p.value) : p.value))
       .join('')
-  } catch {
+  }
+  catch {
     const rounded = Math.round(value * 100) / 100
     return `${rounded.toFixed(2)} ${currencyCode}`
   }

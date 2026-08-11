@@ -27,7 +27,7 @@ const mountDialog = (visible = true): DialogWrapper => {
 }
 
 const buttonByText = (wrapper: DialogWrapper, text: string) =>
-  wrapper.findAll('button').find((b) => b.text().trim() === text)
+  wrapper.findAll('button').find(b => b.text().trim() === text)
 
 afterEach(() => {
   document.body.innerHTML = ''

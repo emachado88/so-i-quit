@@ -8,7 +8,7 @@ const emit = defineEmits<{ change: [theme: Theme] }>()
 
 const { t } = useI18n()
 
-const options: { value: Theme; label: string }[] = [
+const options: { value: Theme, label: string }[] = [
   { value: 'system', label: 'settings.system' },
   { value: 'light', label: 'settings.light' },
   { value: 'dark', label: 'settings.dark' },

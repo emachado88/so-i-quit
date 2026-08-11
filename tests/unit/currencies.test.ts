@@ -17,24 +17,24 @@ describe('utils/currencies', () => {
 
     it('includes symbol + localized name for every option', () => {
       const list = getCurrencyList('en')
-      const eur = list.find((o) => o.code === 'EUR')
+      const eur = list.find(o => o.code === 'EUR')
       expect(eur?.symbol).toBe('€')
       expect(eur?.name).toBe('Euro')
-      const usd = list.find((o) => o.code === 'USD')
+      const usd = list.find(o => o.code === 'USD')
       expect(usd?.symbol).toBe('$')
       expect(usd?.name).toBe('US Dollar')
     })
 
     it('is sorted by the localized name', () => {
       const list = getCurrencyList('en')
-      const names = list.map((o) => o.name)
+      const names = list.map(o => o.name)
       const sorted = [...names].sort((a, b) => a.localeCompare(b, 'en'))
       expect(names).toEqual(sorted)
     })
 
     it('localizes names per locale', () => {
       const list = getCurrencyList('pt')
-      const eur = list.find((o) => o.code === 'EUR')
+      const eur = list.find(o => o.code === 'EUR')
       expect(eur?.name).toBe('Euro')
     })
   })

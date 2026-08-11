@@ -5,8 +5,8 @@ import ConfirmDialog from '../ui/ConfirmDialog.vue'
 
 const { t } = useI18n()
 
-defineProps<{ visible: boolean; name: string }>()
-const emit = defineEmits<{ confirm: []; cancel: [] }>()
+defineProps<{ visible: boolean, name: string }>()
+const emit = defineEmits<{ confirm: [], cancel: [] }>()
 </script>
 
 <template>

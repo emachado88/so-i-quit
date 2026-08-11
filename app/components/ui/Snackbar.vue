@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
-defineProps<{ message: string | null }>();
-const emit = defineEmits<{ dismiss: [] }>();
+defineProps<{ message: string | null }>()
+const emit = defineEmits<{ dismiss: [] }>()
 </script>
 
 <template>

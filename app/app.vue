@@ -33,7 +33,8 @@ onMounted(() => {
     if (handleBackButton()) return
     if (canGoBack) {
       router.back()
-    } else {
+    }
+    else {
       void exitApp()
     }
   }).remove

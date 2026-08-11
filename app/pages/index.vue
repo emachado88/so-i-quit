@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
-import { useNow } from "../composables/useNow";
-import CelebrationToast from "../components/progress/CelebrationToast.vue";
-import HabitProgressCard from "../components/progress/HabitProgressCard.vue";
-import TotalSavingsCard from "../components/progress/TotalSavingsCard.vue";
-import Snackbar from "../components/ui/Snackbar.vue";
-import { daysSince, getHabitName, parseSavings } from "../utils/domain";
-import { getHabits } from "../utils/habits";
-import { impact, ImpactStyle, notify, NotificationType } from "../utils/haptics";
-import { formatMilestoneLabel, isMilestoneReached } from "../utils/milestones";
+import { useNow } from '../composables/useNow'
+import CelebrationToast from '../components/progress/CelebrationToast.vue'
+import HabitProgressCard from '../components/progress/HabitProgressCard.vue'
+import TotalSavingsCard from '../components/progress/TotalSavingsCard.vue'
+import Snackbar from '../components/ui/Snackbar.vue'
+import { daysSince, getHabitName, parseSavings } from '../utils/domain'
+import { getHabits } from '../utils/habits'
+import { impact, ImpactStyle, notify, NotificationType } from '../utils/haptics'
+import { formatMilestoneLabel, isMilestoneReached } from '../utils/milestones'
 import {
   ensureMilestonesForHabit,
   saveMilestonesForHabit,
-} from "../utils/milestones-store";
+} from '../utils/milestones-store'
 import {
   addAppForegroundListener,
   reconcileHabitNotifications,
-} from "../utils/notifications";
-import { getSettings } from "../utils/settings";
-import type { Habit, Milestone } from "../utils/types";
+} from '../utils/notifications'
+import { getSettings } from '../utils/settings'
+import type { Habit, Milestone } from '../utils/types'
 
 /** Pending in-app celebration (newly crossed milestone). */
 interface Celebration {
-  habitId: string;
-  milestone: Milestone;
+  habitId: string
+  milestone: Milestone
 }
 
-const { t, locale } = useI18n();
-const router = useRouter();
+const { t, locale } = useI18n()
+const router = useRouter()
 
 // ── State ──
 
-const habits = ref<Habit[]>([]);
-const milestonesByHabit = ref<Record<string, Milestone[]>>({});
-const celebrations = ref<Celebration[]>([]);
-const snackbarMessage = ref<string | null>(null);
-const now = useNow();
+const habits = ref<Habit[]>([])
+const milestonesByHabit = ref<Record<string, Milestone[]>>({})
+const celebrations = ref<Celebration[]>([])
+const snackbarMessage = ref<string | null>(null)
+const now = useNow()
 
 // ── App foreground tracking (RN AppState parity) ──
 // The toast gate needs "is the app the active surface". The WebView's DOM
@@ -46,14 +46,14 @@ const now = useNow();
 // flag is driven by the native app lifecycle, with `visibilitychange` as the
 // browser-dev fallback.
 const appActive = ref(
-  typeof document !== "undefined" && document.visibilityState === "visible",
-);
-let foregroundSub: { remove: () => void } | null = null;
+  typeof document !== 'undefined' && document.visibilityState === 'visible',
+)
+let foregroundSub: { remove: () => void } | null = null
 
 const handleVisibilityChange = (): void => {
-  appActive.value = document.visibilityState === "visible";
-  if (appActive.value) void load();
-};
+  appActive.value = document.visibilityState === 'visible'
+  if (appActive.value) void load()
+}
 
 // ── Live milestone crossings ──
 // The clock ticks every second; while the page stays mounted, a milestone
@@ -63,64 +63,64 @@ const handleVisibilityChange = (): void => {
 watch(
   () => now.value.getTime(),
   (tick) => {
-    if (!appActive.value) return;
-    const current = new Date(tick);
+    if (!appActive.value) return
+    const current = new Date(tick)
     for (const habit of datedHabits.value) {
-      const stored = milestonesByHabit.value[habit.id];
-      if (!stored || stored.length === 0) continue;
+      const stored = milestonesByHabit.value[habit.id]
+      if (!stored || stored.length === 0) continue
       const crossed = stored.some(
-        (m) => m.reachedAt === null && isMilestoneReached(habit, m, current),
-      );
-      if (!crossed) continue;
-      const result = ensureMilestonesForHabit(habit, current);
-      milestonesByHabit.value[habit.id] = result.milestones;
+        m => m.reachedAt === null && isMilestoneReached(habit, m, current),
+      )
+      if (!crossed) continue
+      const result = ensureMilestonesForHabit(habit, current)
+      milestonesByHabit.value[habit.id] = result.milestones
       for (const milestone of result.newlyReached) {
-        celebrations.value.push({ habitId: habit.id, milestone });
+        celebrations.value.push({ habitId: habit.id, milestone })
       }
     }
   },
-);
+)
 
 const datedHabits = computed(() =>
   [...habits.value]
-    .filter((habit) => habit.date)
-    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? "")),
-);
-const hasAnyHabitWithDate = computed(() => datedHabits.value.length > 0);
+    .filter(habit => habit.date)
+    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
+)
+const hasAnyHabitWithDate = computed(() => datedHabits.value.length > 0)
 const totalSavings = computed(() =>
   habits.value.reduce(
     (sum, habit) =>
       sum + daysSince(habit.date, now.value) * parseSavings(habit.savings),
     0,
   ),
-);
-const sinceDate = computed(() => datedHabits.value[0]?.date ?? null);
-const currency = computed(() => getSettings().currency);
+)
+const sinceDate = computed(() => datedHabits.value[0]?.date ?? null)
+const currency = computed(() => getSettings().currency)
 
 // ── Navigation (locale-aware, no Nuxt auto-imports — unit-test friendly) ──
 
 const goToHabits = (): void => {
-  impact(ImpactStyle.Medium);
-  const prefix = locale.value === "en" ? "" : `/${locale.value}`;
-  router.push(`${prefix}/habits`);
-};
+  impact(ImpactStyle.Medium)
+  const prefix = locale.value === 'en' ? '' : `/${locale.value}`
+  router.push(`${prefix}/habits`)
+}
 
 // ── Data ──
 
 const load = async (): Promise<void> => {
   try {
-    habits.value = getHabits();
-    const nowDate = now.value;
-    const newly: Celebration[] = [];
-    const byHabit: Record<string, Milestone[]> = {};
+    habits.value = getHabits()
+    const nowDate = now.value
+    const newly: Celebration[] = []
+    const byHabit: Record<string, Milestone[]> = {}
 
     for (const habit of datedHabits.value) {
       // Roll reached targets forward and collect newly crossed milestones
       // for the in-app celebration queue.
-      const result = ensureMilestonesForHabit(habit, nowDate);
-      byHabit[habit.id] = result.milestones;
+      const result = ensureMilestonesForHabit(habit, nowDate)
+      byHabit[habit.id] = result.milestones
       for (const milestone of result.newlyReached) {
-        newly.push({ habitId: habit.id, milestone });
+        newly.push({ habitId: habit.id, milestone })
       }
       // Extend the native schedule through the rolling horizon when
       // notifications are enabled (new annuals get scheduled).
@@ -130,40 +130,41 @@ const load = async (): Promise<void> => {
           byHabit[habit.id] as Milestone[],
           t,
           nowDate,
-        );
-        saveMilestonesForHabit(habit.id, byHabit[habit.id] as Milestone[]);
+        )
+        saveMilestonesForHabit(habit.id, byHabit[habit.id] as Milestone[])
       }
     }
-    milestonesByHabit.value = byHabit;
+    milestonesByHabit.value = byHabit
 
     // Only toast while the app is the active surface; backgrounded, the OS
     // notification already covered it (RN AppState parity).
     if (newly.length > 0 && appActive.value) {
-      celebrations.value = [...celebrations.value, ...newly];
+      celebrations.value = [...celebrations.value, ...newly]
     }
-  } catch {
-    snackbarMessage.value = t("progress.failedToLoad");
   }
-};
+  catch {
+    snackbarMessage.value = t('progress.failedToLoad')
+  }
+}
 
 // Re-check on mount and every time the app returns to the foreground — a
 // milestone may have been crossed while backgrounded (the OS notification
 // covered it, but the in-app celebration should still fire on return; RN
 // parity: useFocusEffect re-runs on app resume via React Navigation).
 onMounted(() => {
-  void load();
+  void load()
   foregroundSub = addAppForegroundListener(() => {
-    appActive.value = true;
-    void load();
-  });
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-});
+    appActive.value = true
+    void load()
+  })
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
 
 onUnmounted(() => {
-  foregroundSub?.remove();
-  foregroundSub = null;
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
-});
+  foregroundSub?.remove()
+  foregroundSub = null
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 
 // ── Celebration queue ──
 
@@ -171,24 +172,24 @@ onUnmounted(() => {
 // browser). Fires for mount/foreground crossings and live in-page ones —
 // every path that pushes into the queue.
 watch(celebrations, (list) => {
-  if (list.length > 0) notify(NotificationType.Success);
-});
+  if (list.length > 0) notify(NotificationType.Success)
+})
 
-const activeCelebration = computed(() => celebrations.value[0] ?? null);
+const activeCelebration = computed(() => celebrations.value[0] ?? null)
 const activeCelebrationText = computed(() => {
-  const celebration = activeCelebration.value;
-  if (!celebration) return null;
-  const habit = habits.value.find((h) => h.id === celebration.habitId);
+  const celebration = activeCelebration.value
+  if (!celebration) return null
+  const habit = habits.value.find(h => h.id === celebration.habitId)
   return habit
-    ? t("milestone.reachedBody", {
+    ? t('milestone.reachedBody', {
         habit: getHabitName(habit, t),
         milestone: formatMilestoneLabel(celebration.milestone, t),
       })
-    : t("milestone.reached");
-});
+    : t('milestone.reached')
+})
 const dismissCelebration = (): void => {
-  celebrations.value = celebrations.value.slice(1);
-};
+  celebrations.value = celebrations.value.slice(1)
+}
 </script>
 
 <template>
@@ -269,6 +270,9 @@ const dismissCelebration = (): void => {
       :message="activeCelebrationText"
       @dismiss="dismissCelebration"
     />
-    <Snackbar :message="snackbarMessage" @dismiss="snackbarMessage = null" />
+    <Snackbar
+      :message="snackbarMessage"
+      @dismiss="snackbarMessage = null"
+    />
   </main>
 </template>

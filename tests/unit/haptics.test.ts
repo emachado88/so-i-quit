@@ -100,6 +100,6 @@ describe('utils/haptics', () => {
 
     // Let the fire-and-forget rejection settle so an unhandled-rejection
     // failure would surface here instead of after the test.
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise(resolve => setTimeout(resolve, 0))
   })
 })

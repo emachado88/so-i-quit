@@ -12,7 +12,7 @@ defineProps<{ name: string }>()
 const emit = defineEmits<{
   'edit-date': []
   'edit-savings': []
-  delete: []
+  'delete': []
 }>()
 
 const open = ref(false)
@@ -34,7 +34,8 @@ watch(
         open.value = false
         return true
       })
-    } else if (!isOpen && removeBackHandler) {
+    }
+    else if (!isOpen && removeBackHandler) {
       removeBackHandler()
       removeBackHandler = null
     }
@@ -59,7 +60,11 @@ onUnmounted(() => {
     </button>
 
     <!-- click-outside catcher -->
-    <div v-if="open" class="fixed inset-0 z-40" @click="open = false" />
+    <div
+      v-if="open"
+      class="fixed inset-0 z-40"
+      @click="open = false"
+    />
 
     <div
       v-if="open"

@@ -57,10 +57,10 @@ const mountPage = async (): Promise<PageWrapper> => {
 }
 
 const buttonByText = (wrapper: PageWrapper, text: string) =>
-  wrapper.findAll('button').find((b) => b.text().trim() === text)
+  wrapper.findAll('button').find(b => b.text().trim() === text)
 
 const lastButtonByText = (wrapper: PageWrapper, text: string) =>
-  [...wrapper.findAll('button')].reverse().find((b) => b.text().trim() === text)
+  [...wrapper.findAll('button')].reverse().find(b => b.text().trim() === text)
 
 const openMenu = (wrapper: PageWrapper) =>
   wrapper.find('[aria-label^="Open menu"]').trigger('click')
@@ -85,7 +85,8 @@ const completeWizard = async (
   if (!withSavings) return
   if (skip) {
     await buttonByText(wrapper, 'Skip')!.trigger('click')
-  } else {
+  }
+  else {
     await wrapper.find('#savings-amount').setValue(savings)
     await buttonByText(wrapper, 'Save')!.trigger('click')
   }
@@ -481,14 +482,14 @@ describe('pages/habits', () => {
 
     await openMenu(wrapper)
     expect(
-      wrapper.findAll('button').some((b) => b.text() === 'Edit date'),
+      wrapper.findAll('button').some(b => b.text() === 'Edit date'),
     ).toBe(true)
 
     expect(handleBackButton()).toBe(true)
     await nextTick()
 
     expect(
-      wrapper.findAll('button').some((b) => b.text() === 'Edit date'),
+      wrapper.findAll('button').some(b => b.text() === 'Edit date'),
     ).toBe(false)
   })
 

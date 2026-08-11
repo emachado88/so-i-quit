@@ -81,7 +81,7 @@ describe('utils/milestones', () => {
     it('includes base milestones and yearly anniversaries beyond year 1', () => {
       const h = habit('2024-01-01T00:00:00.000Z')
       const milestones = generateMilestones(h, new Date('2025-06-01T00:00:00Z'))
-      const units = milestones.map((m) => `${m.unit}:${m.amount}`)
+      const units = milestones.map(m => `${m.unit}:${m.amount}`)
 
       expect(units).toContain('day:1')
       expect(units).toContain('month:6')
@@ -96,7 +96,7 @@ describe('utils/milestones', () => {
     it('sorts milestones by target date', () => {
       const h = habit('2025-01-01T00:00:00.000Z')
       const milestones = generateMilestones(h, new Date('2025-06-01T00:00:00Z'))
-      const dates = milestones.map((m) => milestoneTargetDate(h, m).valueOf())
+      const dates = milestones.map(m => milestoneTargetDate(h, m).valueOf())
       for (let i = 1; i < dates.length; i++) {
         expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1])
       }
@@ -217,11 +217,11 @@ describe('utils/milestones', () => {
     it('materializes anniversaries through the horizon', () => {
       const h = habit('2024-01-01T00:00:00.000Z')
       const defs = generateYearlyMilestoneDefinitions(h, new Date('2025-06-01T00:00:00Z'))
-      const amounts = defs.map((d) => d.amount)
+      const amounts = defs.map(d => d.amount)
       expect(amounts).toContain(2) // year 2
       expect(amounts).toContain(11) // through the horizon
       expect(amounts).not.toContain(1) // year 1 is part of BASE_MILESTONES
-      expect(amounts.every((a) => a >= 2)).toBe(true)
+      expect(amounts.every(a => a >= 2)).toBe(true)
     })
   })
 

@@ -58,7 +58,7 @@ export const deleteMilestonesForHabit = (habitId: string): void => {
 export const ensureMilestonesForHabit = (
   habit: Habit,
   now: Date,
-): { milestones: Milestone[]; newlyReached: Milestone[] } => {
+): { milestones: Milestone[], newlyReached: Milestone[] } => {
   if (!habit.date) {
     return { milestones: [], newlyReached: [] }
   }
@@ -69,7 +69,7 @@ export const ensureMilestonesForHabit = (
   if (!stored || stored.length === 0) {
     // Silent backfill: initialize without celebrating anything historical.
     const generated = generateMilestones(habit, now)
-    const backfilled = generated.map((milestone) => ({
+    const backfilled = generated.map(milestone => ({
       ...milestone,
       reachedAt: isMilestoneReached(habit, milestone, now)
         ? now.toISOString()
@@ -83,7 +83,7 @@ export const ensureMilestonesForHabit = (
   // Extend an existing record through the current horizon and mark newly
   // crossed targets. Only milestones crossed since the last check are
   // returned as newly reached.
-  const existingById = new Map(stored.map((m) => [m.id, m]))
+  const existingById = new Map(stored.map(m => [m.id, m]))
   const generated = generateMilestones(habit, now)
   const newlyReached: Milestone[] = []
 
@@ -101,8 +101,8 @@ export const ensureMilestonesForHabit = (
     // Roll forward: a stored milestone whose target has now passed gets
     // reachedAt set and is enqueued for celebration exactly once.
     if (
-      existing.reachedAt === null &&
-      isMilestoneReached(habit, existing, now)
+      existing.reachedAt === null
+      && isMilestoneReached(habit, existing, now)
     ) {
       const updated: Milestone = {
         ...existing,
@@ -135,7 +135,7 @@ export const getMilestonesForHabits = (
     if (!habit.date) continue
     let milestones = store[habit.id]
     if (!milestones || milestones.length === 0) {
-      milestones = generateMilestones(habit, now).map((milestone) => ({
+      milestones = generateMilestones(habit, now).map(milestone => ({
         ...milestone,
         reachedAt: isMilestoneReached(habit, milestone, now)
           ? now.toISOString()

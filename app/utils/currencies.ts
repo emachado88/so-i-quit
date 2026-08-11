@@ -404,22 +404,23 @@ export interface CurrencyOption {
  * `Intl.supportedValuesOf` is unavailable.
  */
 export const getCurrencyList = (locale: string): CurrencyOption[] => {
-  const codes =
-    typeof Intl.supportedValuesOf === 'function'
+  const codes
+    = typeof Intl.supportedValuesOf === 'function'
       ? Intl.supportedValuesOf('currency').filter(
-          (code) => code in CURRENCY_SYMBOLS,
+          code => code in CURRENCY_SYMBOLS,
         )
       : Object.keys(CURRENCY_SYMBOLS)
 
   let names: Intl.DisplayNames
   try {
     names = new Intl.DisplayNames([locale, 'en'], { type: 'currency' })
-  } catch {
+  }
+  catch {
     names = new Intl.DisplayNames('en', { type: 'currency' })
   }
 
   return codes
-    .map((code) => ({
+    .map(code => ({
       code,
       symbol: CURRENCY_SYMBOLS[code] ?? code,
       name: names.of(code) ?? code,

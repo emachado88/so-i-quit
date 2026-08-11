@@ -113,18 +113,18 @@ describe('pages/settings', () => {
     await buttonByLabel(wrapper, 'Open language picker').trigger('click')
 
     const options = wrapper.findAll('button')
-    expect(options.some((b) => b.text().includes('Português'))).toBe(true)
-    expect(options.some((b) => b.text().includes('中文'))).toBe(true)
+    expect(options.some(b => b.text().includes('Português'))).toBe(true)
+    expect(options.some(b => b.text().includes('中文'))).toBe(true)
 
     await options
-      .find((b) => b.text().includes('Português'))!
+      .find(b => b.text().includes('Português'))!
       .trigger('click')
 
     expect(mocks.setLocale).toHaveBeenCalledWith('pt')
     expect(getSettings().language).toBe('pt')
     // Picker closed
     expect(
-      wrapper.findAll('button').some((b) => b.text().includes('中文')),
+      wrapper.findAll('button').some(b => b.text().includes('中文')),
     ).toBe(false)
   })
 
@@ -149,7 +149,7 @@ describe('pages/settings', () => {
     await wrapper.find('#currency-search').setValue('euro')
     await wrapper
       .findAll('button')
-      .find((b) => b.text().includes('€ EUR'))!
+      .find(b => b.text().includes('€ EUR'))!
       .trigger('click')
 
     expect(getSettings().currency).toBe('EUR')

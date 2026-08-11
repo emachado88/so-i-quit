@@ -1,53 +1,54 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
+import { useI18n } from 'vue-i18n'
 
-import { registerBackHandler } from "../../utils/back-handler";
-import { impact, ImpactStyle } from "../../utils/haptics";
+import { registerBackHandler } from '../../utils/back-handler'
+import { impact, ImpactStyle } from '../../utils/haptics'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
-    visible: boolean;
-    title: string;
-    message: string;
-    confirmLabel: string;
-    cancelLabel?: string;
-    destructive?: boolean;
+    visible: boolean
+    title: string
+    message: string
+    confirmLabel: string
+    cancelLabel?: string
+    destructive?: boolean
   }>(),
   { destructive: false, cancelLabel: undefined },
-);
-const emit = defineEmits<{ confirm: []; cancel: [] }>();
+)
+const emit = defineEmits<{ confirm: [], cancel: [] }>()
 
 const handleConfirm = (): void => {
-  impact(ImpactStyle.Medium);
-  emit("confirm");
-};
+  impact(ImpactStyle.Medium)
+  emit('confirm')
+}
 
 // Hardware back (Android): dismiss the dialog — the same as tapping
 // outside or Cancel. Always mounted, so registration follows the
 // `visible` prop.
-let removeBackHandler: (() => void) | null = null;
+let removeBackHandler: (() => void) | null = null
 
 watch(
   () => props.visible,
   (visible) => {
     if (visible && !removeBackHandler) {
       removeBackHandler = registerBackHandler(() => {
-        emit("cancel");
-        return true;
-      });
-    } else if (!visible && removeBackHandler) {
-      removeBackHandler();
-      removeBackHandler = null;
+        emit('cancel')
+        return true
+      })
+    }
+    else if (!visible && removeBackHandler) {
+      removeBackHandler()
+      removeBackHandler = null
     }
   },
   { immediate: true },
-);
+)
 
 onUnmounted(() => {
-  removeBackHandler?.();
-});
+  removeBackHandler?.()
+})
 </script>
 
 <template>
@@ -63,27 +64,31 @@ onUnmounted(() => {
       v-if="visible"
       class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
     >
-    <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
-      <h3 class="text-lg font-bold text-ink">{{ title }}</h3>
-      <p class="mt-1 text-sm leading-relaxed text-muted">{{ message }}</p>
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          class="rounded-lg px-4 py-2 text-sm font-semibold text-muted transition-colors hover:text-ink"
-          @click="emit('cancel')"
-        >
-          {{ cancelLabel ?? t("common.cancel") }}
-        </button>
-        <button
-          type="button"
-          class="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          :class="destructive ? 'bg-danger' : 'bg-primary'"
-          @click="handleConfirm"
-        >
-          {{ confirmLabel }}
-        </button>
+      <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
+        <h3 class="text-lg font-bold text-ink">
+          {{ title }}
+        </h3>
+        <p class="mt-1 text-sm leading-relaxed text-muted">
+          {{ message }}
+        </p>
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-semibold text-muted transition-colors hover:text-ink"
+            @click="emit('cancel')"
+          >
+            {{ cancelLabel ?? t("common.cancel") }}
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            :class="destructive ? 'bg-danger' : 'bg-primary'"
+            @click="handleConfirm"
+          >
+            {{ confirmLabel }}
+          </button>
+        </div>
       </div>
-    </div>
     </div>
   </Transition>
 </template>

@@ -77,8 +77,8 @@ export const isNotificationsSupported = (): boolean => isNative()
 export type NotificationPermissionStatus = 'granted' | 'denied' | 'undetermined'
 
 /** Read the OS-level notification permission. */
-export const getNotificationPermissionStatus =
-  async (): Promise<NotificationPermissionStatus> => {
+export const getNotificationPermissionStatus
+  = async (): Promise<NotificationPermissionStatus> => {
     if (!isNative()) return 'undetermined'
     try {
       // `areEnabled()` reflects the real OS switch (areNotificationsEnabled).
@@ -90,7 +90,8 @@ export const getNotificationPermissionStatus =
       const { display } = await LocalNotifications.checkPermissions()
       if (display === 'granted') return 'granted'
       return 'undetermined'
-    } catch {
+    }
+    catch {
       return 'undetermined'
     }
   }
@@ -102,7 +103,8 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   try {
     const { display } = await LocalNotifications.requestPermissions()
     return display === 'granted'
-  } catch {
+  }
+  catch {
     return false
   }
 }
@@ -117,7 +119,8 @@ export const checkExactNotificationSetting = async (): Promise<boolean> => {
   try {
     const { exact_alarm } = await LocalNotifications.checkExactNotificationSetting()
     return exact_alarm === 'granted'
-  } catch {
+  }
+  catch {
     return true
   }
 }
@@ -127,7 +130,8 @@ export const openExactNotificationSettings = async (): Promise<void> => {
   if (!isNative()) return
   try {
     await LocalNotifications.changeExactNotificationSetting()
-  } catch {
+  }
+  catch {
     // Android < 12: nothing to change.
   }
 }
@@ -142,7 +146,7 @@ export const scheduleMilestoneNotification = async (
   milestone: Milestone,
   t: Translate,
   now: Date,
-): Promise<{ milestone: Milestone; notificationId: string } | null> => {
+): Promise<{ milestone: Milestone, notificationId: string } | null> => {
   if (!isNative() || !habit.date) return null
   const target = milestoneTargetDate(habit, milestone)
   if (target.isBefore(now)) return null
@@ -165,7 +169,8 @@ export const scheduleMilestoneNotification = async (
         },
       ],
     })
-  } catch {
+  }
+  catch {
     return null
   }
   return { milestone, notificationId: String(id) }
@@ -180,7 +185,8 @@ export const cancelMilestoneNotification = async (
   if (!Number.isInteger(id)) return
   try {
     await LocalNotifications.cancel({ notifications: [{ id }] })
-  } catch {
+  }
+  catch {
     // Already fired or unavailable — nothing to cancel.
   }
 }
@@ -191,16 +197,17 @@ export const cancelHabitNotifications = async (
 ): Promise<void> => {
   if (!isNative()) return
   const ids = milestones
-    .map((m) => m.notificationId)
+    .map(m => m.notificationId)
     .filter((id): id is string => id !== null)
     .map(Number)
-    .filter((id) => Number.isInteger(id))
+    .filter(id => Number.isInteger(id))
   if (ids.length === 0) return
   try {
     await LocalNotifications.cancel({
-      notifications: ids.map((id) => ({ id })),
+      notifications: ids.map(id => ({ id })),
     })
-  } catch {
+  }
+  catch {
     // Best effort — ids stay stored so a later reconcile can retry.
   }
 }
@@ -212,9 +219,10 @@ export const cancelAllMilestoneNotifications = async (): Promise<void> => {
     const pending = await LocalNotifications.getPending()
     if (pending.notifications.length === 0) return
     await LocalNotifications.cancel({
-      notifications: pending.notifications.map((n) => ({ id: n.id })),
+      notifications: pending.notifications.map(n => ({ id: n.id })),
     })
-  } catch {
+  }
+  catch {
     // Best effort.
   }
 }
@@ -307,20 +315,21 @@ export const reconcileHabitNotifications = async (
   let pendingIds: Set<number>
   try {
     const pending = await LocalNotifications.getPending()
-    pendingIds = new Set(pending.notifications.map((n) => n.id))
-  } catch {
+    pendingIds = new Set(pending.notifications.map(n => n.id))
+  }
+  catch {
     pendingIds = new Set()
   }
 
   const generated = generateMilestones(habit, now)
-  const generatedIds = new Set(generated.map((m) => m.id))
-  const storedById = new Map(stored.map((m) => [m.id, m]))
+  const generatedIds = new Set(generated.map(m => m.id))
+  const storedById = new Map(stored.map(m => [m.id, m]))
 
   // 1. Cancel notifications whose milestone no longer exists in the
   //    regenerated horizon (e.g. after a date edit shrinks the list).
   const staleIds = stored
-    .filter((m) => m.notificationId && !generatedIds.has(m.id))
-    .map((m) => m.notificationId as string)
+    .filter(m => m.notificationId && !generatedIds.has(m.id))
+    .map(m => m.notificationId as string)
   for (const id of staleIds) {
     await cancelMilestoneNotification(id)
   }
@@ -367,7 +376,7 @@ export const reconcileAllHabitNotifications = async (
   now: Date,
 ): Promise<void> => {
   if (!isNative()) return
-  const dated = habits.filter((h) => h.date)
+  const dated = habits.filter(h => h.date)
   const byHabit = getMilestonesForHabits(dated, now)
   for (const habit of dated) {
     const stored = byHabit[habit.id] ?? []

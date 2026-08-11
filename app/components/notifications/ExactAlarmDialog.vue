@@ -1,39 +1,40 @@
 <script setup lang="ts">
-import { onUnmounted, watch } from "vue";
-import { useI18n } from "vue-i18n";
+import { onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { registerBackHandler } from "../../utils/back-handler";
-import { impact, ImpactStyle } from "../../utils/haptics";
+import { registerBackHandler } from '../../utils/back-handler'
+import { impact, ImpactStyle } from '../../utils/haptics'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
-const props = defineProps<{ visible: boolean }>();
-const emit = defineEmits<{ skip: []; "go-settings": [] }>();
+const props = defineProps<{ visible: boolean }>()
+const emit = defineEmits<{ 'skip': [], 'go-settings': [] }>()
 
 // Hardware back (Android): treat it like "Skip" — dismiss without opening
 // system settings. The dialog is always mounted, so registration follows
 // the `visible` prop.
-let removeBackHandler: (() => void) | null = null;
+let removeBackHandler: (() => void) | null = null
 
 watch(
   () => props.visible,
   (visible) => {
     if (visible && !removeBackHandler) {
       removeBackHandler = registerBackHandler(() => {
-        emit("skip");
-        return true;
-      });
-    } else if (!visible && removeBackHandler) {
-      removeBackHandler();
-      removeBackHandler = null;
+        emit('skip')
+        return true
+      })
+    }
+    else if (!visible && removeBackHandler) {
+      removeBackHandler()
+      removeBackHandler = null
     }
   },
   { immediate: true },
-);
+)
 
 onUnmounted(() => {
-  removeBackHandler?.();
-});
+  removeBackHandler?.()
+})
 </script>
 
 <template>

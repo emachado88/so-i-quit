@@ -75,7 +75,8 @@ export const exitApp = async (): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return
   try {
     await App.exitApp()
-  } catch {
+  }
+  catch {
     // Already finishing or unavailable — nothing to do.
   }
 }

@@ -38,7 +38,8 @@ export const readJSON = <T>(key: string, fallback: T): T => {
   try {
     const parsed: unknown = JSON.parse(raw)
     return parsed === null || parsed === undefined ? fallback : (parsed as T)
-  } catch {
+  }
+  catch {
     return fallback
   }
 }

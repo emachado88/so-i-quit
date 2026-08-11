@@ -55,27 +55,28 @@ export const LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
 
 /** Map device language tags to supported codes (ported from i18n/index.ts). */
 const LANGUAGE_MAP: Record<string, string> = {
-  en: 'en',
+  'en': 'en',
   'en-us': 'en',
   'en-gb': 'en',
-  pt: 'pt',
+  'pt': 'pt',
   'pt-br': 'pt',
-  fr: 'fr',
-  es: 'es',
-  it: 'it',
-  zh: 'zh',
+  'fr': 'fr',
+  'es': 'es',
+  'it': 'it',
+  'zh': 'zh',
   'zh-cn': 'zh',
   'zh-tw': 'zh',
   'zh-hk': 'zh',
-  de: 'de',
-  nl: 'nl',
+  'de': 'de',
+  'nl': 'nl',
 }
 
 const getNavigatorLanguage = (): string => {
   if (typeof navigator === 'undefined') return ''
   try {
     return navigator.language ?? ''
-  } catch {
+  }
+  catch {
     return ''
   }
 }
@@ -114,7 +115,8 @@ export const currencyFromLocale = (locale: string): string | undefined => {
 const fullLocale = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().locale
-  } catch {
+  }
+  catch {
     return getNavigatorLanguage()
   }
 }
@@ -131,7 +133,8 @@ const getNavigatorLocales = (): string[] => {
     if (Array.isArray(languages) && languages.length > 0) {
       return languages as string[]
     }
-  } catch {
+  }
+  catch {
     // some environments throw on navigator.languages
   }
   const single = getNavigatorLanguage()
@@ -170,11 +173,11 @@ export const getSettings = (): AppSettings => {
     language: stored.language || detectLanguage(),
     currency: stored.currency || detectDefaultCurrency(),
     milestoneNotificationsEnabled:
-      stored.milestoneNotificationsEnabled ??
-      DEFAULT_SETTINGS.milestoneNotificationsEnabled,
+      stored.milestoneNotificationsEnabled
+      ?? DEFAULT_SETTINGS.milestoneNotificationsEnabled,
     milestoneNotificationsPrompted:
-      stored.milestoneNotificationsPrompted ??
-      DEFAULT_SETTINGS.milestoneNotificationsPrompted,
+      stored.milestoneNotificationsPrompted
+      ?? DEFAULT_SETTINGS.milestoneNotificationsPrompted,
   }
 }
 

@@ -51,7 +51,7 @@ describe('utils/habits', () => {
     it('appends to the stored list', () => {
       const first = addHabit({ name: 'A', date: null, savings: null })
       const second = addHabit({ name: 'B', date: null, savings: null })
-      expect(getHabits().map((h) => h.id)).toEqual([first.id, second.id])
+      expect(getHabits().map(h => h.id)).toEqual([first.id, second.id])
     })
   })
 

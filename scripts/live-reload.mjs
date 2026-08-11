@@ -20,7 +20,7 @@ const PORT = process.env.PORT || '3000'
 const args = process.argv.slice(2)
 const IS_EMULATOR = args.includes('--emulator')
 const ipOverride = args.includes('--ip') ? args[args.indexOf('--ip') + 1] : null
-const EXTRA_ARGS = args.filter((a) => a !== '--emulator' && a !== '--ip' && a !== ipOverride)
+const EXTRA_ARGS = args.filter(a => a !== '--emulator' && a !== '--ip' && a !== ipOverride)
 
 /** Nomes típicos de interfaces virtuais que o telemóvel nunca alcança. */
 const VIRTUAL = /^(lo|docker|veth|br-|virbr|tun|tap|wg|wireguard|tailscale|utun|ppp|zt|vpn|nord|mullvad|proton)/
@@ -48,7 +48,7 @@ async function lanIPv4() {
   }
   // stdin não-interativo (pipes/CI): sem como perguntar — usa a primeira.
   if (!process.stdin.isTTY) {
-    console.log(`ℹ  Múltiplas interfaces (${candidates.map((c) => `${c.ip} ${c.iface}`).join(', ')}) — a usar a primeira`)
+    console.log(`ℹ  Múltiplas interfaces (${candidates.map(c => `${c.ip} ${c.iface}`).join(', ')}) — a usar a primeira`)
     return candidates[0]
   }
   // Várias interfaces reais (ex.: Ethernet + Wi-Fi): perguntar qual usar.
@@ -71,7 +71,8 @@ console.log(`🔗 Live reload: ${url}${chosen.iface ? `  (${chosen.iface})` : ''
 try {
   const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-} catch {
+}
+catch {
   console.error(`\n⚠  Dev server não está a responder em ${url}`)
   console.error('   Arranca primeiro:  npm run mobile:dev  (depois re-corre este script)')
   process.exit(1)

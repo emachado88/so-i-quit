@@ -71,10 +71,11 @@ const refreshOsPermission = async (): Promise<void> => {
     osPermission.value = status
     if (status === 'denied' && enabled && previousOsPermission !== 'denied') {
       await cancelAllMilestoneNotifications()
-    } else if (
-      status !== 'denied' &&
-      enabled &&
-      previousOsPermission === 'denied'
+    }
+    else if (
+      status !== 'denied'
+      && enabled
+      && previousOsPermission === 'denied'
     ) {
       await reconcileAllHabitNotifications(getHabits(), t, new Date())
     }
@@ -82,9 +83,10 @@ const refreshOsPermission = async (): Promise<void> => {
 
     // Exact alarms (Android 12+ special access) — hint only when the user
     // opted in and the OS blocks exact scheduling.
-    exactAlarmDenied.value =
-      enabled && !(await checkExactNotificationSetting())
-  } catch {
+    exactAlarmDenied.value
+      = enabled && !(await checkExactNotificationSetting())
+  }
+  catch {
     // Permission API unavailable (e.g. web) — leave state untouched.
   }
 }
@@ -116,7 +118,8 @@ const setTheme = (value: Theme): void => {
     saveTheme(value)
     themeMode.setTheme(value)
     refresh()
-  } catch {
+  }
+  catch {
     snackbarMessage.value = t('settings.failedTheme')
   }
 }
@@ -135,7 +138,8 @@ const setLanguage = (code: SupportedLanguage): void => {
     saveLanguage(code)
     localeSwitch.setLocale(code)
     langPickerOpen.value = false
-  } catch {
+  }
+  catch {
     snackbarMessage.value = t('settings.failedLanguage')
   }
 }
@@ -153,7 +157,8 @@ const setCurrency = (code: string): void => {
     saveCurrency(code)
     currencyPickerOpen.value = false
     refresh()
-  } catch {
+  }
+  catch {
     snackbarMessage.value = t('settings.failedCurrency')
   }
 }
@@ -168,8 +173,8 @@ const setCurrency = (code: string): void => {
  */
 const notificationsEnabled = computed(
   () =>
-    settings.value.milestoneNotificationsEnabled &&
-    osPermission.value !== 'denied',
+    settings.value.milestoneNotificationsEnabled
+    && osPermission.value !== 'denied',
 )
 
 const handleNotificationsToggle = async (): Promise<void> => {
@@ -184,14 +189,16 @@ const handleNotificationsToggle = async (): Promise<void> => {
         return
       }
       saveMilestoneNotificationsEnabled(true)
-    } else {
+    }
+    else {
       await cancelAllMilestoneNotifications()
       saveMilestoneNotificationsEnabled(false)
       exactAlarmDenied.value = false
     }
     refresh()
     void refreshOsPermission()
-  } catch {
+  }
+  catch {
     snackbarMessage.value = t('settings.failedNotifications')
   }
 }
@@ -226,7 +233,14 @@ const handleNotificationsToggle = async (): Promise<void> => {
           @click="langPickerOpen = true"
         >
           {{ currentLanguageLabel }}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6" /></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          ><path d="m6 9 6 6 6-6" /></svg>
         </button>
       </div>
 
@@ -241,7 +255,14 @@ const handleNotificationsToggle = async (): Promise<void> => {
           @click="currencyPickerOpen = true"
         >
           {{ currencyLabel }}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6" /></svg>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          ><path d="m6 9 6 6 6-6" /></svg>
         </button>
       </div>
 
@@ -283,6 +304,9 @@ const handleNotificationsToggle = async (): Promise<void> => {
       @select="setCurrency"
       @dismiss="currencyPickerOpen = false"
     />
-    <Snackbar :message="snackbarMessage" @dismiss="snackbarMessage = null" />
+    <Snackbar
+      :message="snackbarMessage"
+      @dismiss="snackbarMessage = null"
+    />
   </main>
 </template>

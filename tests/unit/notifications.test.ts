@@ -298,8 +298,8 @@ describe('scheduleMilestoneNotification', () => {
         id: number
         title: string
         body: string
-        extra: { habitId: string; milestoneId: string }
-        schedule: { at: Date; allowWhileIdle: boolean }
+        extra: { habitId: string, milestoneId: string }
+        schedule: { at: Date, allowWhileIdle: boolean }
         channelId: string
       },
     ]
@@ -381,7 +381,7 @@ describe('reconcileHabitNotifications', () => {
     const reconciled = await notifications.reconcileHabitNotifications(habit, stored, t, NOW)
 
     // week-2 target (2026-01-15) is still ahead → kept with its pending id.
-    const kept = reconciled.find((m) => m.id === 'h1-week-2')
+    const kept = reconciled.find(m => m.id === 'h1-week-2')
     expect(kept?.notificationId).toBe('11')
     expect(mocks.schedule).not.toHaveBeenCalledWith(
       expect.objectContaining({
@@ -392,8 +392,8 @@ describe('reconcileHabitNotifications', () => {
     )
     // Other future base milestones (week-3, month-2, ...) get scheduled.
     const scheduledIds = reconciled
-      .filter((m) => m.notificationId !== null)
-      .map((m) => m.id)
+      .filter(m => m.notificationId !== null)
+      .map(m => m.id)
     expect(scheduledIds).toContain('h1-week-3')
     expect(scheduledIds).toContain('h1-month-2')
     expect(scheduledIds).not.toContain('h1-day-1') // reached → never scheduled
@@ -411,7 +411,7 @@ describe('reconcileHabitNotifications', () => {
 
     const reconciled = await notifications.reconcileHabitNotifications(habit, stored, t, NOW)
 
-    expect(reconciled.some((m) => m.id === 'h1-old')).toBe(false)
+    expect(reconciled.some(m => m.id === 'h1-old')).toBe(false)
     expect(mocks.cancel).toHaveBeenCalledWith({ notifications: [{ id: 13 }] })
   })
 
@@ -424,7 +424,7 @@ describe('reconcileHabitNotifications', () => {
 
     const reconciled = await notifications.reconcileHabitNotifications(habit, stored, t, NOW)
 
-    const day1 = reconciled.find((m) => m.id === 'h1-day-1')
+    const day1 = reconciled.find(m => m.id === 'h1-day-1')
     expect(day1?.notificationId).toBeNull()
     expect(day1?.reachedAt).not.toBeNull()
     expect(mocks.cancel).toHaveBeenCalledWith({ notifications: [{ id: 9 }] })

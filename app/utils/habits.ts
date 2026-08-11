@@ -32,7 +32,7 @@ export const addHabit = (habit: Omit<Habit, 'id'>): Habit => {
 
 export const updateHabit = (id: string, updates: Partial<Habit>): void => {
   const habits = getHabits()
-  const index = habits.findIndex((h) => h.id === id)
+  const index = habits.findIndex(h => h.id === id)
   if (index !== -1) {
     const existing = habits[index]
     if (existing) {
@@ -43,5 +43,5 @@ export const updateHabit = (id: string, updates: Partial<Habit>): void => {
 }
 
 export const deleteHabit = (id: string): void => {
-  saveHabits(getHabits().filter((h) => h.id !== id))
+  saveHabits(getHabits().filter(h => h.id !== id))
 }
