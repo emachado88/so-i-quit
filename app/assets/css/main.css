@@ -70,6 +70,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+*:not(input) {
+  user-select: none;
+}
+
 /*
  * Hide the native widget arrows on date/time inputs — Android/Chromium only.
  *
@@ -88,16 +92,16 @@ body {
  * the Capacitor WKWebView.
  */
 @supports not (-webkit-touch-callout: none) {
-  input[type='date'],
-  input[type='time'] {
+  input[type="date"],
+  input[type="time"] {
     -webkit-appearance: none;
     appearance: none;
   }
 
-  input[type='date']::-webkit-calendar-picker-indicator,
-  input[type='time']::-webkit-calendar-picker-indicator,
-  input[type='date']::-webkit-inner-spin-button,
-  input[type='time']::-webkit-inner-spin-button {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="time"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     appearance: none;
     display: none;
