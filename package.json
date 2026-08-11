@@ -19,6 +19,7 @@
     "mobile:apk:release": "cd android && ./gradlew assembleRelease",
     "mobile:dev": "npm run dev -- --host 0.0.0.0",
     "mobile:run:live": "node scripts/live-reload.mjs",
+    "mobile:icons": "bash scripts/generate-icons.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
@@ -39,6 +40,7 @@
     "vue": "^3.5.41"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^0.14.0",
     "@nuxt/test-utils": "^4.1.0",
@@ -61,6 +63,7 @@
   "allowScripts": {
     "esbuild@0.27.7": true,
     "esbuild@0.28.2": true,
-    "esbuild@0.25.12": true
+    "esbuild@0.25.12": true,
+    "sharp@0.32.6": true
   }
 }

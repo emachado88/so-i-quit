@@ -17,6 +17,9 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- Android 12+: system splash background (brand teal, blends with the
+             app icon). <12: the window background drawable splash below. -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:background">@drawable/splash</item>
     </style>
 </resources>

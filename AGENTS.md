@@ -16,6 +16,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 - **lucide-vue-next** — icons
 - **dayjs** — calendar math for milestone targets
 - **Capacitor 8** — `@capacitor/core|cli|android|app|local-notifications|haptics`; `android/` is committed; `dist/` (cloudflare_pages preset output) is the webDir
+- **@capacitor/assets** (devDep) — generates every icon/splash density from the `assets/` SVG masters via `npm run mobile:icons` (rsvg-convert renders the PNGs)
 - **@sentry/vue** — opt-in error tracking via `NUXT_PUBLIC_SENTRY_DSN` (no DSN → plugin is a no-op)
 - **Vitest 4 + @vue/test-utils + happy-dom** — unit tests in node env, component tests in happy-dom
 - **@nuxt/test-utils**, **unplugin-auto-import** (Vue auto-imports in tests; `nuxt/app` composables used by components under test resolve and are mocked per file)
@@ -70,6 +71,9 @@ scripts/
   live-reload.mjs          # LAN IP + CAP_LIVE_URL + cap run android (HMR dev loop)
   add-i18n-keys.py         # add new keys to all 8 locale JSONs
   convert-i18n.py          # RN .ts → JSON migration helper
+  generate-icons.sh        # SVG masters → PNG sources → @capacitor/assets densities
+assets/                    # Icon/splash SVG masters + rendered 1024²/2732² PNG sources
+public/                    # Web favicon (icon.svg) + apple-touch-icon.png (180²)
 docs/
   ui-sketch.html           # Wireframe — visual contract for the rewrite
   QA-CHECKLIST.md          # Manual QA checklist vs wireframe (screens + overlays)
@@ -147,6 +151,7 @@ npm run mobile:apk:preview  # gradlew assemblePreview — debug-keystore-signed,
 npm run mobile:apk:release  # gradlew assembleRelease
 npm run mobile:dev       # dev server on 0.0.0.0 (phone dev loop)
 npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
+npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-icons.sh → @capacitor/assets)
 ```
 
 ## Testing
@@ -207,13 +212,24 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - `canGoBack` comes from the native event (WebView history). Tab switches push history via `NuxtLink`, so back walks the tabs; at the root it exits
 - The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
 
+### Icons & Splash
+- Master art: `app/assets/images/icon.svg` (rounded, full-bleed). `assets/` holds the derived SVG variants + rendered 1024²/2732² PNG sources; `npm run mobile:icons` (`scripts/generate-icons.sh` → rsvg-convert → `@capacitor/assets generate --android`) regenerates every density. Re-run it after editing any master; iOS (when it lands): `npx cap add ios` + `npm run mobile:icons` (the script already renders `icon-ios.png`)
+- **Adaptive foreground** = pulse line + dot only on transparent, baked into the center safe zone (`icon-foreground.svg` scales the line 0.82×); the tool wraps it in a 16.7% inset → final art ≈44% of the icon, safely inside the mask
+- **Gotcha:** the tool's generated `ic_launcher*.xml` insets the **background** 16.7% too — on squircle masks that leaves a launcher-default rim around the gradient. The committed XMLs drop the background inset (gradient fills the full 108dp layer); keep it that way when regenerating (the tool will re-add it — re-patch after `mobile:icons`)
+- **iOS variant** (`assets/icon-ios.svg`) is the square master with **no baked rounded corners** — Apple applies its own mask. Web favicon `public/icon.svg` + `apple-touch-icon.png` (180², from icon-ios) are wired via `useHead` in `app.vue`
+
+### Native splash (Capacitor/Android)
+- Android 12+: system splash background = `@color/splash_background` (`#1A6B5C`, `values/colors.xml`) via `windowSplashScreenBackground` on `AppTheme.NoActionBarLaunch` — the default was the **system theme color**; teal blends with the app icon. The native splash can't read the user's theme (localStorage is JS-only), so it uses the brand color for both modes
+- `<12`: launch theme window background = `@drawable/splash` (brand gradient + pulse, from `@capacitor/assets`) — already wired
+- No `postSplashScreenTheme`: the activity keeps `AppTheme.NoActionBarLaunch`, so the branded drawable stays behind the WebView while it loads (no white flash)
+
 ### Misc
 - **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
 - **Total savings card is pinned above the tab bar** (`fixed`), not part of the scroll
 - Milestone chips scroll fade uses a **pseudo-element** (`::after` gradient), not an overlay element
 - `capacitor.config.ts` reads `CAP_LIVE_URL` — dev-only; sets the dev appId/name, `server.url` + `cleartext: true`. Never commit a URL
 - Android build variants: `debug`, `preview` (debug-keystore-signed for sideload/QA), `release` — `mobile:apk:preview`/`mobile:apk:release` call gradle directly
-- npm 11 blocks esbuild postinstall — `allowScripts` entries in package.json + `npm rebuild esbuild` after fresh installs
+- npm 11 blocks esbuild/sharp postinstall — `allowScripts` entries in package.json + `npm rebuild esbuild` after fresh installs (sharp needed by @capacitor/assets)
 - `appId com.soiquit.app` is a placeholder — confirm before Play Store release
 
 ## Docs Freshness — CHECK THESE ON EVERY TASK

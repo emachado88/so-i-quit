@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand teal for the Android 12+ system splash background
+         (windowSplashScreenBackground). The native splash can't know the
+         user's theme (localStorage is only readable from JS) — the teal
+         matches the app icon and the in-JS BootSplash overlay takes over
+         with the user's actual color scheme from the first WebView frame. -->
+    <color name="splash_background">#1A6B5C</color>
+</resources>

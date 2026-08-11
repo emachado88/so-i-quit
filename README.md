@@ -108,9 +108,11 @@ app/
                            # settings, currencies, domain, notifications (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides
+assets/                    # Icon/splash SVG masters + 1024²/2732² PNG sources
+public/                    # Web favicon (icon.svg) + apple-touch-icon.png
 android/                   # Capacitor Android project (committed)
 tests/                     # unit/ + component/ + helpers.ts + smoke.test.ts
-scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py
+scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py, generate-icons.sh
 docs/ui-sketch.html        # Wireframe — visual contract
 docs/QA-CHECKLIST.md       # Manual QA checklist vs wireframe (screens + overlays)
 ```

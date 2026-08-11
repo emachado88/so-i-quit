@@ -13,6 +13,13 @@ import { addNotificationTapListener } from './utils/notifications'
 const router = useRouter()
 const { locale } = useI18n()
 
+useHead({
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  ],
+})
+
 // Milestone notification taps: route to the Progress screen (the index).
 // The Android plugin delivers the tap on cold starts too (the launch intent
 // action is retained until this listener registers).
