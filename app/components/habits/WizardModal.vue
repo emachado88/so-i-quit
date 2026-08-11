@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { registerBackHandler } from "../../utils/back-handler";
+import { impact, ImpactStyle } from "../../utils/haptics";
 import SavingsModal from "./SavingsModal.vue";
 
 /**
@@ -83,6 +84,7 @@ const selectedDate = (): Date | null => {
 const goToSavingsOrFinish = (): void => {
   const date = selectedDate();
   if (!date) return;
+  impact(ImpactStyle.Medium);
   if (props.withSavings) {
     step.value = "savings";
   } else {

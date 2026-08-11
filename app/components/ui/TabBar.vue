@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ListChecks, Settings, TrendingUp } from "lucide-vue-next";
 
+import { impact, ImpactStyle } from "../../utils/haptics";
+
 const localePath = useLocalePath();
 const route = useRoute();
 
@@ -34,6 +36,7 @@ const isActive = (path: string): boolean => {
           :to="localePath(tab.path)"
           class="flex flex-col items-center gap-0.5 px-4 py-2.5 text-[11px] font-medium text-muted transition-colors"
           :class="isActive(tab.path) ? 'text-primary' : ''"
+          @pointerdown="impact(ImpactStyle.Light)"
         >
           <component :is="tab.icon" class="h-5 w-5 shrink-0" />
           {{ $t(tab.label) }}

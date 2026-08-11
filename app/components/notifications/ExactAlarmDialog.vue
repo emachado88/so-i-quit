@@ -3,6 +3,7 @@ import { onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { registerBackHandler } from "../../utils/back-handler";
+import { impact, ImpactStyle } from "../../utils/haptics";
 
 const { t } = useI18n();
 
@@ -66,7 +67,7 @@ onUnmounted(() => {
           <button
             type="button"
             class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            @click="emit('go-settings')"
+            @click="impact(ImpactStyle.Medium); emit('go-settings')"
           >
             {{ t("milestone.exactAlarmAction") }}
           </button>

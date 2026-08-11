@@ -2,6 +2,7 @@
 import { registerBackHandler } from "../../utils/back-handler";
 import { CURRENCY_SYMBOLS } from "../../utils/currencies";
 import { normalizeSavings } from "../../utils/domain";
+import { impact, ImpactStyle } from "../../utils/haptics";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -41,6 +42,7 @@ const sanitize = (text: string): string =>
     .replace(/(\.\d{2})\d+/g, "$1");
 
 const handleSave = (): void => {
+  impact(ImpactStyle.Medium);
   emit("save", normalizeSavings(localValue.value));
 };
 

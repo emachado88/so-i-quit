@@ -10,6 +10,7 @@ import TotalSavingsCard from "../components/progress/TotalSavingsCard.vue";
 import Snackbar from "../components/ui/Snackbar.vue";
 import { daysSince, getHabitName, parseSavings } from "../utils/domain";
 import { getHabits } from "../utils/habits";
+import { impact, ImpactStyle, notify, NotificationType } from "../utils/haptics";
 import { formatMilestoneLabel, isMilestoneReached } from "../utils/milestones";
 import {
   ensureMilestonesForHabit,
@@ -99,6 +100,7 @@ const currency = computed(() => getSettings().currency);
 // ── Navigation (locale-aware, no Nuxt auto-imports — unit-test friendly) ──
 
 const goToHabits = (): void => {
+  impact(ImpactStyle.Medium);
   const prefix = locale.value === "en" ? "" : `/${locale.value}`;
   router.push(`${prefix}/habits`);
 };
@@ -164,6 +166,13 @@ onUnmounted(() => {
 });
 
 // ── Celebration queue ──
+
+// A milestone was reached → success haptic (native only; no-op in the
+// browser). Fires for mount/foreground crossings and live in-page ones —
+// every path that pushes into the queue.
+watch(celebrations, (list) => {
+  if (list.length > 0) notify(NotificationType.Success);
+});
 
 const activeCelebration = computed(() => celebrations.value[0] ?? null);
 const activeCelebrationText = computed(() => {

@@ -8,7 +8,17 @@ export default defineConfig({
     // Vue auto-imports (ref, computed, onMounted, ...) at transform time —
     // vitest has no Nuxt auto-imports, so components can rely on them the
     // same way they do in the app.
-    AutoImport({ imports: ['vue'], dts: false }),
+    //
+    // Nuxt-only composables used inside components under test (TabBar's
+    // useLocalePath/useRoute) resolve from the real `nuxt/app` module and
+    // are vi.mocked per test file.
+    AutoImport({
+      imports: [
+        'vue',
+        { 'nuxt/app': ['useLocalePath', 'useRoute'] },
+      ],
+      dts: false,
+    }),
   ],
   test: {
     environment: 'node',

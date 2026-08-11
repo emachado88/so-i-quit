@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 
 import { getHabitName } from "../utils/domain";
 import { addHabit, deleteHabit, getHabits, updateHabit } from "../utils/habits";
+import { impact, ImpactStyle } from "../utils/haptics";
 import {
   deleteMilestonesForHabit,
   ensureMilestonesForHabit,
@@ -108,6 +109,7 @@ const handleAddCustomHabit = (): void => {
     snackbarMessage.value = t("habits.enterName");
     return;
   }
+  impact(ImpactStyle.Medium);
   try {
     const created = addHabit({ name: normalized, date: null, savings: null });
     customHabitName.value = "";
