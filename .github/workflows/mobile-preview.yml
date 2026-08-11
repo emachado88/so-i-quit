@@ -5,6 +5,10 @@
 #   - iOS: unsigned simulator .app (installable via Xcode/simctl). A signed
 #     device IPA needs an Apple Developer account + certificates — add a
 #     signing job (secrets: P12, provisioning profile) when that exists.
+#     Artifact gotcha: GitHub wraps every artifact download in a zip AND its
+#     wrapper strips executable bits (breaking .app bundles), so the job
+#     pre-zips App.app itself (ditto) and the download is a zip-in-zip:
+#     so-i-quit-<v>-simulator.zip → so-i-quit-<v>-simulator.app.zip → App.app.
 #
 # Trigger: workflow_dispatch only — previews are on-demand, not per-PR. The
 # `ci` workflow already gates PRs (lint/tsc/test/build), and macOS runner
@@ -129,11 +133,21 @@ jobs:
 
       - name: Package .app
         working-directory: ios/App/build/Build/Products/Debug-iphonesimulator
-        run: zip -r so-i-quit-${{ steps.version.outputs.version }}-simulator.zip App.app
+        run: |
+          # ditto, not zip -r: macOS-correct for .app bundles — preserves the
+          # symlinks and executable bits that `simctl install` requires.
+          # (The GitHub artifact wrapper strips exec permissions, so we must
+          # ship our own zip — see the note in the workflow header.)
+          ditto -c -k --keepParent App.app \
+            so-i-quit-${{ steps.version.outputs.version }}-simulator.app.zip
 
       - name: Upload .app
         uses: actions/upload-artifact@v4
         with:
+          # Note: GitHub wraps every artifact download in a zip, so the
+          # download is so-i-quit-<v>-simulator.zip containing
+          # so-i-quit-<v>-simulator.app.zip (this pre-made zip) containing
+          # App.app — unzip twice. The two names differ on purpose.
           name: so-i-quit-${{ steps.version.outputs.version }}-simulator
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-${{ steps.version.outputs.version }}-simulator.zip
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-${{ steps.version.outputs.version }}-simulator.app.zip
           if-no-files-found: error
