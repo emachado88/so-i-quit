@@ -35,7 +35,7 @@ app/
     habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, MilestoneOptInDialog, RelapseConfirm
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
-    notifications/         # ExactAlarmHint
+    notifications/         # ExactAlarmHint, ExactAlarmDialog
   composables/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
@@ -173,6 +173,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 
 ### Notifications
 - Exact alarms: `SCHEDULE_EXACT_ALARM` in the manifest; Android 12+ special access checked via `checkExactNotificationSetting()`; if denied → hint component + inexact fallback
+- The exact-alarm prompt chains right after the milestone opt-in "Enable" (permission granted AND exact denied → `ExactAlarmDialog` with Skip / Go to settings — never when the OS permission was refused). "Go to settings" opens the OS screen; the dialog stays open and the foreground listener re-checks on return — granted → dismiss + cancel/reconcile all schedules (Android keeps already-scheduled alarms inexact, so they are rebuilt as exact). Skip never re-prompts; the Settings hint remains as fallback
 - OS permission revoked → cancel pending; restored → reconcile (same semantics as the RN app)
 - App foreground is tracked via `App.addListener('appStateChange')` — DOM `visibilitychange` alone is unreliable in the WebView (the DOM visibility doesn't change when the app backgrounds)
 - Tap on a notification routes to Progress, including cold starts (the plugin retains the launch intent action until the JS listener registers)

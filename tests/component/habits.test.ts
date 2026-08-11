@@ -19,6 +19,11 @@ vi.mock('../../app/utils/notifications', () => ({
   requestNotificationPermission: vi.fn(async () => false),
   reconcileHabitNotifications: vi.fn(async (_habit: unknown, stored: unknown) => stored),
   cancelHabitNotifications: vi.fn(async () => {}),
+  checkExactNotificationSetting: vi.fn(async () => true),
+  openExactNotificationSettings: vi.fn(async () => {}),
+  cancelAllMilestoneNotifications: vi.fn(async () => {}),
+  reconcileAllHabitNotifications: vi.fn(async () => {}),
+  addAppForegroundListener: vi.fn(() => ({ remove: vi.fn() })),
 }))
 
 import * as notifications from '../../app/utils/notifications'
@@ -91,6 +96,7 @@ const completeWizard = async (
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(false)
+  vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(true)
 })
 
 afterEach(() => {
@@ -306,6 +312,105 @@ describe('pages/habits', () => {
     expect(notifications.reconcileHabitNotifications).toHaveBeenCalled()
   })
 
+  it('opt-in enable chains the exact-alarm dialog only when permission is granted and exact alarms are denied', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+
+    expect(getSettings().milestoneNotificationsEnabled).toBe(true)
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+  })
+
+  it('opt-in enable never shows the exact-alarm dialog when the OS permission is denied', async () => {
+    // Default mocks: permission denied, exact alarms granted — no chain.
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+
+    expect(getSettings().milestoneNotificationsEnabled).toBe(false)
+    expect(wrapper.text()).not.toContain('Allow exact alarms?')
+  })
+
+  it('exact-alarm dialog skip dismisses without opening system settings', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+
+    await buttonByText(wrapper, 'Skip')!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('Allow exact alarms?')
+    expect(notifications.openExactNotificationSettings).not.toHaveBeenCalled()
+  })
+
+  it('exact-alarm dialog go-to-settings opens the system screen and stays open', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+
+    await buttonByText(wrapper, 'Go to settings')!.trigger('click')
+
+    expect(notifications.openExactNotificationSettings).toHaveBeenCalledTimes(1)
+    // Dialog stays open until the user returns from system settings.
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+  })
+
+  it('returning to foreground with exact alarms granted dismisses the dialog and rebuilds schedules', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+
+    // The page registered the native foreground listener on mount.
+    const listener = vi.mocked(notifications.addAppForegroundListener).mock.calls[0][0]
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(true)
+    await listener()
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Allow exact alarms?')
+    expect(notifications.cancelAllMilestoneNotifications).toHaveBeenCalledTimes(1)
+    expect(notifications.reconcileAllHabitNotifications).toHaveBeenCalledTimes(1)
+  })
+
+  it('returning to foreground while exact alarms are still denied keeps the dialog open', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+
+    const listener = vi.mocked(notifications.addAppForegroundListener).mock.calls[0][0]
+    await listener()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+    expect(notifications.cancelAllMilestoneNotifications).not.toHaveBeenCalled()
+    expect(notifications.reconcileAllHabitNotifications).not.toHaveBeenCalled()
+  })
+
   it('surfaces storage errors via the snackbar', async () => {
     seedStorage('habits', '{not json')
     const wrapper = await mountPage()
@@ -415,5 +520,22 @@ describe('pages/habits', () => {
     expect(wrapper.text()).not.toContain('Celebrate your milestones?')
     // Preference untouched — opting out via back does not enable or prompt again.
     expect(getSettings().milestoneNotificationsEnabled).toBe(false)
+  })
+
+  it('hardware back dismisses the exact-alarm dialog like Skip', async () => {
+    vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(true)
+    vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(false)
+    const wrapper = await mountPage()
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await completeWizard(wrapper)
+    await buttonByText(wrapper, 'Enable notifications')!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Allow exact alarms?')
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('Allow exact alarms?')
+    expect(notifications.openExactNotificationSettings).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { getHabitName } from "../utils/domain";
@@ -11,7 +11,12 @@ import {
   saveMilestonesForHabit,
 } from "../utils/milestones-store";
 import {
+  addAppForegroundListener,
+  cancelAllMilestoneNotifications,
   cancelHabitNotifications,
+  checkExactNotificationSetting,
+  openExactNotificationSettings,
+  reconcileAllHabitNotifications,
   reconcileHabitNotifications,
   requestNotificationPermission,
 } from "../utils/notifications";
@@ -28,6 +33,7 @@ import MilestoneOptInDialog from "../components/habits/MilestoneOptInDialog.vue"
 import RelapseConfirm from "../components/habits/RelapseConfirm.vue";
 import SavingsModal from "../components/habits/SavingsModal.vue";
 import WizardModal from "../components/habits/WizardModal.vue";
+import ExactAlarmDialog from "../components/notifications/ExactAlarmDialog.vue";
 
 const { t } = useI18n();
 
@@ -53,6 +59,7 @@ const deletePending = ref<Habit | null>(null);
 const relapsePending = ref<Habit | null>(null);
 const optInVisible = ref(false);
 const pendingOptInHabitId = ref<string | null>(null);
+const exactAlarmVisible = ref(false);
 const customHabitInput = ref<HTMLInputElement | null>(null);
 
 const settingsCurrency = computed(() => getSettings().currency);
@@ -264,12 +271,66 @@ const handleOptInEnable = async (): Promise<void> => {
       snackbarMessage.value = t("habits.failedToSave");
     }
   }
+
+  // Android 12+: exact alarms are a separate special access. Surface it
+  // right after enabling — the Settings hint alone is easy to miss.
+  if (!(await checkExactNotificationSetting())) {
+    exactAlarmVisible.value = true;
+  }
 };
 
 const handleOptInNotNow = (): void => {
   optInVisible.value = false;
   pendingOptInHabitId.value = null;
 };
+
+// ── Exact alarms (Android 12+ special access) ──
+
+const handleExactAlarmSkip = (): void => {
+  exactAlarmVisible.value = false;
+};
+
+const handleExactAlarmGoSettings = (): void => {
+  // Opens the system screen (ACTION_REQUEST_SCHEDULE_EXACT_ALARM); the
+  // dialog stays open — the foreground listener re-checks on return.
+  void openExactNotificationSettings();
+};
+
+/**
+ * Re-check after the user returns from system settings. Granted → dismiss
+ * and rebuild every schedule (Android keeps already-scheduled alarms
+ * inexact — cancel + reconcile re-creates them as exact). Still denied →
+ * keep the dialog open so they can retry or skip.
+ */
+const handleExactAlarmForeground = async (): Promise<void> => {
+  if (!exactAlarmVisible.value) return;
+  try {
+    if (await checkExactNotificationSetting()) {
+      exactAlarmVisible.value = false;
+      await cancelAllMilestoneNotifications();
+      await reconcileAllHabitNotifications(getHabits(), t, new Date());
+    }
+  } catch {
+    // Permission API unavailable — leave the dialog open.
+  }
+};
+
+onMounted(() => {
+  // Native app lifecycle: when the exact-alarm dialog is open, re-check the
+  // special access every time the app returns to the foreground (e.g. the
+  // user just left system settings). `visibilitychange` is unreliable in the
+  // WebView — DOM visibility doesn't change on app background.
+  foregroundSub = addAppForegroundListener(() => {
+    void handleExactAlarmForeground();
+  });
+});
+
+let foregroundSub: { remove: () => void } | null = null;
+
+onUnmounted(() => {
+  foregroundSub?.remove();
+  foregroundSub = null;
+});
 
 const handleCustomHabitInputBlur = (): void => {
   setTimeout(() => {
@@ -410,6 +471,13 @@ const handleCustomHabitInputBlur = (): void => {
       :visible="optInVisible"
       @enable="handleOptInEnable"
       @not-now="handleOptInNotNow"
+    />
+
+    <!-- Exact alarm special access (Android 12+, chained after opt-in enable) -->
+    <ExactAlarmDialog
+      :visible="exactAlarmVisible"
+      @skip="handleExactAlarmSkip"
+      @go-settings="handleExactAlarmGoSettings"
     />
 
     <Snackbar :message="snackbarMessage" @dismiss="snackbarMessage = null" />
