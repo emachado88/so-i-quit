@@ -2,11 +2,11 @@
 
 > **Track vices. Celebrate progress.**
 
+![So I Quit](./assets/icon.svg)
+
 ---
 
 So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or anything else you set yourself to overcome. Set a quit date, log daily savings, and watch the counters tick. No accounts, no cloud sync, no nonsense.
-
-> ⚠️ **This branch (`rewrite-nuxt-cap`) is the Nuxt 4 + Capacitor rewrite.** The previous React Native (Expo) app lives on `master` until the rewrite lands. The docs below describe the rewrite.
 
 ## Features
 
@@ -23,19 +23,19 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 
 ## Tech Stack
 
-| Layer         | Technology                                                                  |
-| ------------- | --------------------------------------------------------------------------- |
-| Framework     | [Nuxt](https://nuxt.com) 4.5 (SPA, `ssr: false`) + Vue 3.5                  |
+| Layer         | Technology                                                                        |
+| ------------- | --------------------------------------------------------------------------------- |
+| Framework     | [Nuxt](https://nuxt.com) 4.5 (SPA, `ssr: false`) + Vue 3.5                        |
 | Mobile        | [Capacitor](https://capacitorjs.com) 8 (Android) + @capacitor/local-notifications |
-| UI            | Tailwind CSS v4 (token-driven `@theme`) + lucide-vue-next icons             |
-| i18n          | @nuxtjs/i18n 10 — 8 locales, URL-prefix strategy, localStorage persistence  |
-| Theme         | @nuxtjs/color-mode 4 (system/light/dark, localStorage)                      |
-| Date Handling | dayjs (calendar math for milestone targets)                                 |
-| Storage       | localStorage (WebView-safe layer in `app/utils/storage.ts`)                 |
-| Fonts         | @nuxt/fonts — Inter 400–900                                                 |
-| Language      | TypeScript 5.9 (strict mode)                                                |
-| Testing       | Vitest 4 + @vue/test-utils + happy-dom                                      |
-| Build         | `nuxt generate` (cloudflare_pages preset) → `dist/` = Capacitor webDir      |
+| UI            | Tailwind CSS v4 (token-driven `@theme`) + lucide-vue-next icons                   |
+| i18n          | @nuxtjs/i18n 10 — 8 locales, URL-prefix strategy, localStorage persistence        |
+| Theme         | @nuxtjs/color-mode 4 (system/light/dark, localStorage)                            |
+| Date Handling | dayjs (calendar math for milestone targets)                                       |
+| Storage       | localStorage (WebView-safe layer in `app/utils/storage.ts`)                       |
+| Fonts         | @nuxt/fonts — Inter 400–900                                                       |
+| Language      | TypeScript 5.9 (strict mode)                                                      |
+| Testing       | Vitest 4 + @vue/test-utils + happy-dom                                            |
+| Build         | `nuxt generate` (cloudflare_pages preset) → `dist/` = Capacitor webDir            |
 
 ## Getting Started
 
@@ -56,22 +56,22 @@ npm run dev
 
 ### Scripts
 
-| Command                      | Description                                       |
-| ---------------------------- | ------------------------------------------------- |
-| `npm run dev`                | Nuxt dev server                                   |
-| `npm run build`              | SPA build → `.output`                             |
-| `npm run generate`           | SPA generate → `dist/` (Capacitor webDir)         |
+| Command                      | Description                                                |
+| ---------------------------- | ---------------------------------------------------------- |
+| `npm run dev`                | Nuxt dev server                                            |
+| `npm run build`              | SPA build → `.output`                                      |
+| `npm run generate`           | SPA generate → `dist/` (Capacitor webDir)                  |
 | `npm test`                   | Vitest unit + component tests (coverage gate 80% enforced) |
-| `npm run lint`               | ESLint (flat config) — 0 errors/warnings                    |
-| `npm run lint:fix`           | ESLint `--fix`                                              |
-| `npx tsc --noEmit`           | TypeScript type check (strict mode)                         |
-| `npm run mobile:sync`        | generate + `cap sync android`                     |
-| `npm run mobile:run`         | `cap run android`                                 |
-| `npm run mobile:apk`         | Gradle `assembleDebug`                            |
-| `npm run mobile:apk:preview` | Gradle `assemblePreview` (debug-signed, sideload) |
-| `npm run mobile:apk:release` | Gradle `assembleRelease`                          |
-| `npm run mobile:dev`         | Dev server on `0.0.0.0` (phone dev loop)          |
-| `npm run mobile:run:live`    | Live-reload loop (LAN IP + `cap run android`)     |
+| `npm run lint`               | ESLint (flat config) — 0 errors/warnings                   |
+| `npm run lint:fix`           | ESLint `--fix`                                             |
+| `npx tsc --noEmit`           | TypeScript type check (strict mode)                        |
+| `npm run mobile:sync`        | generate + `cap sync android`                              |
+| `npm run mobile:run`         | `cap run android`                                          |
+| `npm run mobile:apk`         | Gradle `assembleDebug`                                     |
+| `npm run mobile:apk:preview` | Gradle `assemblePreview` (debug-signed, sideload)          |
+| `npm run mobile:apk:release` | Gradle `assembleRelease`                                   |
+| `npm run mobile:dev`         | Dev server on `0.0.0.0` (phone dev loop)                   |
+| `npm run mobile:run:live`    | Live-reload loop (LAN IP + `cap run android`)              |
 
 ### Build
 
@@ -116,22 +116,6 @@ scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py,
 docs/ui-sketch.html        # Wireframe — visual contract
 docs/QA-CHECKLIST.md       # Manual QA checklist vs wireframe (screens + overlays)
 ```
-
-## Roadmap (rewrite tickets)
-
-1. ✅ Scaffold Nuxt 4 + Tailwind + i18n + color-mode + Vitest
-2. ✅ Capacitor wrapper + mobile build + live reload
-3. ✅ Types + storage layer (localStorage)
-4. ✅ Domain utils (time + money)
-5. ✅ Milestone engine (pure TS)
-6. ✅ i18n: 8 locales
-7. ✅ Shell + dark mode + fonts
-8. ✅ Habits screen (CRUD + wizard)
-9. ✅ Progress screen (counters + ring + celebration)
-10. ✅ Settings screen
-11. ✅ Local notifications (Capacitor)
-12. ✅ Haptics + Sentry + polish
-13. ✅ Test suite gates (80% coverage enforced) + ESLint + QA checklist + final docs
 
 ## License
 
