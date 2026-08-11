@@ -33,7 +33,16 @@ type Translate = (key: string, params?: Record<string, unknown>) => string
 /** Android notification channel for milestone celebrations. */
 export const MILESTONE_CHANNEL_ID = 'milestones'
 
+/**
+ * iOS hard-caps pending local notifications at 64 per app. `reconcileAll`
+ * splits a safety-margin budget (60) across dated habits; each habit only
+ * schedules its earliest milestones and later boots/foregrounds fill the
+ * rest as earlier ones are reached (ids are deterministic — nothing lost).
+ */
+export const IOS_PENDING_BUDGET = 60
+
 const isNative = (): boolean => Capacitor.isNativePlatform()
+const isIOS = (): boolean => Capacitor.getPlatform() === 'ios'
 
 /**
  * Deterministic int32 notification id for a milestone — stable across
@@ -309,6 +318,7 @@ export const reconcileHabitNotifications = async (
   stored: Milestone[],
   t: Translate,
   now: Date,
+  maxPending: number = Number.POSITIVE_INFINITY,
 ): Promise<Milestone[]> => {
   if (!habit.date || !isNative()) return stored
 
@@ -336,6 +346,7 @@ export const reconcileHabitNotifications = async (
 
   // 2. Reconcile each generated milestone.
   const reconciled: Milestone[] = []
+  let pendingCount = 0
   for (const milestone of generated) {
     const previous = storedById.get(milestone.id)
     const reached = isMilestoneReached(habit, milestone, now)
@@ -353,11 +364,23 @@ export const reconcileHabitNotifications = async (
       continue
     }
 
-    // Future target: keep a still-pending id, otherwise schedule fresh.
+    // Future target: keep a still-pending id, otherwise schedule fresh —
+    // unless the platform pending budget is exhausted (iOS caps at 64 per
+    // app; reconcileAll splits the budget across habits and later boots
+    // fill the rest as earlier milestones are reached).
     let notificationId: string | null = previous?.notificationId ?? null
     if (!notificationId || !pendingIds.has(Number(notificationId))) {
-      const scheduled = await scheduleMilestoneNotification(habit, milestone, t, now)
-      notificationId = scheduled?.notificationId ?? null
+      if (pendingCount < maxPending) {
+        const scheduled = await scheduleMilestoneNotification(habit, milestone, t, now)
+        notificationId = scheduled?.notificationId ?? null
+        if (notificationId) pendingCount += 1
+      }
+      else {
+        notificationId = null
+      }
+    }
+    else {
+      pendingCount += 1
     }
     reconciled.push({
       ...milestone,
@@ -377,10 +400,16 @@ export const reconcileAllHabitNotifications = async (
 ): Promise<void> => {
   if (!isNative()) return
   const dated = habits.filter(h => h.date)
+  // iOS caps pending local notifications at 64 per app: split the safety
+  // budget across dated habits so a habit with a 10-year horizon doesn't
+  // crowd out the others. Android has no such limit (Infinity).
+  const maxPending = isIOS()
+    ? Math.max(1, Math.floor(IOS_PENDING_BUDGET / dated.length))
+    : Number.POSITIVE_INFINITY
   const byHabit = getMilestonesForHabits(dated, now)
   for (const habit of dated) {
     const stored = byHabit[habit.id] ?? []
-    const reconciled = await reconcileHabitNotifications(habit, stored, t, now)
+    const reconciled = await reconcileHabitNotifications(habit, stored, t, now, maxPending)
     saveMilestonesForHabit(habit.id, reconciled)
   }
 }

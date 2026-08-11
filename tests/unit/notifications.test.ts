@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
   const checkExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
   const changeExact = vi.fn(async () => ({ exact_alarm: 'granted' }))
   const isNative = vi.fn(() => true)
+  const getPlatform = vi.fn(() => 'android')
   const addListener = vi.fn(
     async (_event: string, _listener: (a: ActionPerformed) => void) => ({
       remove: () => Promise.resolve(),
@@ -45,13 +46,16 @@ const mocks = vi.hoisted(() => {
   )
   return {
     schedule, getPending, cancel, requestPermissions, checkPermissions,
-    createChannel, checkExact, changeExact, isNative, addListener,
+    createChannel, checkExact, changeExact, isNative, getPlatform, addListener,
     appAddListener, areEnabled,
   }
 })
 
 vi.mock('@capacitor/core', () => ({
-  Capacitor: { isNativePlatform: () => mocks.isNative() },
+  Capacitor: {
+    isNativePlatform: () => mocks.isNative(),
+    getPlatform: () => mocks.getPlatform(),
+  },
 }))
 
 vi.mock('@capacitor/app', () => ({
@@ -436,6 +440,38 @@ describe('reconcileHabitNotifications', () => {
         ],
       }),
     )
+  })
+
+  it('respects the iOS pending budget (maxPending) when scheduling', async () => {
+    mocks.getPlatform.mockReturnValue('ios')
+    const habit = makeHabit()
+    mocks.getPending.mockResolvedValue({ notifications: [] })
+
+    const reconciled = await notifications.reconcileHabitNotifications(habit, [], t, NOW, 5)
+
+    const withIds = reconciled.filter(m => m.notificationId !== null)
+    // Budget 5 → exactly the 5 earliest future milestones get a notification.
+    expect(withIds.length).toBe(5)
+    expect(mocks.schedule).toHaveBeenCalledTimes(5)
+    // Later milestones are still reconciled (with null ids) for the ring UI.
+    expect(reconciled.length).toBeGreaterThan(5)
+  })
+
+  it('splits the iOS budget across dated habits in reconcileAll', async () => {
+    mocks.getPlatform.mockReturnValue('ios')
+    const habits = [makeHabit(), makeHabit({ id: 'h2', date: '2026-01-05T09:00:00.000Z' })]
+    saveMilestonesForHabit('h1', [])
+    saveMilestonesForHabit('h2', [])
+    mocks.getPending.mockResolvedValue({ notifications: [] })
+
+    await notifications.reconcileAllHabitNotifications(habits, t, new Date('2026-01-10T00:00:00Z'))
+
+    const h1Ids = getMilestonesForHabit('h1').filter(m => m.notificationId !== null)
+    const h2Ids = getMilestonesForHabit('h2').filter(m => m.notificationId !== null)
+    // 60 budget / 2 habits = 30 each — never beyond iOS's hard 64 cap.
+    expect(h1Ids.length).toBeLessThanOrEqual(30)
+    expect(h2Ids.length).toBeLessThanOrEqual(30)
+    expect(h1Ids.length + h2Ids.length).toBeLessThanOrEqual(60)
   })
 })
 
