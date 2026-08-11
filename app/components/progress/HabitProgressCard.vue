@@ -184,4 +184,18 @@ onMounted(() => {
     transparent
   );
 }
+
+.chips::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: calc(var(--spacing) * 3.5);
+  right: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to left,
+    var(--color-surface),
+    transparent
+  );
+}
 </style>
