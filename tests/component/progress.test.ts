@@ -309,7 +309,7 @@ describe('components/progress/HabitProgressCard', () => {
     expect(
       wrapper.find('svg[aria-label="milestone progress"]').exists(),
     ).toBe(true)
-    expect(wrapper.find('circle.stroke-success').exists()).toBe(true)
+    expect(wrapper.find('circle.stroke-primary-hover').exists()).toBe(true)
   })
 
   it('shows the just-started message for streaks under an hour', () => {
@@ -335,7 +335,7 @@ describe('components/progress/HabitProgressCard', () => {
       global: { plugins: [i18n] },
     })
 
-    const bar = wrapper.find('circle.stroke-success')
+    const bar = wrapper.find('circle.stroke-primary-hover')
     expect(bar.exists()).toBe(true)
     // Empty ring: dashoffset equals the full circumference, not 0 (full).
     expect(bar.attributes('stroke-dashoffset')).toBe(
