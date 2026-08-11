@@ -61,7 +61,8 @@ app/
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 104 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
-  app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS
+  app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
+  app/src/main/java/com/soiquit/app/SplashActivity.java  # OEM-proof launch splash (1200ms → MainActivity)
 tests/
   helpers.ts               # installStorageMock() (localStorage stub via vi.stubGlobal) + seedStorage()
   smoke.test.ts            # en.json key-set guard (≥80 keys, no {{ mustache }})
@@ -219,9 +220,12 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 - **iOS variant** (`assets/icon-ios.svg`) is the square master with **no baked rounded corners** — Apple applies its own mask. Web favicon `public/icon.svg` + `apple-touch-icon.png` (180², from icon-ios) are wired via `useHead` in `app.vue`
 
 ### Native splash (Capacitor/Android)
-- Android 12+: system splash background = `@color/splash_background` (`#1A6B5C`, `values/colors.xml`) via `windowSplashScreenBackground` on `AppTheme.NoActionBarLaunch` — the default was the **system theme color**; teal blends with the app icon. The native splash can't read the user's theme (localStorage is JS-only), so it uses the brand color for both modes
-- `<12`: launch theme window background = `@drawable/splash` (brand gradient + pulse, from `@capacitor/assets`) — already wired
-- No `postSplashScreenTheme`: the activity keeps `AppTheme.NoActionBarLaunch`, so the branded drawable stays behind the WebView while it loads (no white flash)
+- **OEM-proof route (HyperOS/MIUI skip the Android 12+ system splash):** `SplashActivity.java` is the **launcher** activity — it draws the branded `@drawable/splash` (portrait variants from @capacitor/assets) full-screen via `AppTheme.NoActionBarLaunch`, holds ~1200ms, then starts `MainActivity` and finishes (`noHistory`, so back never returns to it; back during the splash exits the app). The launch intent (action + extras) is forwarded to MainActivity so **notification cold-start taps keep working**. The splash→WebView transition is a **crossfade** (`applyFadeTransition()`: `overrideActivityTransition` on API 34+, `overridePendingTransition` below) — the default activity slide/zoom is overridden
+- `windowSplashScreenBackground` (`@color/splash_background`, `#1A6B5C`) still colors the Android 12+ system splash on devices where it renders (before SplashActivity); `windowSplashScreenAnimatedIcon` is **transparent** — HyperOS renders the splash icon duplicated on top of the window (the "3 copies" bug: 2 distorted icons in the header + the window image)
+- **Gotcha:** the core-splashscreen library (`Theme.SplashScreen`) **overrides `android:windowBackground` with a solid color** (`compat_splash_screen_no_icon_background`) — the Capacitor template's `android:background=@drawable/splash` is the wrong attribute and never renders. The launch theme must set `android:windowBackground` (after the parent) to show the splash image
+- `MainActivity` has no intent-filter (`exported=false`, `singleTask`) and keeps `AppTheme.NoActionBarLaunch` so the branded drawable stays behind the WebView while it loads (no flash)
+- `@capacitor/splash-screen` was **tried and removed** — on Android 12+ its launch splash is still the system one (icon + color), which Xiaomi ignores in dark mode
+- **iOS (when it lands):** no OEM problem there — Apple always shows the launch screen. Equivalent = `LaunchScreen.storyboard` with the brand image (feed it via `@capacitor/assets generate --ios`, which renders `splash-ios` from `assets/splash.svg`); if a min-duration hold is wanted, the same plugin config (`launchShowDuration`) works on iOS — no custom VC needed
 
 ### Misc
 - **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
