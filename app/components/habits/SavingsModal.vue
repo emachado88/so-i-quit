@@ -120,7 +120,7 @@ onUnmounted(() => {
             @input="
               localValue = sanitize(($event.target as HTMLInputElement).value)
             "
-          />
+          >
         </div>
       </div>
 

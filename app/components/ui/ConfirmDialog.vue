@@ -15,7 +15,7 @@ const props = withDefaults(
     cancelLabel?: string;
     destructive?: boolean;
   }>(),
-  { destructive: false },
+  { destructive: false, cancelLabel: undefined },
 );
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
 

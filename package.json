@@ -18,7 +18,9 @@
     "mobile:apk:preview": "cd android && ./gradlew assemblePreview",
     "mobile:apk:release": "cd android && ./gradlew assembleRelease",
     "mobile:dev": "npm run dev -- --host 0.0.0.0",
-    "mobile:run:live": "node scripts/live-reload.mjs"
+    "mobile:run:live": "node scripts/live-reload.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -36,12 +38,14 @@
     "vue": "^3.5.41"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^0.14.0",
     "@nuxt/test-utils": "^4.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
+    "eslint": "^10.8.1",
     "happy-dom": "^20.11.2",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. **This branch (`rewrite-nuxt-cap`) is a full rewrite from React Native/Expo to Nuxt 4 SPA + Capacitor (Android)** — the RN app still lives on `master` until the rewrite lands. Visual contract: `docs/ui-sketch.html`. Work is executed ticket-by-ticket from `.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md` (Tickets 1–12 done; 13 pending).
+A habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. **This branch (`rewrite-nuxt-cap`) is a full rewrite from React Native/Expo to Nuxt 4 SPA + Capacitor (Android)** — the RN app still lives on `master` until the rewrite lands. Visual contract: `docs/ui-sketch.html`. Work is executed ticket-by-ticket from `.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md` (Tickets 1–13 done).
 
 **Always mobile** (user decision — no `MOBILE_BUILD` flag): `ssr: false`, everything persisted in localStorage (the WebView drops cookies), domain logic as pure TS modules tested with Vitest. The web build exists only for the dev loop.
 
@@ -19,7 +19,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 - **@sentry/vue** — opt-in error tracking via `NUXT_PUBLIC_SENTRY_DSN` (no DSN → plugin is a no-op)
 - **Vitest 4 + @vue/test-utils + happy-dom** — unit tests in node env, component tests in happy-dom
 - **@nuxt/test-utils**, **unplugin-auto-import** (Vue auto-imports in tests; `nuxt/app` composables used by components under test resolve and are mocked per file)
-- **Not yet installed** (Ticket 13): ESLint
+- **ESLint 10 + @nuxt/eslint** — flat config (`eslint.config.mjs`), `npm run lint` / `npm run lint:fix`
 
 ## Project Structure
 
@@ -71,6 +71,7 @@ scripts/
   convert-i18n.py          # RN .ts → JSON migration helper
 docs/
   ui-sketch.html           # Wireframe — visual contract for the rewrite
+  QA-CHECKLIST.md          # Manual QA checklist vs wireframe (screens + overlays)
 capacitor.config.ts        # appId com.soiquit.app (dev: com.soiquit.dev), webDir dist, androidScheme https
 nuxt.config.ts             # modules, ssr:false, colorMode, i18n, fonts, cloudflare_pages preset
 vitest.config.ts           # vue + AutoImport plugins; node env; include tests/**
@@ -132,9 +133,11 @@ vitest.config.ts           # vue + AutoImport plugins; node env; include tests/*
 npm run dev              # Nuxt dev server (browser dev loop)
 npm run build            # SPA build → .output
 npm run generate         # SPA generate → dist/ (Capacitor webDir)
+npm run lint             # ESLint (flat config, @nuxt/eslint) — 0 errors/warnings
+npm run lint:fix         # ESLint --fix
 npx tsc --noEmit         # TypeScript check (strict)
-npm test                 # vitest run (unit + component)
-npx vitest run --coverage  # coverage (thresholds not enforced yet — Ticket 13; last ~91/86/88/93)
+npm test                 # vitest run (unit + component) + coverage gate 80%
+npx vitest run --coverage  # coverage report (last ~94/89/92/95 stmts/lines/funcs/branches)
 # Mobile (Capacitor)
 npm run mobile:sync      # generate + cap sync android
 npm run mobile:run       # cap run android
@@ -145,8 +148,6 @@ npm run mobile:dev       # dev server on 0.0.0.0 (phone dev loop)
 npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
 ```
 
-**There is no `npm run lint`** — ESLint is not configured yet (Ticket 13). Do not invent one.
-
 ## Testing
 
 - **Unit** (`tests/unit/`): pure utils, node environment — no setup needed beyond the storage stub
@@ -154,7 +155,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - **`tests/helpers.ts`:** `installStorageMock()` stubs a real `localStorage` global via `vi.stubGlobal` (no module mocking — the storage layer guards with `typeof localStorage === 'undefined'`); `seedStorage(key, value)` arranges raw values (corrupt JSON, edge cases)
 - **Component test boilerplate:** `createI18n({ legacy: false, locale: 'en', messages: { en } })` from `app/i18n/locales/en.json` + `createRouter` with `createMemoryHistory`; `vi.mock` for `useNow` (hoisted ref for clock control) and `notifications` (foreground handlers)
 - `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute'] }] })` — components get Vue auto-imports in tests, and the Nuxt composables they call inline resolve from the real `nuxt/app` module; **mock that module per test file** (`vi.mock('nuxt/app', ...)`) — other Nuxt APIs (`navigateTo`, …) are still NOT available in tests
-- Coverage gate (80%) and ESLint are pending (Ticket 13)
+- Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~94/89/92/95). ESLint (10 + @nuxt/eslint) is configured; `npm run lint` must stay at 0 errors/warnings
 
 ## Key Decisions & Pitfalls
 
@@ -225,7 +226,7 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 10. ✅ Settings screen
 11. ✅ Local notifications (Capacitor)
 12. ✅ Haptics + Sentry + polish
-13. ⏳ Test suite gates (80% coverage in vitest.config) + ESLint + QA checklist + final docs
+13. ✅ Test suite gates (80% coverage enforced in vitest.config) + ESLint + QA checklist + final docs
 
 ## Brand
 

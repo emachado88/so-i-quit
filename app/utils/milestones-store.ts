@@ -42,8 +42,8 @@ export const saveMilestonesForHabit = (
 /** Remove all milestone state for one habit. */
 export const deleteMilestonesForHabit = (habitId: string): void => {
   const store = readStore()
-  delete store[habitId]
-  writeStore(store)
+  const { [habitId]: _removed, ...rest } = store
+  writeStore(rest)
 }
 
 /**

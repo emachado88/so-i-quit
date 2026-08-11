@@ -166,7 +166,7 @@ onUnmounted(() => {
               type="date"
               :max="todayStr"
               class="w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
-            />
+            >
           </div>
           <div class="w-28">
             <label
@@ -180,7 +180,7 @@ onUnmounted(() => {
               v-model="timeStr"
               type="time"
               class="w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
-            />
+            >
           </div>
         </div>
         <div class="mt-5 flex justify-end gap-2">

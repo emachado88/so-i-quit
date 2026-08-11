@@ -380,13 +380,13 @@ const handleCustomHabitInputBlur = (): void => {
     <!-- Custom name input -->
     <div v-if="showCustomInput" class="flex items-center gap-2">
       <input
-        v-model="customHabitName"
         ref="customHabitInput"
+        v-model="customHabitName"
         type="text"
         :placeholder="t('habits.habitName')"
         class="flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
         @blur="handleCustomHabitInputBlur"
-      />
+      >
       <button
         type="button"
         class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"

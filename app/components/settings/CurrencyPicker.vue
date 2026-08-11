@@ -80,7 +80,7 @@ const options = computed(() => {
         type="search"
         :placeholder="t('settings.searchCurrency')"
         class="mt-3 w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
-      />
+      >
       <div class="mt-2 flex flex-1 flex-col overflow-y-auto">
         <button
           v-for="option in options"

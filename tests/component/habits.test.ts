@@ -9,6 +9,7 @@ import HabitsPage from '../../app/pages/habits.vue'
 import { handleBackButton } from '../../app/utils/back-handler'
 import { getHabits, saveHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
+import * as notifications from '../../app/utils/notifications'
 import { getSettings } from '../../app/utils/settings'
 import type { Habit } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
@@ -25,8 +26,6 @@ vi.mock('../../app/utils/notifications', () => ({
   reconcileAllHabitNotifications: vi.fn(async () => {}),
   addAppForegroundListener: vi.fn(() => ({ remove: vi.fn() })),
 }))
-
-import * as notifications from '../../app/utils/notifications'
 
 installStorageMock()
 

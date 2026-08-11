@@ -10,7 +10,7 @@ export default defineNuxtConfig({
         'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
     },
   },
-  modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts'],
+  modules: ['@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/fonts', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
   // Component names without directory prefixes (TabBar, HabitCard, ...) —
   // every component name in this app is unique.

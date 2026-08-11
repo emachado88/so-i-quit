@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 
 import type { Theme } from '../../utils/types'
 
-const props = defineProps<{ value: Theme }>()
+defineProps<{ value: Theme }>()
 const emit = defineEmits<{ change: [theme: Theme] }>()
 
 const { t } = useI18n()

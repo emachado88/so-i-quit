@@ -61,8 +61,10 @@ npm run dev
 | `npm run dev`                | Nuxt dev server                                   |
 | `npm run build`              | SPA build → `.output`                             |
 | `npm run generate`           | SPA generate → `dist/` (Capacitor webDir)         |
-| `npm test`                   | Vitest unit + component tests                     |
-| `npx tsc --noEmit`           | TypeScript type check (strict mode)               |
+| `npm test`                   | Vitest unit + component tests (coverage gate 80% enforced) |
+| `npm run lint`               | ESLint (flat config) — 0 errors/warnings                    |
+| `npm run lint:fix`           | ESLint `--fix`                                              |
+| `npx tsc --noEmit`           | TypeScript type check (strict mode)                         |
 | `npm run mobile:sync`        | generate + `cap sync android`                     |
 | `npm run mobile:run`         | `cap run android`                                 |
 | `npm run mobile:apk`         | Gradle `assembleDebug`                            |
@@ -89,7 +91,7 @@ The `android/` project is committed; build artifacts are gitignored.
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
 - **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, notifications) + `tests/component/` (habits, progress, settings) + `tests/smoke.test.ts` (i18n key-set guard).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
-- **Coverage:** currently ~91/86/88/93 (lines/branches/functions/statements). An enforced 80% gate + ESLint are planned (rewrite Ticket 13).
+- **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/89/92/95. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
 
 ## Project Structure
@@ -110,6 +112,7 @@ android/                   # Capacitor Android project (committed)
 tests/                     # unit/ + component/ + helpers.ts + smoke.test.ts
 scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py
 docs/ui-sketch.html        # Wireframe — visual contract
+docs/QA-CHECKLIST.md       # Manual QA checklist vs wireframe (screens + overlays)
 ```
 
 ## Roadmap (rewrite tickets)
@@ -126,7 +129,7 @@ docs/ui-sketch.html        # Wireframe — visual contract
 10. ✅ Settings screen
 11. ✅ Local notifications (Capacitor)
 12. ✅ Haptics + Sentry + polish
-13. ⏳ Test suite gates (80% coverage) + ESLint + QA checklist + final docs
+13. ✅ Test suite gates (80% coverage enforced) + ESLint + QA checklist + final docs
 
 ## License
 

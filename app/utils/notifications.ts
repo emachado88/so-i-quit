@@ -304,7 +304,7 @@ export const reconcileHabitNotifications = async (
 ): Promise<Milestone[]> => {
   if (!habit.date || !isNative()) return stored
 
-  let pendingIds: Set<number> | null = null
+  let pendingIds: Set<number>
   try {
     const pending = await LocalNotifications.getPending()
     pendingIds = new Set(pending.notifications.map((n) => n.id))

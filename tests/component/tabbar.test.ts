@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import en from '../../app/i18n/locales/en.json'
 import TabBar from '../../app/components/ui/TabBar.vue'
+import { impact } from '../../app/utils/haptics'
 
 // Nuxt-only composables (resolved from `nuxt/app` by the vitest AutoImport
 // config) are mocked per test file — the TabBar only needs localePath and
@@ -22,8 +23,6 @@ vi.mock('../../app/utils/haptics', () => ({
   notify: vi.fn(),
   vibrate: vi.fn(),
 }))
-
-import { impact } from '../../app/utils/haptics'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 

@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { Haptics } from '@capacitor/haptics'
+import {
+  ImpactStyle,
+  NotificationType,
+  impact,
+  notify,
+  vibrate,
+} from '../../app/utils/haptics'
+
 // The wrapper's native guard is the only Capacitor touchpoint — flip it to
 // exercise both sides of every call.
 const { native } = vi.hoisted(() => ({ native: { value: false } }))
@@ -21,15 +30,6 @@ vi.mock('@capacitor/haptics', () => ({
     vibrate: vi.fn(async () => {}),
   },
 }))
-
-import { Haptics } from '@capacitor/haptics'
-import {
-  ImpactStyle,
-  NotificationType,
-  impact,
-  notify,
-  vibrate,
-} from '../../app/utils/haptics'
 
 const mocked = vi.mocked(Haptics)
 
