@@ -20,6 +20,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 - **Vitest 4 + @vue/test-utils + happy-dom** — unit tests in node env, component tests in happy-dom
 - **@nuxt/test-utils**, **unplugin-auto-import** (Vue auto-imports in tests; `nuxt/app` composables used by components under test resolve and are mocked per file)
 - **ESLint 10 + @nuxt/eslint** — flat config (`eslint.config.mjs`), `npm run lint` / `npm run lint:fix`
+- **husky 9 + lint-staged 17** — git hooks; lint-staged runs `eslint --fix` on staged files only (`lint-staged.config.mjs`)
 
 ## Project Structure
 
@@ -156,6 +157,13 @@ npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + c
 - **Component test boilerplate:** `createI18n({ legacy: false, locale: 'en', messages: { en } })` from `app/i18n/locales/en.json` + `createRouter` with `createMemoryHistory`; `vi.mock` for `useNow` (hoisted ref for clock control) and `notifications` (foreground handlers)
 - `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute'] }] })` — components get Vue auto-imports in tests, and the Nuxt composables they call inline resolve from the real `nuxt/app` module; **mock that module per test file** (`vi.mock('nuxt/app', ...)`) — other Nuxt APIs (`navigateTo`, …) are still NOT available in tests
 - Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~94/89/92/95). ESLint (10 + @nuxt/eslint) is configured; `npm run lint` must stay at 0 errors/warnings
+
+## Git Hooks & CI
+
+- **Pre-commit (`.husky/pre-commit`)**: `npx lint-staged` (eslint --fix on staged `*.{ts,vue,mjs}`; fails fast, no full-lint cost) → `npm test` (full suite + 80% coverage gate, enforced by vitest.config.ts). If commits feel heavy, the test line can move to a `pre-push` hook — CI gates merges regardless. Escape hatch: `git commit --no-verify` (rare)
+- **`.github/workflows/ci.yml`** — job **`ci`** on every PR + push to `rewrite-nuxt-cap`: `npm ci` (Node 22, npm cache) → `npm run lint` → `npx tsc --noEmit` → `npm test` → `npm run build`. `concurrency` cancels superseded runs on the same ref
+- **Branch protection on `master`** (PR merge target): required status check `ci`, strict (up-to-date before merge), enforced for admins — direct pushes to `master` are rejected, everything lands via PR
+- `prepare: "husky"` (package.json) re-installs the hooks on `npm install`; hooks live in `.husky/` (committed, `_/` gitignored)
 
 ## Key Decisions & Pitfalls
 

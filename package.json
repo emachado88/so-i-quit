@@ -20,7 +20,8 @@
     "mobile:dev": "npm run dev -- --host 0.0.0.0",
     "mobile:run:live": "node scripts/live-reload.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -47,6 +48,8 @@
     "@vue/test-utils": "^2.4.11",
     "eslint": "^10.8.1",
     "happy-dom": "^20.11.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "unplugin-auto-import": "^21.1.0",
