@@ -54,7 +54,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21" # Capacitor 8 requires Java 21 (sourceCompatibility VERSION_21)
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -114,7 +114,9 @@ jobs:
       - name: Build for simulator (unsigned)
         working-directory: ios/App
         run: |
-          xcodebuild -workspace App.xcworkspace -scheme App \
+          # SPM-based project (CapApp-SPM, no Podfile) — there is no
+          # App.xcworkspace; build via the .xcodeproj directly.
+          xcodebuild -project App.xcodeproj -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath build \
