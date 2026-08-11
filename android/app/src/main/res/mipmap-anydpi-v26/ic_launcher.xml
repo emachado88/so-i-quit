@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background fills the full 108dp layer (no inset — the gradient must
+         cover every mask shape; an inset would leave a launcher-default rim
+         on squircle/rounded-square masks). Foreground keeps the 16.7% inset:
+         the tool's art is baked with padding so the inset lands it at ~44%
+         of the icon, inside the visible circle. -->
+    <background android:drawable="@mipmap/ic_launcher_background"/>
+    <foreground>
+        <inset android:drawable="@mipmap/ic_launcher_foreground" android:inset="16.7%" />
+    </foreground>
+</adaptive-icon>

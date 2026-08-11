@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+    </style>
+
+
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- Android 12+ system splash: brand teal background, NO icon
+             (windowSplashScreenAnimatedIcon transparent — HyperOS renders the
+             icon duplicated on top of the window; hiding it makes the system
+             splash pure teal, seamless into the window image below). -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <!-- NOTE: the core-splashscreen library overrides windowBackground with
+             a solid color — must set android:windowBackground (not
+             android:background) AFTER the parent to show the splash image. -->
+        <item name="android:windowBackground">@drawable/splash</item>
+        <!-- Belt & braces: kill any title/action bar (framework + AppCompat
+             attr namespaces; some ROMs ignore windowActionBar alone) and pin
+             the system bars to the brand color. -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+        <!-- Crossfade on activity transitions (splash → WebView window)
+             instead of the default slide/zoom. -->
+        <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
+    </style>
+
+    <style name="SplashWindowAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
+    </style>
+</resources>
