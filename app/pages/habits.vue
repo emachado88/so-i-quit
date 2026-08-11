@@ -360,6 +360,7 @@ const handleCustomHabitInputBlur = (): void => {
       :visible="!!(wizard && wizardHabit)"
       :flow="wizard?.flow ?? 'new'"
       :habit-name="wizardName"
+      :initial-date="wizard?.flow === 'edit' ? wizardHabit?.date ?? null : null"
       :initial-savings="wizard?.initialSavings ?? null"
       :currency="settingsCurrency"
       :with-savings="wizard?.withSavings ?? true"

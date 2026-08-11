@@ -194,6 +194,37 @@ describe('pages/habits', () => {
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
   })
 
+  it('edit date pre-fills the saved date and keeps savings', async () => {
+    saveHabits([
+      makeHabit({ date: '2025-01-01T10:30:00.000Z', savings: '3' }),
+    ])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit date')!.trigger('click')
+    await nextTick()
+
+    // Native inputs pre-filled with the saved instant in local time
+    const saved = new Date('2025-01-01T10:30:00.000Z')
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const expectedDate = `${saved.getFullYear()}-${pad(saved.getMonth() + 1)}-${pad(saved.getDate())}`
+    const expectedTime = `${pad(saved.getHours())}:${pad(saved.getMinutes())}`
+    expect(
+      (wrapper.find('#wizard-date').element as HTMLInputElement).value,
+    ).toBe(expectedDate)
+    expect(
+      (wrapper.find('#wizard-time').element as HTMLInputElement).value,
+    ).toBe(expectedTime)
+
+    // Confirm with the untouched pre-filled values round-trips the date
+    await buttonByText(wrapper, 'Confirm')!.trigger('click')
+    await flushPromises()
+
+    const [habit] = getHabits()
+    expect(habit.date).toBe('2025-01-01T10:30:00.000Z')
+    expect(habit.savings).toBe('3') // untouched
+  })
+
   it('edit date keeps savings and updates the date', async () => {
     saveHabits([makeHabit({ date: '2025-01-01T00:00:00.000Z', savings: '3' })])
     const wrapper = await mountPage()
@@ -212,12 +243,18 @@ describe('pages/habits', () => {
     expect(habit.savings).toBe('3') // untouched
   })
 
-  it('edit savings via the menu', async () => {
+  it('edit savings via the menu (pre-filled with the current value)', async () => {
     saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z', savings: '3' })])
     const wrapper = await mountPage()
 
     await openMenu(wrapper)
     await buttonByText(wrapper, 'Edit savings')!.trigger('click')
+    await nextTick()
+
+    expect(
+      (wrapper.find('#savings-amount').element as HTMLInputElement).value,
+    ).toBe('3')
+
     await wrapper.find('#savings-amount').setValue('7.5')
     await buttonByText(wrapper, 'Confirm')!.trigger('click')
 

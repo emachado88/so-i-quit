@@ -19,11 +19,13 @@ const props = withDefaults(
     visible: boolean;
     flow: "new" | "reset" | "edit";
     habitName: string;
+    /** Current quit date (ISO) — pre-filled into the datetime step for the edit flow. */
+    initialDate?: string | null;
     initialSavings: string | null;
     currency: string;
     withSavings?: boolean;
   }>(),
-  { withSavings: true },
+  { withSavings: true, initialDate: null },
 );
 const emit = defineEmits<{
   finish: [date: Date, savings: string | null];
@@ -43,13 +45,29 @@ const todayStr = computed(() => {
   return `${y}-${m}-${d}`;
 });
 
+/** Local yyyy-mm-dd + hh:mm from an ISO string ('' when null/invalid). */
+const isoToInputs = (iso: string | null): { date: string; time: string } => {
+  if (!iso) return { date: "", time: "" };
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "", time: "" };
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+};
+
 watch(
   () => props.visible,
   (visible) => {
     if (visible) {
       step.value = "datetime";
-      dateStr.value = "";
-      timeStr.value = "";
+      // Edit flow: pre-fill the current saved date so the user sees/tweaks
+      // it instead of retyping from scratch. New/reset start blank.
+      const initial =
+        props.flow === "edit" ? isoToInputs(props.initialDate) : null;
+      dateStr.value = initial?.date ?? "";
+      timeStr.value = initial?.time ?? "";
     }
   },
 );
