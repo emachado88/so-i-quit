@@ -167,7 +167,7 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 ## Git Hooks & CI
 
 - **Pre-commit (`.husky/pre-commit`)**: `npx lint-staged` (eslint --fix on staged `*.{ts,vue,mjs}`; fails fast, no full-lint cost) → `npm test` (full suite + 80% coverage gate, enforced by vitest.config.ts). If commits feel heavy, the test line can move to a `pre-push` hook — CI gates merges regardless. Escape hatch: `git commit --no-verify` (rare)
-- **`.github/workflows/ci.yml`** — job **`ci`** on every PR + push to `rewrite-nuxt-cap`: `npm ci` (Node 22, npm cache) → `npm run lint` → `npx tsc --noEmit` → `npm test` → `npm run build`. `concurrency` cancels superseded runs on the same ref
+- **`.github/workflows/ci.yml`** — job **`ci`** on every PR (`pull_request`) + manual `workflow_dispatch`: `npm ci` (Node 22, npm cache) → `npm run lint` → `npx tsc --noEmit` → `npm test` → `npm run build`. No `push` trigger — everything lands via PR, so a branch push would only duplicate the PR run. `concurrency` cancels superseded runs on the same ref
 - **Branch protection on `master`** (PR merge target): required status check `ci`, strict (up-to-date before merge), enforced for admins — direct pushes to `master` are rejected, everything lands via PR
 - `prepare: "husky"` (package.json) re-installs the hooks on `npm install`; hooks live in `.husky/` (committed, `_/` gitignored)
 
