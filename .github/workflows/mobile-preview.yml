@@ -1,0 +1,109 @@
+# CD: preview installers for QA/sideload, built on demand.
+#
+#   - Android: `preview` variant APK (debug-keystore-signed, installable on
+#     any device without a dedicated keystore) — com.soiquit.app.preview.
+#   - iOS: unsigned simulator .app (installable via Xcode/simctl). A signed
+#     device IPA needs an Apple Developer account + certificates — add a
+#     signing job (secrets: P12, provisioning profile) when that exists.
+#
+# Triggers: workflow_dispatch (manual, any branch) + pull_request (artifacts
+# land in the run's Summary page for PR QA). Same concurrency pattern as CI.
+name: Mobile Preview
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android (preview APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate web assets (SPA)
+        run: npx nuxt generate
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build preview APK
+        working-directory: android
+        run: ./gradlew assemblePreview
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: so-i-quit-android-preview
+          path: android/app/build/outputs/apk/preview/app-preview.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS (simulator .app)
+    runs-on: macos-15 # Xcode required — does not exist on Linux runners
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate web assets (SPA)
+        run: npx nuxt generate
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Build for simulator (unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package .app
+        working-directory: ios/App/build/Build/Products/Debug-iphonesimulator
+        run: zip -r so-i-quit-ios-simulator.zip App.app
+
+      - name: Upload .app
+        uses: actions/upload-artifact@v4
+        with:
+          name: so-i-quit-ios-simulator
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-ios-simulator.zip
+          if-no-files-found: error

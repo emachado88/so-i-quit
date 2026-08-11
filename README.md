@@ -17,7 +17,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 - **💱 Currency Picker** — Searchable currency selector with locale-based auto-detection on first run
 - **🌍 Locale-aware** — Device-language detection; Intl-based currency/date formatting
 - **🗣 Multi-language** — Zero-backend i18n via @nuxtjs/i18n: EN, PT, FR, ES, IT, ZH (Simplified), DE, NL
-- **📱 Android-first** — Capacitor 8 wrapper; the same SPA runs in the browser for the dev loop
+- **📱 Mobile-first** — Capacitor 8 wrapper (Android + iOS); the same SPA runs in the browser for the dev loop
 - **💾 Local Only** — All data stays on-device via localStorage (no account needed)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
 
@@ -26,7 +26,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 | Layer         | Technology                                                                        |
 | ------------- | --------------------------------------------------------------------------------- |
 | Framework     | [Nuxt](https://nuxt.com) 4.5 (SPA, `ssr: false`) + Vue 3.5                        |
-| Mobile        | [Capacitor](https://capacitorjs.com) 8 (Android) + @capacitor/local-notifications |
+| Mobile        | [Capacitor](https://capacitorjs.com) 8 (Android + iOS, iOS via Swift Package Manager) + @capacitor/local-notifications |
 | UI            | Tailwind CSS v4 (token-driven `@theme`) + lucide-vue-next icons                   |
 | i18n          | @nuxtjs/i18n 10 — 8 locales, URL-prefix strategy, localStorage persistence        |
 | Theme         | @nuxtjs/color-mode 4 (system/light/dark, localStorage)                            |
@@ -65,13 +65,15 @@ npm run dev
 | `npm run lint`               | ESLint (flat config) — 0 errors/warnings                   |
 | `npm run lint:fix`           | ESLint `--fix`                                             |
 | `npx tsc --noEmit`           | TypeScript type check (strict mode)                        |
-| `npm run mobile:sync`        | generate + `cap sync android`                              |
-| `npm run mobile:run`         | `cap run android`                                          |
-| `npm run mobile:apk`         | Gradle `assembleDebug`                                     |
-| `npm run mobile:apk:preview` | Gradle `assemblePreview` (debug-signed, sideload)          |
-| `npm run mobile:apk:release` | Gradle `assembleRelease`                                   |
-| `npm run mobile:dev`         | Dev server on `0.0.0.0` (phone dev loop)                   |
-| `npm run mobile:run:live`    | Live-reload loop (LAN IP + `cap run android`)              |
+| `npm run mobile:sync`        | generate + `cap sync` (android + ios)                         |
+| `npm run mobile:run`         | `cap run android`                                             |
+| `npm run mobile:run:ios`     | `cap run ios` (macOS + Xcode only)                            |
+| `npm run mobile:apk`         | Gradle `assembleDebug`                                        |
+| `npm run mobile:apk:preview` | Gradle `assemblePreview` (debug-signed, sideload)             |
+| `npm run mobile:apk:release` | Gradle `assembleRelease`                                      |
+| `npm run mobile:dev`         | Dev server on `0.0.0.0` (phone dev loop)                      |
+| `npm run mobile:run:live`    | Live-reload loop (LAN IP + `cap run android`)                 |
+| `npm run mobile:icons`       | Regenerate icon/splash densities (Android + iOS)              |
 
 ### Build
 
@@ -84,7 +86,16 @@ npm run mobile:apk:preview
 npm run mobile:apk:release   # then sign/align via the normal Android toolchain
 ```
 
-The `android/` project is committed; build artifacts are gitignored.
+The `android/` and `ios/` projects are committed; build artifacts are gitignored.
+
+### CI preview installers
+
+`.github/workflows/mobile-preview.yml` builds on every PR (+ manual `workflow_dispatch`):
+
+- **Android** — `assemblePreview` APK (installable on any device, `com.soiquit.app.preview`)
+- **iOS** — unsigned simulator `.app` (zipped; install via Xcode/simctl)
+
+Artifacts land in the run's Summary page. Signed iOS device builds need an Apple Developer account + certificates.
 
 ## Testing
 
@@ -108,9 +119,10 @@ app/
                            # settings, currencies, domain, notifications (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides
-assets/                    # Icon/splash SVG masters + 1024²/2732² PNG sources
+assets/                    # Icon/splash SVG masters + rendered 1024²/2732² PNG sources
 public/                    # Web favicon (icon.svg) + apple-touch-icon.png
 android/                   # Capacitor Android project (committed)
+ios/                       # Capacitor iOS project (committed; Swift Package Manager)
 tests/                     # unit/ + component/ + helpers.ts + smoke.test.ts
 scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py, generate-icons.sh
 docs/ui-sketch.html        # Wireframe — visual contract
