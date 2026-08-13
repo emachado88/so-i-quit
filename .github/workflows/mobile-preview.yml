@@ -5,10 +5,13 @@
 #   - iOS: unsigned simulator .app (installable via Xcode/simctl). A signed
 #     device IPA needs an Apple Developer account + certificates — add a
 #     signing job (secrets: P12, provisioning profile) when that exists.
-#     Artifact gotcha: GitHub wraps every artifact download in a zip AND its
-#     wrapper strips executable bits (breaking .app bundles), so the job
-#     pre-zips App.app itself (ditto) and the download is a zip-in-zip:
-#     so-i-quit-<v>-simulator.zip → so-i-quit-<v>-simulator.app.zip → App.app.
+#     Artifact gotcha: GitHub's download wrapper strips executable bits
+#     (breaking .app bundles), so the job ships App.app inside a single
+#     tar.gz (upload-artifact v7 with `archive: false` keeps it as-is).
+#     Download → tar -xzf so-i-quit-<v>-simulator.app.tar.gz → App.app
+#     (permissions/symlinks intact). If the GitHub UI wraps the download
+#     in an extra zip, unzip first, then tar -xzf (pending real
+#     workflow_dispatch validation).
 #
 # Trigger: workflow_dispatch only — previews are on-demand, not per-PR. The
 # `ci` workflow already gates PRs (lint/tsc/test/build), and macOS runner
@@ -85,7 +88,7 @@ jobs:
         run: mv app-preview.apk so-i-quit-${{ steps.version.outputs.version }}-preview.apk
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: so-i-quit-${{ steps.version.outputs.version }}-preview
           path: android/app/build/outputs/apk/preview/so-i-quit-${{ steps.version.outputs.version }}-preview.apk
@@ -134,20 +137,18 @@ jobs:
       - name: Package .app
         working-directory: ios/App/build/Build/Products/Debug-iphonesimulator
         run: |
-          # ditto, not zip -r: macOS-correct for .app bundles — preserves the
-          # symlinks and executable bits that `simctl install` requires.
-          # (The GitHub artifact wrapper strips exec permissions, so we must
-          # ship our own zip — see the note in the workflow header.)
-          ditto -c -k --keepParent App.app \
-            so-i-quit-${{ steps.version.outputs.version }}-simulator.app.zip
+          # tar.gz, not zip: preserves permissions, symlinks and case, which
+          # the GitHub artifact wrapper would strip. Uploaded with
+          # `archive: false` so the artifact IS this tar.gz (see header).
+          tar -czf so-i-quit-${{ steps.version.outputs.version }}-simulator.app.tar.gz App.app
 
       - name: Upload .app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          # Note: GitHub wraps every artifact download in a zip, so the
-          # download is so-i-quit-<v>-simulator.zip containing
-          # so-i-quit-<v>-simulator.app.zip (this pre-made zip) containing
-          # App.app — unzip twice. The two names differ on purpose.
+          # `archive: false` keeps the artifact as the raw tar.gz (no extra
+          # zip layer). Download → tar -xzf → App.app intact. If the GitHub
+          # UI still wraps the download in a zip, unzip first, then tar -xzf.
           name: so-i-quit-${{ steps.version.outputs.version }}-simulator
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-${{ steps.version.outputs.version }}-simulator.app.zip
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/so-i-quit-${{ steps.version.outputs.version }}-simulator.app.tar.gz
+          archive: false
           if-no-files-found: error
