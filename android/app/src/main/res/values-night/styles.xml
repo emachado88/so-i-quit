@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Night-mode variants. The activities use AppTheme.NoActionBarLaunch;
+         without these, night falls back to the light styles and Xiaomi/HyperOS
+         paints the system nav-bar band (behind the 3-button keys / gesture
+         pill) from the window theme's isLightTheme — a light-grey band over
+         the dark page even after the icons are flipped by SystemBarsPlugin. -->
+
+    <!-- AppTheme is the manifest application theme; no activity uses it
+         directly (both activities override below). Dark variant for
+         completeness. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <!-- @drawable/splash resolves to drawable-night/splash.png here. -->
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+        <!-- Dark appearance: light (white) icons on both bars — matches the
+             SystemBarsPlugin runtime call for dark mode, so pre-Android-15
+             solid bars and any theme-derived scrim are dark too. -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
+    </style>
+
+</resources>

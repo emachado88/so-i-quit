@@ -264,7 +264,7 @@ const dismissCelebration = (): void => {
     <!-- Pinned above the TabBar; the habit cards scroll behind it -->
     <div
       v-if="totalSavings > 0"
-      class="enter-rise fixed left-0 bottom-[calc(3.7rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
+      class="enter-rise fixed left-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
       :style="{ animationDelay: '90ms' }"
     >
       <TotalSavingsCard
