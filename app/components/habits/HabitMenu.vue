@@ -17,9 +17,19 @@ const emit = defineEmits<{
 
 const open = ref(false)
 
-const action = (emitName: 'edit-date' | 'edit-savings' | 'delete'): void => {
+type MenuAction = 'edit-date' | 'edit-savings' | 'delete'
+
+// `emit()` is typed as one overload per event, so calling it with the union
+// variable would not match any overload — dispatch through literal calls.
+const emitAction: Record<MenuAction, () => void> = {
+  'edit-date': () => emit('edit-date'),
+  'edit-savings': () => emit('edit-savings'),
+  'delete': () => emit('delete'),
+}
+
+const action = (emitName: MenuAction): void => {
   open.value = false
-  emit(emitName)
+  emitAction[emitName]()
 }
 
 // Hardware back (Android): close the menu — same as tapping outside.
@@ -52,7 +62,7 @@ onUnmounted(() => {
   <div class="relative">
     <button
       type="button"
-      class="rounded-full p-1.5 text-muted transition-colors hover:bg-card hover:text-ink"
+      class="rounded-full p-1.5 text-muted transition hover:bg-card hover:text-ink"
       :aria-label="t('habits.openMenu', { name })"
       @click="open = !open"
     >
@@ -66,34 +76,45 @@ onUnmounted(() => {
       @click="open = false"
     />
 
-    <div
-      v-if="open"
-      class="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+    <!-- Dropdown: subtle pop-in from the ⋮ button (fade + scale, origin
+         top-right). Same zoom language as the modals, smaller amplitude. -->
+    <Transition
+      enter-active-class="transition duration-150 ease-out motion-reduce:transition-none"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-100 ease-in motion-reduce:transition-none"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
-      <button
-        type="button"
-        class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
-        @click="action('edit-date')"
+      <div
+        v-if="open"
+        class="absolute right-0 top-full z-50 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
       >
-        <Clock3 class="h-4 w-4 shrink-0 text-muted" />
-        {{ t('habits.editDate') }}
-      </button>
-      <button
-        type="button"
-        class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
-        @click="action('edit-savings')"
-      >
-        <Coins class="h-4 w-4 shrink-0 text-muted" />
-        {{ t('habits.editSavings') }}
-      </button>
-      <button
-        type="button"
-        class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-danger/10"
-        @click="action('delete')"
-      >
-        <Trash2 class="h-4 w-4 shrink-0" />
-        {{ t('habits.delete') }}
-      </button>
-    </div>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
+          @click="action('edit-date')"
+        >
+          <Clock3 class="h-4 w-4 shrink-0 text-muted" />
+          {{ t('habits.editDate') }}
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
+          @click="action('edit-savings')"
+        >
+          <Coins class="h-4 w-4 shrink-0 text-muted" />
+          {{ t('habits.editSavings') }}
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-danger/10"
+          @click="action('delete')"
+        >
+          <Trash2 class="h-4 w-4 shrink-0" />
+          {{ t('habits.delete') }}
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>

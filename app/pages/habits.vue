@@ -352,14 +352,17 @@ const handleCustomHabitInputBlur = (): void => {
 
 <template>
   <main class="flex flex-col gap-4 px-4 py-6">
-    <div class="flex items-center justify-between">
+    <div class="enter-rise flex items-center justify-between">
       <h1 class="text-2xl font-black tracking-tight text-ink">
         {{ t("tabs.habits") }}
       </h1>
     </div>
 
     <!-- Standard habits (hidden once added) + custom -->
-    <div class="flex flex-wrap items-center gap-2">
+    <div
+      class="enter-rise flex flex-wrap items-center gap-2"
+      :style="{ animationDelay: '45ms' }"
+    >
       <button
         v-if="!hasAlcohol"
         type="button"
@@ -411,7 +414,8 @@ const handleCustomHabitInputBlur = (): void => {
     <!-- List (newest first) -->
     <div
       v-if="habits.length === 0"
-      class="py-10 text-center text-sm text-muted"
+      class="enter-rise py-10 text-center text-sm text-muted"
+      :style="{ animationDelay: '90ms' }"
     >
       {{ t("habits.noHabits") }}
     </div>
@@ -420,8 +424,10 @@ const handleCustomHabitInputBlur = (): void => {
       class="flex flex-col gap-3"
     >
       <HabitCard
-        v-for="habit in [...habits].reverse()"
+        v-for="(habit, index) in [...habits].reverse()"
         :key="habit.id"
+        class="enter-rise"
+        :style="{ animationDelay: `${(index + 2) * 45}ms` }"
         :habit="habit"
         :currency="settingsCurrency"
         @edit-date="startWizard('edit', habit.id, habit.savings, false)"

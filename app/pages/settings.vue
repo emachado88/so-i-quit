@@ -208,11 +208,14 @@ const handleNotificationsToggle = async (): Promise<void> => {
 
 <template>
   <main class="flex flex-col gap-4 px-4 py-6">
-    <h1 class="text-2xl font-black tracking-tight text-ink">
+    <h1 class="enter-rise text-2xl font-black tracking-tight text-ink">
       {{ t('tabs.settings') }}
     </h1>
 
-    <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <section
+      class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
+      :style="{ animationDelay: '45ms' }"
+    >
       <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.appearance') }}
@@ -287,7 +290,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
       <ExactAlarmHint v-if="exactAlarmDenied" />
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <section
+      class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
+      :style="{ animationDelay: '90ms' }"
+    >
       <div class="flex items-center gap-3 px-4 py-3.5">
         <span class="text-sm font-semibold text-ink">So I Quit</span>
         <span class="ml-auto text-[13.5px] font-semibold text-muted">v{{ version }}</span>

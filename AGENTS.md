@@ -28,7 +28,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 ```
 app/
   app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap listener routes to Progress
-  layouts/default.vue      # Shell: max-w-107.5 (430px) mx-auto, safe-area padding, TabBar fixed bottom
+  layouts/default.vue      # Shell: safe-area padding, TabBar fixed bottom (430px shell dropped in the portrait-lock commit)
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
     habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, milestone opt-in
@@ -59,7 +59,7 @@ app/
     haptics.ts             # Capacitor haptics wrapper (native guard; light tabs / medium confirms / success milestones)
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 104 keys each
-  assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides
+  assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
   app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
   app/src/main/java/com/soiquit/app/SplashActivity.java  # OEM-proof launch splash (1200ms → MainActivity)
@@ -215,6 +215,14 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 - Fill is driven by the **Web Animations API** (`el.animate` on `strokeDashoffset`), not CSS transitions — Chromium starts SVG presentation-attribute transitions from 0 on insert ("shrink from 100%" flash), and they can be swallowed if the attribute lands before first paint
 - The ring mounts empty and animates up; data arriving later re-animates from the current offset (no full-ring flash)
 - Test selector for the fill bar: `circle.stroke-primary-hover` (the class is a token, `stroke-success` was renamed)
+
+### Page Transitions & Entrances (Combo A)
+- **Crossfade, `out-in`**: `app.vue` passes `<NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />`; the `page-*` classes live in `main.css`. **Opacity-only on purpose** — a transform/filter on the page root would make it the containing block of fixed descendants, so the pinned TotalSavingsCard on Progress would jump mid-animation. `out-in` keeps one page mounted at a time (pages never stack), at the cost of a quick bg-colour blink between phases (invisible — pages are transparent over the shell bg)
+- **Staggered card entrance**: `.enter-rise` (rise-in keyframes: fade + 10px rise, 350ms `cubic-bezier(0.16,1,0.3,1)`, `backwards` fill so delayed cards stay hidden during their wait). Applied with an inline `animation-delay` of `index * 45ms` on page mounts: header 0ms → chips 45ms → cards 90ms+ → pinned savings card 90ms. Runs once per mount (CSS animations don't replay on re-render; keyed v-for keeps them inert on list edits). **Gotcha:** fill mode is `backwards`, never `both`/`forwards` — a finished fill-mode animation stays applied and keeps every card a permanent stacking context, which trapped the habit-menu dropdown (absolute z-50) behind the next card (a sibling stacking context later in DOM order)
+- **TabBar sliding pill**: a `w-1/3` track absolutely positioned in the fixed nav, `translateX(activeIndex * 100%)` with `transition-transform duration-300` — glides between tabs; the pill visual inside carries the `mx-2` margins so the translate stays cell-aligned. Boot always lands on tab 0 (root URL), so no initial slide
+- **HabitMenu dropdown**: same zoom language as the modals at smaller amplitude — `<Transition>` fade + `scale-95 → 100`, `origin-top-right` (grows from the ⋮ button), `duration-150 ease-out` enter / `duration-100 ease-in` leave, `motion-reduce:transition-none`
+- **Reduced motion**: `@media (prefers-reduced-motion: reduce)` in `main.css` kills the page transition and `enter-rise`; the pill uses `motion-reduce:transition-none` (Tailwind variant)
+- Locale switches on the same page (e.g. `/pt` → `/en` on Settings) reuse the page component — no remount, no transition (text updates in place); that is intentional
 
 ### Hardware Back Button (Android)
 - Android-only: iOS has no hardware back button (`App.addListener('backButton')` never fires there — the listener is a safe no-op; the iOS system swipe-back gestures are handled by the WebView natively)
