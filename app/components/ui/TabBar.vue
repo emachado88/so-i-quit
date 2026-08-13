@@ -35,7 +35,7 @@ const activeIndex = computed(() => {
 
 <template>
   <nav
-    class="fixed bottom-0 z-50 w-full border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur"
+    class="fixed bottom-0 z-50 w-full border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] pt-1.5 backdrop-blur"
   >
     <!-- Sliding active-tab indicator: a soft pill that glides between tabs.
          The 1/3-wide track translates by tab index; the pill visual inside
