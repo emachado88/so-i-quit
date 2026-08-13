@@ -1,3 +1,4 @@
+import pkg from './package.json'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
@@ -31,6 +32,7 @@ export default defineNuxtConfig({
   // Without a DSN the sentry plugin is a no-op (see plugins/sentry.client.ts).
   runtimeConfig: {
     public: {
+      appVersion: pkg.version,
       sentryDsn: '',
     },
   },
