@@ -28,7 +28,7 @@ const isActive = (path: string): boolean => {
 
 <template>
   <nav
-    class="fixed bottom-0 left-1/2 z-50 w-full max-w-107.5 -translate-x-1/2 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur"
+    class="fixed bottom-0 z-50 w-full border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur"
   >
     <ul class="flex items-stretch">
       <li
