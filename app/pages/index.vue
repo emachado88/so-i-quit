@@ -10,7 +10,12 @@ import TotalSavingsCard from '../components/progress/TotalSavingsCard.vue'
 import Snackbar from '../components/ui/Snackbar.vue'
 import { daysSince, getHabitName, parseSavings } from '../utils/domain'
 import { getHabits } from '../utils/habits'
-import { impact, ImpactStyle, notify, NotificationType } from '../utils/haptics'
+import {
+  impact,
+  ImpactStyle,
+  notify,
+  NotificationType,
+} from '../utils/haptics'
 import { formatMilestoneLabel, isMilestoneReached } from '../utils/milestones'
 import {
   ensureMilestonesForHabit,
@@ -257,7 +262,7 @@ const dismissCelebration = (): void => {
     <!-- Pinned above the TabBar; the habit cards scroll behind it -->
     <div
       v-if="totalSavings > 0"
-      class="fixed bottom-[calc(3.7rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
+      class="fixed left-0 bottom-[calc(3.7rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
     >
       <TotalSavingsCard
         :total="totalSavings"

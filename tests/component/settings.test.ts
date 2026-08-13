@@ -53,7 +53,7 @@ vi.mock('../../app/utils/notifications', () => ({
 // from package.json); the real nuxt/app module needs the Nuxt build context,
 // so it's fully stubbed like in the other component tests.
 vi.mock('nuxt/app', () => ({
-  useRuntimeConfig: () => ({ app: { version: '1.0.0-beta' } }),
+  useRuntimeConfig: () => ({ public: { appVersion: '1.0.0-beta' } }),
 }))
 
 installStorageMock()
