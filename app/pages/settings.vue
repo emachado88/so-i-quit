@@ -34,7 +34,7 @@ import type { AppSettings, Theme } from '../utils/types'
 
 const { t, locale } = useI18n()
 // App version injected by Nuxt from package.json — single source of truth.
-const version = useRuntimeConfig().app.version
+const version = useRuntimeConfig().public.appVersion
 const themeMode = useThemeMode()
 const localeSwitch = useLocaleSwitch()
 
