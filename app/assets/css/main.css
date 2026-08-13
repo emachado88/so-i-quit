@@ -114,22 +114,50 @@ body {
 /*
  * Normalize native date/time inputs on iOS (WKWebView).
  *
- * WebKit sizes these from UA defaults that changed between iOS 18 (empty
- * inputs can collapse — WebKit bug 198959, "too tiny") and iOS 26 (controls
- * redesigned with much larger default padding — "too big"). The box height
- * is driven by padding on the shadow-DOM parts (::-webkit-datetime-edit*
- * fields), so we zero it and pin the dimensions ourselves. NO
- * appearance:none here — on iOS that disables tap-to-open the picker.
+ * WebKit sizes temporal inputs from the shadow-DOM fields' INTRINSIC
+ * minimum width, which ignores width:100% on some versions and scales
+ * with the fields' own font-size. iOS 18 minimums are small (inputs look
+ * tiny, date != time width); iOS 26 minimums are large (content overflows
+ * the box into the neighbor column / past the modal). Fix: make the input
+ * a flex container that honors width:100%, and collapse the fields'
+ * intrinsic minimums (font-size + min-width:0 + overflow:hidden).
+ * NO appearance:none here — on iOS that disables tap-to-open the picker.
  */
 @supports (-webkit-touch-callout: none) {
+  /* DEBUG MARKER — 3px red outline proves this block is live on device.
+     Remove once confirmed. */
   input[type="date"],
   input[type="time"] {
-    display: block;
+    outline: 3px solid red;
+  }
+
+  input[type="date"],
+  input[type="time"] {
+    display: flex; /* width:100% is ignored with the UA inline-flex on some WebKit; flex honors it */
+    align-items: center;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     min-height: 2.75rem; /* 44px — Apple tap-target minimum */
+    font-size: 0.875rem; /* pin — fields scale in ch units off this */
     line-height: 1.5;
+  }
+
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   input[type="date"]::-webkit-datetime-edit,
@@ -145,5 +173,7 @@ body {
   input[type="time"]::-webkit-datetime-edit-minute-field,
   input[type="time"]::-webkit-datetime-edit-meridiem-field {
     padding: 0;
+    min-width: 0;
+    font-size: 0.875rem;
   }
 }
