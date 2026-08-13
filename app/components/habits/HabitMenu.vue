@@ -17,9 +17,19 @@ const emit = defineEmits<{
 
 const open = ref(false)
 
-const action = (emitName: 'edit-date' | 'edit-savings' | 'delete'): void => {
+type MenuAction = 'edit-date' | 'edit-savings' | 'delete'
+
+// `emit()` is typed as one overload per event, so calling it with the union
+// variable would not match any overload — dispatch through literal calls.
+const emitAction: Record<MenuAction, () => void> = {
+  'edit-date': () => emit('edit-date'),
+  'edit-savings': () => emit('edit-savings'),
+  'delete': () => emit('delete'),
+}
+
+const action = (emitName: MenuAction): void => {
   open.value = false
-  emit(emitName)
+  emitAction[emitName]()
 }
 
 // Hardware back (Android): close the menu — same as tapping outside.
