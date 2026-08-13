@@ -90,7 +90,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: so-i-quit-${{ steps.version.outputs.version }}-preview
+          name: so-i-quit-${{ steps.version.outputs.version }}-preview.apk
           path: android/app/build/outputs/apk/preview/so-i-quit-${{ steps.version.outputs.version }}-preview.apk
           if-no-files-found: error
 
