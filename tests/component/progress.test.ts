@@ -22,9 +22,10 @@ import { installStorageMock, seedStorage } from '../helpers'
 // screen only calls reconcile when notifications are enabled. The foreground
 // listener is captured so tests can simulate the app returning to the
 // foreground (the flow that re-checks milestones crossed while backgrounded).
-const { nowRef, foregroundHandlers } = vi.hoisted(() => ({
+const { nowRef, foregroundHandlers, notifyMock } = vi.hoisted(() => ({
   nowRef: { value: null as { value: Date } | null },
   foregroundHandlers: [] as Array<() => void>,
+  notifyMock: vi.fn(),
 }))
 
 // `useNow` must return a real Vue ref (the template unwraps `:now="now"`
@@ -46,6 +47,13 @@ vi.mock('../../app/utils/notifications', () => ({
     return { remove: vi.fn() }
   }),
 }))
+
+// Partial haptics mock: keep the real ImpactStyle/NotificationType enums,
+// spy on `notify` so the live-crossing test can assert the success haptic.
+vi.mock('../../app/utils/haptics', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../app/utils/haptics')>()
+  return { ...actual, notify: notifyMock }
+})
 
 installStorageMock()
 
@@ -220,6 +228,8 @@ describe('pages/index', () => {
     expect(wrapper.find('[role="status"]').text()).toContain(
       'Alcohol free for 1 day!',
     )
+    // Mount/foreground crossing → success haptic (watch fires on replace).
+    expect(notifyMock).toHaveBeenCalledTimes(1)
     await wrapper.find('[role="status"] button').trigger('click')
     await nextTick()
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
@@ -233,6 +243,9 @@ describe('pages/index', () => {
     expect(wrapper.find('[role="status"]').text()).toContain(
       'Alcohol free for 3 days!',
     )
+    // Live in-page crossing → haptic too (regression: push() mutated the
+    // array in place and the shallow watch never fired).
+    expect(notifyMock).toHaveBeenCalledTimes(2)
   })
 
   it('celebrates milestones crossed while backgrounded when the app returns', async () => {

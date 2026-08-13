@@ -80,7 +80,12 @@ watch(
       const result = ensureMilestonesForHabit(habit, current)
       milestonesByHabit.value[habit.id] = result.milestones
       for (const milestone of result.newlyReached) {
-        celebrations.value.push({ habitId: habit.id, milestone })
+        // REPLACE, never mutate in place: the celebrations watcher is
+        // shallow — a push() would silently skip the success haptic.
+        celebrations.value = [
+          ...celebrations.value,
+          { habitId: habit.id, milestone },
+        ]
       }
     }
   },
@@ -175,7 +180,8 @@ onUnmounted(() => {
 
 // A milestone was reached → success haptic (native only; no-op in the
 // browser). Fires for mount/foreground crossings and live in-page ones —
-// every path that pushes into the queue.
+// every entry point REPLACES the array (never mutates in place), because
+// this watch is shallow and push() would not trigger it.
 watch(celebrations, (list) => {
   if (list.length > 0) notify(NotificationType.Success)
 })
