@@ -196,6 +196,8 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 
 ### Native Date/Time Inputs
 - `<input type="date">` / `<input type="time">` open the native pickers inside the WebView (Android and iOS) — the wizard is a stepper modal with native inputs, `max="today"` via the `max` attribute. The iOS-safe CSS in `main.css` hides Chromium-only spinner pseudo-elements (excluded on iOS via `@supports not (-webkit-touch-callout: none)`)
+- **iOS uses an overlay pattern, not CSS**: WKWebView renders temporal inputs from UA shadow-DOM rules that are NOT stylable — `::-webkit-datetime-edit*` pseudo-element rules are dead in the WebView (verified with colored probes: input-level rules apply, pseudo rules don't) and the intrinsic sizing differs per iOS version (18: tiny/date≠time widths; 26: oversized/overflowing). `WizardModal.vue` therefore renders, on iOS only (`Capacitor.getPlatform() === 'ios'`), an invisible native input (`absolute inset-0 opacity-0` — keeps the picker + v-model + max) stretched over a styled div that shows the value via `Intl` (2-digit pattern; components-built Date to avoid UTC day-shift). Android/browser keep the plain native input
+- **Never `appearance: none` on iOS** — it disables tap-to-open the picker
 
 ### Notifications
 - Exact alarms: `SCHEDULE_EXACT_ALARM` in the manifest; Android 12+ special access checked via `checkExactNotificationSetting()`; if denied → hint component + inexact fallback

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Capacitor } from '@capacitor/core'
 
 import { registerBackHandler } from '../../utils/back-handler'
 import { impact, ImpactStyle } from '../../utils/haptics'
@@ -12,8 +13,18 @@ import SavingsModal from './SavingsModal.vue'
  * Uses native `<input type="date|time">` — on Android WebView these open
  * the platform pickers. `max` pins the quit date to today. The confirm
  * button stays disabled until both fields are filled.
+ *
+ * iOS renders date/time inputs from UA shadow-DOM rules that cannot be
+ * styled (::-webkit-datetime-edit* is dead in WKWebView) and that differ
+ * per iOS version (18: tiny/intrinsic, 26: oversized/overflowing). On iOS
+ * we therefore overlay an invisible native input (keeps the picker +
+ * v-model) with a styled div that renders the value — no shadow-DOM
+ * involvement.
  */
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+/** iOS WKWebView only — Android/browser keep the plain native input. */
+const isIOS = Capacitor.getPlatform() === 'ios'
 
 const props = withDefaults(
   defineProps<{
@@ -45,6 +56,21 @@ const todayStr = computed(() => {
   const d = String(today.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 })
+
+/**
+ * Localized compact date for the iOS overlay display. Builds the Date from
+ * components (local midnight) so there is no UTC timezone day-shift, and
+ * uses a 2-digit pattern ("13/08/2026") so it fits the half-width column.
+ */
+const formatDateInput = (value: string): string => {
+  const [y, m, d] = value.split('-').map(Number)
+  if (!y || !m || !d) return value
+  return new Intl.DateTimeFormat(locale.value, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(y, m - 1, d))
+}
 
 /** Local yyyy-mm-dd + hh:mm from an ISO string ('' when null/invalid). */
 const isoToInputs = (iso: string | null): { date: string, time: string } => {
@@ -157,34 +183,73 @@ onUnmounted(() => {
         </h3>
 
         <template v-if="step === 'datetime'">
-          <div class="mt-4 flex gap-3">
-            <div class="flex-1">
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="min-w-0">
               <label
                 for="wizard-date"
                 class="mb-1 block text-xs font-semibold text-muted"
               >
                 {{ t("habits.date") }}
               </label>
+              <template v-if="isIOS">
+                <div
+                  class="relative flex min-h-11 w-full items-center rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink focus-within:border-primary"
+                >
+                  <input
+                    id="wizard-date"
+                    v-model="dateStr"
+                    type="date"
+                    :max="todayStr"
+                    class="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                  >
+                  <span
+                    class="pointer-events-none min-w-0 flex-1 truncate"
+                    :class="dateStr ? 'text-ink' : 'text-muted'"
+                  >
+                    {{ dateStr ? formatDateInput(dateStr) : "—" }}
+                  </span>
+                </div>
+              </template>
               <input
+                v-else
                 id="wizard-date"
                 v-model="dateStr"
                 type="date"
                 :max="todayStr"
-                class="w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+                class="min-w-0 w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
               >
             </div>
-            <div class="w-28">
+            <div class="min-w-0">
               <label
                 for="wizard-time"
                 class="mb-1 block text-xs font-semibold text-muted"
               >
                 {{ t("habits.time") }}
               </label>
+              <template v-if="isIOS">
+                <div
+                  class="relative flex min-h-11 w-full items-center rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink focus-within:border-primary"
+                >
+                  <input
+                    id="wizard-time"
+                    v-model="timeStr"
+                    type="time"
+                    class="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                  >
+                  <span
+                    class="pointer-events-none min-w-0 flex-1 truncate"
+                    :class="timeStr ? 'text-ink' : 'text-muted'"
+                  >
+                    {{ timeStr || "—" }}
+                  </span>
+                </div>
+              </template>
               <input
+                v-else
                 id="wizard-time"
                 v-model="timeStr"
                 type="time"
-                class="w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+                class="min-w-0 w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
               >
             </div>
           </div>
