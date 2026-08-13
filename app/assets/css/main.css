@@ -110,3 +110,40 @@ body {
     display: none;
   }
 }
+
+/*
+ * Normalize native date/time inputs on iOS (WKWebView).
+ *
+ * WebKit sizes these from UA defaults that changed between iOS 18 (empty
+ * inputs can collapse — WebKit bug 198959, "too tiny") and iOS 26 (controls
+ * redesigned with much larger default padding — "too big"). The box height
+ * is driven by padding on the shadow-DOM parts (::-webkit-datetime-edit*
+ * fields), so we zero it and pin the dimensions ourselves. NO
+ * appearance:none here — on iOS that disables tap-to-open the picker.
+ */
+@supports (-webkit-touch-callout: none) {
+  input[type="date"],
+  input[type="time"] {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 2.75rem; /* 44px — Apple tap-target minimum */
+    line-height: 1.5;
+  }
+
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field,
+  input[type="time"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="time"]::-webkit-datetime-edit-text,
+  input[type="time"]::-webkit-datetime-edit-hour-field,
+  input[type="time"]::-webkit-datetime-edit-minute-field,
+  input[type="time"]::-webkit-datetime-edit-meridiem-field {
+    padding: 0;
+  }
+}

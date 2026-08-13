@@ -196,6 +196,7 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 
 ### Native Date/Time Inputs
 - `<input type="date">` / `<input type="time">` open the native pickers inside the WebView (Android and iOS) — the wizard is a stepper modal with native inputs, `max="today"` via the `max` attribute. The iOS-safe CSS in `main.css` hides Chromium-only spinner pseudo-elements (excluded on iOS via `@supports not (-webkit-touch-callout: none)`)
+- **iOS sizing differs per iOS version** (18: empty inputs can collapse — WebKit bug 198959; 26: redesigned, oversized controls). `main.css` carries an iOS-scoped block (`@supports (-webkit-touch-callout: none)`) that zeroes the `::-webkit-datetime-edit*` shadow-DOM padding, pins `width/min-width/max-width` + `min-height: 2.75rem`, and standardizes `line-height`. **Never `appearance: none` on iOS** — it disables tap-to-open the picker
 
 ### Notifications
 - Exact alarms: `SCHEDULE_EXACT_ALARM` in the manifest; Android 12+ special access checked via `checkExactNotificationSetting()`; if denied → hint component + inexact fallback
