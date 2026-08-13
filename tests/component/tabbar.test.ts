@@ -9,10 +9,13 @@ import { impact } from '../../app/utils/haptics'
 
 // Nuxt-only composables (resolved from `nuxt/app` by the vitest AutoImport
 // config) are mocked per test file — the TabBar only needs localePath and
-// the current route.
+// the current route. The route is hoisted so tests can switch tabs and
+// re-mount to assert the pill's position.
+const routeMock = vi.hoisted(() => ({ path: '/' }))
+
 vi.mock('nuxt/app', () => ({
   useLocalePath: () => (path: string) => path,
-  useRoute: () => ({ path: '/' }),
+  useRoute: () => routeMock,
 }))
 
 // Haptics side effects are mocked; the wrapper has its own unit suite.
@@ -53,5 +56,20 @@ describe('components/ui/TabBar', () => {
     const links = wrapper.findAll('a')
     expect(links[0].classes()).toContain('text-primary')
     expect(links[1].classes()).not.toContain('text-primary')
+  })
+
+  it('glides the pill under the active tab', () => {
+    // The pill is the first direct child of <nav> (track div before <ul>).
+    const wrapper = mountTabBar()
+    const pill = wrapper.find('nav > div')
+    expect(pill.attributes('style')).toContain('translateX(0%)')
+
+    // Re-mount against a different route — the track translates by index.
+    wrapper.unmount()
+    routeMock.path = '/habits'
+    const wrapper2 = mountTabBar()
+    expect(wrapper2.find('nav > div').attributes('style')).toContain(
+      'translateX(100%)',
+    )
   })
 })

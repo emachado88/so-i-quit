@@ -205,7 +205,7 @@ const dismissCelebration = (): void => {
     <!-- Empty state (wireframe): no habits yet → guide to the Habits tab -->
     <div
       v-if="habits.length === 0"
-      class="flex flex-col items-center gap-3 px-6 py-16 text-center"
+      class="enter-rise flex flex-col items-center gap-3 px-6 py-16 text-center"
     >
       <div
         class="flex h-21 w-21 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,var(--color-primary-hover),var(--color-depth))] text-4xl shadow-md"
@@ -228,7 +228,7 @@ const dismissCelebration = (): void => {
     </div>
 
     <template v-else>
-      <div>
+      <div class="enter-rise">
         <h1 class="text-2xl font-black tracking-tight text-ink">
           {{ t("tabs.progress") }}
         </h1>
@@ -250,8 +250,10 @@ const dismissCelebration = (): void => {
       </div>
 
       <HabitProgressCard
-        v-for="habit in datedHabits"
+        v-for="(habit, index) in datedHabits"
         :key="habit.id"
+        class="enter-rise"
+        :style="{ animationDelay: `${(index + 2) * 45}ms` }"
         :habit="habit"
         :milestones="milestonesByHabit[habit.id] ?? []"
         :now="now"
@@ -262,7 +264,8 @@ const dismissCelebration = (): void => {
     <!-- Pinned above the TabBar; the habit cards scroll behind it -->
     <div
       v-if="totalSavings > 0"
-      class="fixed left-0 bottom-[calc(3.7rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
+      class="enter-rise fixed left-0 bottom-[calc(3.7rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
+      :style="{ animationDelay: '90ms' }"
     >
       <TotalSavingsCard
         :total="totalSavings"

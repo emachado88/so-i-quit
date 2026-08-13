@@ -110,3 +110,66 @@ body {
     display: none;
   }
 }
+
+/*
+ * Page transition (tabs): soft crossfade between pages.
+ *
+ * Opacity-only on purpose — a transform/filter on the page root would make
+ * it the containing block of fixed descendants, so pinned elements inside
+ * pages (the TotalSavingsCard on Progress) would jump during the animation.
+ * `mode="out-in"` (app.vue) keeps one page in the DOM at a time, so pages
+ * never stack or overlap.
+ */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.22s ease-out;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+
+/*
+ * Staggered card entrance (Combo A): fade + slight rise. Applied with a
+ * per-element `animation-delay` inline style (index * 45ms) so cards
+ * cascade in on page mount. `backwards` fill keeps delayed cards hidden
+ * (from state) during their wait — no flash of the un-animated layout.
+ *
+ * Fill mode is deliberately NOT `both`/`forwards`: a finished fill-mode
+ * animation stays "applied", which keeps every card a permanent stacking
+ * context. That traps absolutely-positioned children inside the card —
+ * the habit menu dropdown (absolute z-50) painted below the next card,
+ * which is a sibling stacking context later in DOM order.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.enter-rise {
+  animation: rise-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Reduced motion: kill page + entrance animations entirely */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+
+  .page-enter-from,
+  .page-leave-to {
+    opacity: 1;
+  }
+
+  .enter-rise {
+    animation: none;
+  }
+}
