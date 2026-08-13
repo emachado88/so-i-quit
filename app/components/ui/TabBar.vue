@@ -45,7 +45,7 @@ const activeIndex = computed(() => {
       class="pointer-events-none absolute inset-y-1.5 left-0 w-1/3 transition-transform duration-300 ease-out motion-reduce:transition-none"
       :style="{ transform: `translateX(${activeIndex * 100}%)` }"
     >
-      <div class="mx-2 h-full rounded-xl bg-primary/10" />
+      <div class="mx-2 h-full rounded-xl bg-linear-to-b from-primary/10 to-transparent" />
     </div>
     <ul class="relative flex items-stretch">
       <li
