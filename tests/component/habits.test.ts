@@ -49,8 +49,11 @@ const makeHabit = (overrides: Partial<Habit> = {}): Habit => ({
 type PageWrapper = VueWrapper<ComponentPublicInstance>
 const wrappers: PageWrapper[] = []
 
-const mountPage = async (): Promise<PageWrapper> => {
-  const wrapper = mount(HabitsPage, { global: { plugins: [i18n] } })
+const mountPage = async (attachTo?: HTMLElement): Promise<PageWrapper> => {
+  const wrapper = mount(HabitsPage, {
+    global: { plugins: [i18n] },
+    ...(attachTo ? { attachTo } : {}),
+  })
   await nextTick()
   wrappers.push(wrapper)
   return wrapper
@@ -129,6 +132,49 @@ describe('pages/habits', () => {
 
     expect(getHabits()).toHaveLength(1)
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
+  })
+
+  it('traps focus inside the wizard dialog and wraps Tab at the boundaries', async () => {
+    // Attached to document.body so happy-dom actually moves focus (the
+    // trap is driven by document.activeElement).
+    const wrapper = await mountPage(document.body)
+    await buttonByText(wrapper, 'Alcohol')!.trigger('click')
+    await nextTick()
+    await flushPromises()
+
+    const dialog = wrapper.find('.fixed.inset-0')
+    expect(dialog.exists()).toBe(true)
+    // Opening the wizard moves focus into the dialog.
+    expect(dialog.element.contains(document.activeElement)).toBe(true)
+
+    const focusable = () =>
+      Array.from(
+        dialog.element.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      )
+    const list = focusable()
+    expect(list.length).toBeGreaterThan(0)
+    const first = list[0]!
+    const last = list[list.length - 1]!
+
+    // Tab from the last focusable wraps back to the first.
+    last.focus()
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }),
+    )
+    expect(document.activeElement).toBe(first)
+
+    // Shift+Tab from the first focusable wraps to the last.
+    first.focus()
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+      }),
+    )
+    expect(document.activeElement).toBe(last)
   })
 
   it('wizard confirm stays disabled until both date and time are filled', async () => {

@@ -70,6 +70,7 @@
   "progress.months": "mois",
   "progress.noData": "Aucune donnée enregistrée",
   "progress.readyToGetBetter": "Prêt à vous améliorer ?",
+  "progress.ringLabel": "Progrès de l'étape",
   "progress.saved": "économisés",
   "progress.since": "depuis le {date}",
   "progress.totalSavings": "Économies totales",

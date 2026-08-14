@@ -215,6 +215,7 @@ const dismissCelebration = (): void => {
     >
       <div
         class="flex h-21 w-21 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,var(--color-primary-hover),var(--color-depth))] text-4xl shadow-md"
+        aria-hidden="true"
       >
         🚭
       </div>

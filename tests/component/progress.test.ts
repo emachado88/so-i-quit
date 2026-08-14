@@ -320,7 +320,7 @@ describe('components/progress/HabitProgressCard', () => {
     expect(text).toContain('✓ 1 day')
     expect(text).toContain('Next: 2 months')
     expect(
-      wrapper.find('svg[aria-label="milestone progress"]').exists(),
+      wrapper.find('svg[aria-label="Milestone progress"]').exists(),
     ).toBe(true)
     expect(wrapper.find('circle.stroke-primary-hover').exists()).toBe(true)
   })

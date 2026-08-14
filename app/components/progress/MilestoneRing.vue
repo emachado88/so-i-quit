@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{ progress: number, size?: number, strokeWidth?: number }>(),
@@ -69,7 +72,7 @@ watch(dashOffset, (value) => {
     :viewBox="`0 0 ${size} ${size}`"
     class="-rotate-90 shrink-0"
     role="img"
-    aria-label="milestone progress"
+    :aria-label="t('progress.ringLabel')"
   >
     <circle
       :cx="size / 2"

@@ -70,6 +70,7 @@
   "progress.months": "months",
   "progress.noData": "No data saved in settings",
   "progress.readyToGetBetter": "Ready to get better?",
+  "progress.ringLabel": "Milestone progress",
   "progress.saved": "saved",
   "progress.since": "since {date}",
   "progress.totalSavings": "Total savings",
