@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { addHabit, deleteHabit, getHabits, saveHabits, updateHabit } from '../../app/utils/habits'
 import type { Habit } from '../../app/utils/types'
@@ -30,6 +30,18 @@ describe('utils/habits', () => {
     it('propagates corrupt JSON as an error (screens surface it)', () => {
       seedStorage('habits', '{not json')
       expect(() => getHabits()).toThrow()
+    })
+
+    it('discards invalid entries and keeps only valid habits', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const valid = makeHabit()
+      seedStorage('habits', JSON.stringify([
+        { ...makeHabit({ id: 'bad' }), date: 1735689600000 },
+        valid,
+      ]))
+      expect(getHabits()).toEqual([valid])
+      expect(warn).toHaveBeenCalled()
+      warn.mockRestore()
     })
   })
 
