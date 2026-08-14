@@ -509,4 +509,21 @@ describe('notificationIdFor', () => {
     const day = makeMilestone({ id: 'h1-day-1', unit: 'day', amount: 1 })
     expect(notifications.notificationIdFor(month)).not.toBe(notifications.notificationIdFor(day))
   })
+
+  it('stays within the positive int32 range for any milestone id', () => {
+    const milestones = [
+      makeMilestone(),
+      makeMilestone({ id: 'h1-day-1', unit: 'day', amount: 1 }),
+      makeMilestone({ id: 'h2-day-365', unit: 'day', amount: 365 }),
+      makeMilestone({ id: 'h3-week-52', unit: 'week', amount: 52 }),
+      makeMilestone({ id: 'h4-month-120', unit: 'month', amount: 120 }),
+      makeMilestone({ id: 'h5-year-10', unit: 'year', amount: 10 }),
+    ]
+    for (const milestone of milestones) {
+      const result = notifications.notificationIdFor(milestone)
+      expect(result).toBeGreaterThanOrEqual(1)
+      expect(result).toBeLessThanOrEqual(0x7fffffff)
+      expect(Number.isInteger(result)).toBe(true)
+    }
+  })
 })
