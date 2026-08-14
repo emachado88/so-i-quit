@@ -9,14 +9,28 @@
 import { generateMilestones, isMilestoneReached } from './milestones'
 import { STORAGE_KEYS, readJSON, writeJSON } from './storage'
 import type { Habit, Milestone } from './types'
+import { isMilestone } from './validators'
 
 type MilestoneStore = Record<string, Milestone[]>
 
 const readStore = (): MilestoneStore => {
   const parsed: unknown = readJSON(STORAGE_KEYS.milestones, {})
-  return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-    ? (parsed as MilestoneStore)
-    : {}
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {}
+  }
+  const store: MilestoneStore = {}
+  for (const [habitId, value] of Object.entries(parsed)) {
+    if (!Array.isArray(value)) {
+      console.warn('[milestones] discarding non-array entry for habit', habitId)
+      continue
+    }
+    store[habitId] = value.filter((milestone): milestone is Milestone => {
+      if (isMilestone(milestone)) return true
+      console.warn('[milestones] discarding invalid milestone', milestone)
+      return false
+    })
+  }
+  return store
 }
 
 const writeStore = (store: MilestoneStore): void => {
