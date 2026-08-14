@@ -68,7 +68,7 @@ const options = computed(() => {
   >
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
+      class="fixed inset-0 z-[60] flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
       @click.self="emit('dismiss')"
     >
       <div

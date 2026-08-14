@@ -72,7 +72,7 @@ onUnmounted(() => {
     <!-- click-outside catcher -->
     <div
       v-if="open"
-      class="fixed inset-0 z-40"
+      class="fixed inset-0 z-[60]"
       @click="open = false"
     />
 
@@ -88,7 +88,7 @@ onUnmounted(() => {
     >
       <div
         v-if="open"
-        class="absolute right-0 top-full z-50 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+        class="absolute right-0 top-full z-[60] mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
       >
         <button
           type="button"

@@ -96,7 +96,7 @@ const datedHabits = computed(() =>
     .filter(habit => habit.date)
     .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
 )
-const hasAnyHabitWithDate = computed(() => datedHabits.value.length > 0)
+
 const totalSavings = computed(() =>
   habits.value.reduce(
     (sum, habit) =>
@@ -240,20 +240,8 @@ const dismissCelebration = (): void => {
           {{ t("tabs.progress") }}
         </h1>
         <p class="mt-0.5 text-[13px] text-muted">
-          {{
-            hasAnyHabitWithDate
-              ? t("progress.doingGreat")
-              : t("progress.noData")
-          }}
+          {{ t("progress.doingGreat") }}
         </p>
-        <button
-          v-if="!hasAnyHabitWithDate"
-          type="button"
-          class="mt-1 text-[13px] font-bold text-primary underline underline-offset-2"
-          @click="goToHabits"
-        >
-          {{ t("progress.goToHabits") }}
-        </button>
       </div>
 
       <HabitProgressCard

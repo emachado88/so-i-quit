@@ -47,7 +47,12 @@ const snackbarMessage = ref<string | null>(null)
 
 interface WizardState {
   flow: 'new' | 'reset' | 'edit'
-  habitId: string
+  /** Existing habit for reset/edit flows. */
+  habitId?: string
+  /** Standard-habit i18n key (new flow only). */
+  key?: string
+  /** Custom-habit display name (new flow only). */
+  name?: string
   initialSavings: string | null
   withSavings: boolean
 }
@@ -100,14 +105,9 @@ const handleAddHabit = (type: 'alcohol' | 'tobacco' | 'Other'): void => {
     return
   }
   const key = type === 'alcohol' ? 'habits.alcohol' : 'habits.tobacco'
-  try {
-    const created = addHabit({ key, name: '', date: null, savings: null })
-    loadHabits()
-    startWizard('new', created.id, null)
-  }
-  catch {
-    snackbarMessage.value = t('habits.failedToAdd', { name: t(key) })
-  }
+  // Nothing is persisted until the wizard finishes — a cancelled or
+  // abandoned wizard must not leave a dateless habit behind.
+  startWizard({ flow: 'new', key })
 }
 
 const handleAddCustomHabit = (): void => {
@@ -118,52 +118,60 @@ const handleAddCustomHabit = (): void => {
     return
   }
   impact(ImpactStyle.Medium)
-  try {
-    const created = addHabit({ name: normalized, date: null, savings: null })
-    customHabitName.value = ''
-    showCustomInput.value = false
-    customHabitInput.value?.blur()
-    loadHabits()
-    startWizard('new', created.id, null)
-  }
-  catch {
-    snackbarMessage.value = t('habits.failedToAddCustom')
-  }
+  customHabitName.value = ''
+  showCustomInput.value = false
+  customHabitInput.value?.blur()
+  // Persisted only on wizard finish (same rationale as handleAddHabit).
+  startWizard({ flow: 'new', name: normalized })
 }
 
 // ── Wizard ──
 
-const startWizard = (
-  flow: WizardState['flow'],
-  habitId: string,
-  initialSavings: string | null,
-  withSavings = true,
-): void => {
-  wizard.value = { flow, habitId, initialSavings, withSavings }
+const startWizard = (state: {
+  flow: WizardState['flow']
+  habitId?: string
+  key?: string
+  name?: string
+  initialSavings?: string | null
+  withSavings?: boolean
+}): void => {
+  wizard.value = {
+    flow: state.flow,
+    habitId: state.habitId,
+    key: state.key,
+    name: state.name,
+    initialSavings: state.initialSavings ?? null,
+    withSavings: state.withSavings ?? true,
+  }
 }
 
-const wizardHabit = computed(() =>
-  wizard.value
-    ? (habits.value.find(h => h.id === wizard.value!.habitId) ?? null)
-    : null,
-)
+/** Reset/edit target — the 'new' flow has no habit until the wizard finishes. */
+const wizardHabit = computed(() => {
+  const current = wizard.value
+  return current && current.flow !== 'new'
+    ? (habits.value.find(h => h.id === current.habitId) ?? null)
+    : null
+})
 
-const wizardName = computed(() =>
-  wizardHabit.value ? getHabitName(wizardHabit.value, t) : '',
-)
+const wizardVisible = computed(() => {
+  const current = wizard.value
+  if (!current) return false
+  // 'new' has no habit yet (created on finish); reset/edit need theirs.
+  return current.flow === 'new' || !!wizardHabit.value
+})
+
+const wizardName = computed(() => {
+  const current = wizard.value
+  if (!current) return ''
+  if (current.flow === 'new') {
+    return current.key ? t(current.key) : (current.name ?? '')
+  }
+  return wizardHabit.value ? getHabitName(wizardHabit.value, t) : ''
+})
 
 const handleWizardCancel = (): void => {
-  const current = wizard.value
-  if (current && current.flow === 'new') {
-    // The habit was created before the wizard — drop it when cancelled.
-    try {
-      deleteHabit(current.habitId)
-    }
-    catch {
-      // ignore — habit may already be gone
-    }
-    loadHabits()
-  }
+  // Nothing is persisted until the wizard finishes — a 'new' flow has no
+  // habit to drop, and reset/edit only apply on finish. Just close.
   wizard.value = null
 }
 
@@ -173,17 +181,28 @@ const handleWizardFinish = async (
 ): Promise<void> => {
   const current = wizard.value
   if (!current) return
-  const habitId = current.habitId
+  let habitId: string | null = current.habitId ?? null
   try {
-    // Reset flow: tear down the previous streak before the date changes.
-    if (current.flow === 'reset') {
-      await cancelHabitNotifications(getMilestonesForHabit(habitId))
-      deleteMilestonesForHabit(habitId)
+    if (current.flow === 'new') {
+      // The habit is created only now — an abandoned wizard never persists.
+      habitId = addHabit({
+        key: current.key,
+        name: current.name ?? '',
+        date: date.toISOString(),
+        savings,
+      }).id
     }
+    else if (habitId) {
+      // Reset flow: tear down the previous streak before the date changes.
+      if (current.flow === 'reset') {
+        await cancelHabitNotifications(getMilestonesForHabit(habitId))
+        deleteMilestonesForHabit(habitId)
+      }
 
-    const updates: Partial<Habit> = { date: date.toISOString() }
-    if (current.flow !== 'edit') updates.savings = savings
-    updateHabit(habitId, updates)
+      const updates: Partial<Habit> = { date: date.toISOString() }
+      if (current.flow !== 'edit') updates.savings = savings
+      updateHabit(habitId, updates)
+    }
     loadHabits()
 
     // Initialize/refresh the current streak's milestones, then schedule
@@ -259,7 +278,7 @@ const handleRelapseConfirm = (): void => {
   const habit = relapsePending.value
   if (!habit) return
   relapsePending.value = null
-  startWizard('reset', habit.id, habit.savings)
+  startWizard({ flow: 'reset', habitId: habit.id, initialSavings: habit.savings })
 }
 
 // ── Milestone opt-in ──
@@ -442,7 +461,7 @@ const handleCustomHabitInputBlur = (): void => {
         :style="{ animationDelay: `${(index + 2) * 45}ms` }"
         :habit="habit"
         :currency="settingsCurrency"
-        @edit-date="startWizard('edit', habit.id, habit.savings, false)"
+        @edit-date="startWizard({ flow: 'edit', habitId: habit.id, initialSavings: habit.savings, withSavings: false })"
         @edit-savings="
           editSavings = { habitId: habit.id, currentValue: habit.savings }
         "
@@ -453,7 +472,7 @@ const handleCustomHabitInputBlur = (): void => {
 
     <!-- Wizard (new / reset / edit-date) -->
     <WizardModal
-      :visible="!!(wizard && wizardHabit)"
+      :visible="wizardVisible"
       :flow="wizard?.flow ?? 'new'"
       :habit-name="wizardName"
       :initial-date="wizard?.flow === 'edit' ? wizardHabit?.date ?? null : null"

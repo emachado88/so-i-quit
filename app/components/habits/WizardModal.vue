@@ -173,7 +173,7 @@ onUnmounted(() => {
     <div
       v-if="visible"
       ref="dialogRef"
-      class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
+      class="fixed inset-0 z-[60] flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
     >
       <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
         <p class="text-xs font-bold uppercase tracking-widest text-primary">
