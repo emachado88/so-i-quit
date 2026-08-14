@@ -28,7 +28,7 @@ onUnmounted(() => clearTimeout(timer))
     <div
       v-if="message"
       role="status"
-      class="fixed top-[calc(env(safe-area-inset-top,0px)+0.75rem)] left-1/2 z-50 flex w-[calc(100%-2.25rem)] max-w-[400px] -translate-x-1/2 items-center gap-3 rounded-2xl bg-gradient-to-br from-primary to-depth px-4 py-3.5 text-white shadow-lg"
+      class="fixed top-[calc(env(safe-area-inset-top,0px)+0.75rem)] left-1/2 z-[70] flex w-[calc(100%-2.25rem)] max-w-[400px] -translate-x-1/2 items-center gap-3 rounded-2xl bg-gradient-to-br from-primary to-depth px-4 py-3.5 text-white shadow-lg"
     >
       <span class="text-2xl">🎉</span>
       <p class="min-w-0 flex-1 text-[13px] font-bold leading-snug">

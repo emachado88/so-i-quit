@@ -62,7 +62,7 @@ onUnmounted(() => {
   >
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
+      class="fixed inset-0 z-[60] flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
     >
       <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
         <h3 class="text-lg font-bold text-ink">

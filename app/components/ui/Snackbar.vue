@@ -18,7 +18,7 @@ const emit = defineEmits<{ dismiss: [] }>()
     <div
       v-if="message"
       role="alert"
-      class="fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-100 -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg"
+      class="fixed bottom-24 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-100 -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg"
       :class="success ? 'bg-primary' : 'bg-danger'"
     >
       <div class="flex items-center justify-between gap-3">
