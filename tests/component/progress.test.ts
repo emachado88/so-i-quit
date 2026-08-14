@@ -172,12 +172,14 @@ describe('pages/index', () => {
     expect(articles[1]!.text()).toContain('Tobacco')
   })
 
-  it('shows the no-data hint when habits exist but none dated', async () => {
+  it('shows the encouraging header when habits exist but none dated', async () => {
     saveHabits([makeHabit({ date: null, savings: null })])
 
     const wrapper = await mountPage()
-    expect(wrapper.text()).toContain('No data saved in settings')
-    expect(wrapper.text()).toContain('Go to habits')
+    // The header always shows the encouragement — no per-state hint anymore.
+    expect(wrapper.text()).toContain('You\'re doing great,')
+    // No dated habit → no cards; the zero-habits empty state does not apply.
+    expect(wrapper.text()).not.toContain('Add your first habit')
     expect(wrapper.findAll('article')).toHaveLength(0)
   })
 
