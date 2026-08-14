@@ -103,5 +103,17 @@
   "tabs.progress": "进度",
   "tabs.settings": "设置",
   "settings.exactAlarmHint": "为了准时庆祝，请在系统设置中允许 So I Quit 使用精确闹钟。",
-  "settings.exactAlarmAction": "打开系统设置"
+  "settings.exactAlarmAction": "打开系统设置",
+  "settings.importDialogConfirm": "恢复",
+  "settings.importDialogMessage": "这将替换你当前的所有习惯、里程碑和设置。此操作无法撤销。",
+  "settings.importDialogTitle": "恢复备份？",
+  "settings.importDone": "备份已恢复。",
+  "settings.importInvalid": "此文件不是有效的 So I Quit 备份。",
+  "settings.exportFailed": "导出失败。请重试。",
+  "settings.importData": "导入数据",
+  "settings.exportData": "导出数据",
+  "settings.dataDescription": "将你的数据导出为备份文件，或恢复之前的备份。",
+  "settings.data": "数据",
+  "settings.exportDone": "备份已导出。",
+  "settings.exportShareDialog": "保存或分享你的备份"
 }

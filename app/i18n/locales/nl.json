@@ -103,5 +103,17 @@
   "tabs.progress": "Voortgang",
   "tabs.settings": "Instellingen",
   "settings.exactAlarmHint": "Voor tijdige vieringen: sta exacte alarmen toe voor So I Quit in de systeeminstellingen.",
-  "settings.exactAlarmAction": "Systeeminstellingen openen"
+  "settings.exactAlarmAction": "Systeeminstellingen openen",
+  "settings.importDialogConfirm": "Herstellen",
+  "settings.importDialogMessage": "Dit vervangt al je huidige gewoontes, mijlpalen en instellingen. Deze actie kan niet ongedaan worden gemaakt.",
+  "settings.importDialogTitle": "Back-up herstellen?",
+  "settings.importDone": "Back-up hersteld.",
+  "settings.importInvalid": "Dit bestand is geen geldige So I Quit-back-up.",
+  "settings.exportFailed": "Exporteren mislukt. Probeer het opnieuw.",
+  "settings.importData": "Gegevens importeren",
+  "settings.exportData": "Gegevens exporteren",
+  "settings.dataDescription": "Exporteer je gegevens als back-upbestand of herstel een eerdere back-up.",
+  "settings.data": "Gegevens",
+  "settings.exportDone": "Back-up geëxporteerd.",
+  "settings.exportShareDialog": "Bewaar of deel je back-up"
 }
