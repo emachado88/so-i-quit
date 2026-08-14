@@ -38,8 +38,8 @@ android {
             // task ':app:mergePreviewNativeLibs'".
             matchingFallbacks = ["release"]
             applicationIdSuffix ".preview"
-            resValue "string", "app_name", "So I Quit (Preview)"
-            resValue "string", "title_activity_main", "So I Quit (Preview)"
+            resValue "string", "app_name", "So I Quit"
+            resValue "string", "title_activity_main", "So I Quit"
             signingConfig signingConfigs.debug
             versionNameSuffix "-preview"
         }
