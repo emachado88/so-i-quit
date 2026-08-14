@@ -127,11 +127,11 @@ describe('pages/habits', () => {
     expect(wrapper.text()).toContain('€5.25/day')
   })
 
-  it('adds a standard habit and opens the wizard', async () => {
+  it('adds a standard habit and opens the wizard without persisting yet', async () => {
     const wrapper = await mountPage()
     await buttonByText(wrapper, 'Alcohol')!.trigger('click')
 
-    expect(getHabits()).toHaveLength(1)
+    expect(getHabits()).toHaveLength(0)
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
   })
 
@@ -223,10 +223,10 @@ describe('pages/habits', () => {
     expect(habit.savings).toBeNull()
   })
 
-  it('cancelling a new-habit wizard removes the created habit', async () => {
+  it('cancelling a new-habit wizard persists nothing', async () => {
     const wrapper = await mountPage()
     await buttonByText(wrapper, 'Alcohol')!.trigger('click')
-    expect(getHabits()).toHaveLength(1)
+    expect(getHabits()).toHaveLength(0)
 
     await buttonByText(wrapper, 'Cancel')!.trigger('click')
     await nextTick()
@@ -234,7 +234,7 @@ describe('pages/habits', () => {
     expect(wrapper.find('#wizard-date').exists()).toBe(false)
   })
 
-  it('adds a custom habit with normalized name', async () => {
+  it('adds a custom habit with normalized name (persisted on finish)', async () => {
     const wrapper = await mountPage()
     // The custom button shows "+ Add another" — target its aria-label,
     // which is stable across translations.
@@ -242,9 +242,13 @@ describe('pages/habits', () => {
     await wrapper.find('input[type="text"]').setValue('coffee')
     await buttonByText(wrapper, 'Add')!.trigger('click')
 
+    // Nothing persisted until the wizard finishes.
+    expect(getHabits()).toHaveLength(0)
+    expect(wrapper.find('#wizard-date').exists()).toBe(true)
+
+    await completeWizard(wrapper)
     expect(getHabits()[0]).toMatchObject({ name: 'Coffee' })
     expect(getHabits()[0].key).toBeUndefined()
-    expect(wrapper.find('#wizard-date').exists()).toBe(true)
   })
 
   it('submits the custom habit with Enter and opens the wizard', async () => {
@@ -254,7 +258,7 @@ describe('pages/habits', () => {
     await input.setValue('coffee')
     await input.trigger('keydown.enter')
 
-    expect(getHabits()[0]).toMatchObject({ name: 'Coffee' })
+    expect(getHabits()).toHaveLength(0)
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
   })
 
@@ -504,16 +508,17 @@ describe('pages/habits', () => {
   // handleBackButton() is the real util: the components register on
   // mount/visible, so these tests exercise the actual wiring.
 
-  it('hardware back closes the wizard from the first step (new habit dropped)', async () => {
+  it('hardware back closes the wizard from the first step (nothing persisted)', async () => {
     const wrapper = await mountPage()
     await buttonByText(wrapper, 'Alcohol')!.trigger('click')
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
+    expect(getHabits()).toHaveLength(0)
 
     expect(handleBackButton()).toBe(true)
     await nextTick()
 
     expect(wrapper.find('#wizard-date').exists()).toBe(false)
-    // Same semantics as tapping Cancel: the pre-created habit is dropped.
+    // Same semantics as tapping Cancel: nothing was ever persisted.
     expect(getHabits()).toEqual([])
   })
 
@@ -530,9 +535,9 @@ describe('pages/habits', () => {
     await nextTick()
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
     expect(wrapper.find('#savings-amount').exists()).toBe(false)
-    expect(getHabits()).toHaveLength(1) // wizard still open → habit kept
+    expect(getHabits()).toHaveLength(0) // wizard still open → nothing persisted
 
-    // datetime → cancel (habit dropped, like the Cancel button)
+    // datetime → cancel (like the Cancel button — nothing was created)
     expect(handleBackButton()).toBe(true)
     await nextTick()
     expect(wrapper.find('#wizard-date').exists()).toBe(false)
