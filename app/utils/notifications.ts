@@ -53,7 +53,7 @@ export const notificationIdFor = (milestone: Milestone): number => {
   for (let i = 0; i < milestone.id.length; i += 1) {
     hash = ((hash << 5) + hash + milestone.id.charCodeAt(i)) | 0
   }
-  return Math.abs(hash) || 1
+  return (Math.abs(hash) || 1) & 0x7fffffff
 }
 
 /** Ensure the milestone channel exists (Android 8+; no-op elsewhere). */
