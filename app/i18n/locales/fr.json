@@ -103,5 +103,17 @@
   "tabs.progress": "Progrès",
   "tabs.settings": "Paramètres",
   "settings.exactAlarmHint": "Pour des célébrations à l'heure, autorisez les alarmes exactes pour So I Quit dans les réglages du système.",
-  "settings.exactAlarmAction": "Ouvrir les réglages du système"
+  "settings.exactAlarmAction": "Ouvrir les réglages du système",
+  "settings.importDialogConfirm": "Restaurer",
+  "settings.importDialogMessage": "Cela remplace tous vos habitudes, jalons et réglages actuels. Cette action est irréversible.",
+  "settings.importDialogTitle": "Restaurer la sauvegarde ?",
+  "settings.importDone": "Sauvegarde restaurée.",
+  "settings.importInvalid": "Ce fichier n'est pas une sauvegarde So I Quit valide.",
+  "settings.exportFailed": "Échec de l'exportation. Réessayez.",
+  "settings.importData": "Importer les données",
+  "settings.exportData": "Exporter les données",
+  "settings.dataDescription": "Exportez vos données dans un fichier de sauvegarde, ou restaurez une sauvegarde précédente.",
+  "settings.data": "Données",
+  "settings.exportDone": "Sauvegarde exportée.",
+  "settings.exportShareDialog": "Enregistrez ou partagez votre sauvegarde"
 }

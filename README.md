@@ -19,6 +19,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 - **🗣 Multi-language** — Zero-backend i18n via @nuxtjs/i18n: EN, PT, FR, ES, IT, ZH (Simplified), DE, NL
 - **📱 Mobile-first** — Capacitor 8 wrapper (Android + iOS); the same SPA runs in the browser for the dev loop
 - **💾 Local Only** — All data stays on-device via localStorage (no account needed)
+- **📦 Backup & Restore** — Export everything (habits, milestones, settings) to a portable JSON — native share sheet on mobile, file download on web; import validates the file and replaces your data only after explicit confirmation (notification schedules are rebuilt from the restored data)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
 
 ## Tech Stack
@@ -26,7 +27,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 | Layer         | Technology                                                                        |
 | ------------- | --------------------------------------------------------------------------------- |
 | Framework     | [Nuxt](https://nuxt.com) 4.5 (SPA, `ssr: false`) + Vue 3.5                        |
-| Mobile        | [Capacitor](https://capacitorjs.com) 8 (Android + iOS, iOS via Swift Package Manager) + @capacitor/local-notifications |
+| Mobile        | [Capacitor](https://capacitorjs.com) 8 (Android + iOS, iOS via Swift Package Manager) + @capacitor/local-notifications, @capacitor/filesystem, @capacitor/share |
 | UI            | Tailwind CSS v4 (token-driven `@theme`) + lucide-vue-next icons                   |
 | i18n          | @nuxtjs/i18n 10 — 8 locales, URL-prefix strategy, localStorage persistence        |
 | Theme         | @nuxtjs/color-mode 4 (system/light/dark, localStorage)                            |
@@ -100,9 +101,9 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, notifications) + `tests/component/` (habits, progress, settings) + `tests/smoke.test.ts` (i18n key-set guard).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, notifications, backup, backup-platform) + `tests/component/` (habits, progress, settings) + `tests/smoke.test.ts` (i18n key-set guard).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
-- **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/89/92/95. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
+- **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~93/87/93/95. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
 
 ## Project Structure
@@ -116,7 +117,8 @@ app/
   composables/             # useNow (1s tick), useThemeMode, useLocaleSwitch
   plugins/                 # i18n-persist.client.ts (WebView-safe locale persistence)
   utils/                   # types, storage, habits, milestones, milestones-store,
-                           # settings, currencies, domain, notifications (pure TS)
+                           # settings, currencies, domain, notifications, backup,
+                           # backup-platform (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides
 assets/                    # Icon/splash SVG masters + rendered 1024²/2732² PNG sources

@@ -103,5 +103,17 @@
   "tabs.progress": "Progress",
   "tabs.settings": "Settings",
   "settings.exactAlarmHint": "For on-time celebrations, allow exact alarms for So I Quit in system settings.",
-  "settings.exactAlarmAction": "Open system settings"
+  "settings.exactAlarmAction": "Open system settings",
+  "settings.importDialogConfirm": "Restore",
+  "settings.importDialogMessage": "This replaces all your current habits, milestones and settings. This cannot be undone.",
+  "settings.importDialogTitle": "Restore backup?",
+  "settings.importDone": "Backup restored.",
+  "settings.importInvalid": "This file is not a valid So I Quit backup.",
+  "settings.exportFailed": "Export failed. Please try again.",
+  "settings.importData": "Import data",
+  "settings.exportData": "Export data",
+  "settings.dataDescription": "Export your data as a backup file, or restore a previous backup.",
+  "settings.data": "Data",
+  "settings.exportDone": "Backup exported.",
+  "settings.exportShareDialog": "Save or share your backup"
 }

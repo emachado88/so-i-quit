@@ -103,5 +103,17 @@
   "tabs.progress": "Fortschritt",
   "tabs.settings": "Einstellungen",
   "settings.exactAlarmHint": "Für pünktliche Feiern erlaube exakte Wecker für So I Quit in den Systemeinstellungen.",
-  "settings.exactAlarmAction": "Systemeinstellungen öffnen"
+  "settings.exactAlarmAction": "Systemeinstellungen öffnen",
+  "settings.importDialogConfirm": "Wiederherstellen",
+  "settings.importDialogMessage": "Dies ersetzt alle deine aktuellen Gewohnheiten, Meilensteine und Einstellungen. Diese Aktion kann nicht rückgängig gemacht werden.",
+  "settings.importDialogTitle": "Backup wiederherstellen?",
+  "settings.importDone": "Backup wiederhergestellt.",
+  "settings.importInvalid": "Diese Datei ist kein gültiges So I Quit-Backup.",
+  "settings.exportFailed": "Export fehlgeschlagen. Bitte versuche es erneut.",
+  "settings.importData": "Daten importieren",
+  "settings.exportData": "Daten exportieren",
+  "settings.dataDescription": "Exportiere deine Daten als Backup-Datei oder stelle ein früheres Backup wieder her.",
+  "settings.data": "Daten",
+  "settings.exportDone": "Backup exportiert.",
+  "settings.exportShareDialog": "Backup speichern oder teilen"
 }

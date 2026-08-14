@@ -103,5 +103,17 @@
   "tabs.progress": "Progresso",
   "tabs.settings": "Definições",
   "settings.exactAlarmHint": "Para celebrações atempadas, permite alarmes exatos para So I Quit nas definições do sistema.",
-  "settings.exactAlarmAction": "Abrir definições do sistema"
+  "settings.exactAlarmAction": "Abrir definições do sistema",
+  "settings.importDialogConfirm": "Restaurar",
+  "settings.importDialogMessage": "Isto substitui todos os teus hábitos, marcos e definições atuais. Esta ação não pode ser anulada.",
+  "settings.importDialogTitle": "Restaurar backup?",
+  "settings.importDone": "Backup restaurado.",
+  "settings.importInvalid": "Este ficheiro não é um backup válido do So I Quit.",
+  "settings.exportFailed": "Falha na exportação. Tenta novamente.",
+  "settings.importData": "Importar dados",
+  "settings.exportData": "Exportar dados",
+  "settings.dataDescription": "Exporta os teus dados como ficheiro de backup, ou restaura um backup anterior.",
+  "settings.data": "Dados",
+  "settings.exportDone": "Backup exportado.",
+  "settings.exportShareDialog": "Guarda ou partilha o teu backup"
 }

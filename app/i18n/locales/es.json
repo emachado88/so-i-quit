@@ -103,5 +103,17 @@
   "tabs.progress": "Progreso",
   "tabs.settings": "Ajustes",
   "settings.exactAlarmHint": "Para celebraciones a tiempo, permite alarmas exactas para So I Quit en los ajustes del sistema.",
-  "settings.exactAlarmAction": "Abrir ajustes del sistema"
+  "settings.exactAlarmAction": "Abrir ajustes del sistema",
+  "settings.importDialogConfirm": "Restaurar",
+  "settings.importDialogMessage": "Esto reemplaza todos tus hábitos, hitos y ajustes actuales. Esta acción no se puede deshacer.",
+  "settings.importDialogTitle": "¿Restaurar la copia de seguridad?",
+  "settings.importDone": "Copia de seguridad restaurada.",
+  "settings.importInvalid": "Este archivo no es una copia de seguridad válida de So I Quit.",
+  "settings.exportFailed": "Error al exportar. Inténtalo de nuevo.",
+  "settings.importData": "Importar datos",
+  "settings.exportData": "Exportar datos",
+  "settings.dataDescription": "Exporta tus datos como archivo de respaldo, o restaura una copia anterior.",
+  "settings.data": "Datos",
+  "settings.exportDone": "Copia de seguridad exportada.",
+  "settings.exportShareDialog": "Guarda o comparte tu copia de seguridad"
 }

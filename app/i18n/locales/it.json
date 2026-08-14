@@ -103,5 +103,17 @@
   "tabs.progress": "Progresso",
   "tabs.settings": "Impostazioni",
   "settings.exactAlarmHint": "Per celebrazioni puntuali, consenti gli allarmi esatti per So I Quit nelle impostazioni di sistema.",
-  "settings.exactAlarmAction": "Apri impostazioni di sistema"
+  "settings.exactAlarmAction": "Apri impostazioni di sistema",
+  "settings.importDialogConfirm": "Ripristina",
+  "settings.importDialogMessage": "Questo sostituisce tutti i tuoi abitudini, traguardi e impostazioni attuali. Questa azione non può essere annullata.",
+  "settings.importDialogTitle": "Ripristinare il backup?",
+  "settings.importDone": "Backup ripristinato.",
+  "settings.importInvalid": "Questo file non è un backup So I Quit valido.",
+  "settings.exportFailed": "Esportazione non riuscita. Riprova.",
+  "settings.importData": "Importa dati",
+  "settings.exportData": "Esporta dati",
+  "settings.dataDescription": "Esporta i tuoi dati come file di backup o ripristina un backup precedente.",
+  "settings.data": "Dati",
+  "settings.exportDone": "Backup esportato.",
+  "settings.exportShareDialog": "Salva o condividi il tuo backup"
 }
