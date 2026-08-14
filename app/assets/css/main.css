@@ -23,7 +23,7 @@
   --color-surface: #ffffff;
   --color-card: #f0eeea;
   --color-border: #e2e0dc;
-  --color-muted: #8a8680;
+  --color-muted: #6e6c6a;
   --color-ink: #1c1b1a;
 
   /* Fonts */
@@ -44,7 +44,7 @@ html.dark {
   --color-surface: #1a1918;
   --color-card: #242321;
   --color-border: #2e2d2b;
-  --color-muted: #7a7670;
+  --color-muted: #8c8b8a;
   --color-ink: #f0eeea;
 
   /* Dark soft tints */

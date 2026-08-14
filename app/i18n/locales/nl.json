@@ -70,6 +70,7 @@
   "progress.months": "maanden",
   "progress.noData": "Geen gegevens opgeslagen",
   "progress.readyToGetBetter": "Klaar om te verbeteren?",
+  "progress.ringLabel": "Mijlpaalvoortgang",
   "progress.saved": "bespaard",
   "progress.since": "sinds {date}",
   "progress.totalSavings": "Totale besparingen",
