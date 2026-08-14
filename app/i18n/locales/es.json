@@ -70,6 +70,7 @@
   "progress.months": "meses",
   "progress.noData": "Sin datos guardados",
   "progress.readyToGetBetter": "¿Listo para mejorar?",
+  "progress.ringLabel": "Progreso del hito",
   "progress.saved": "ahorrados",
   "progress.since": "desde {date}",
   "progress.totalSavings": "Ahorros totales",

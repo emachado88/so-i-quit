@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 
 import { registerBackHandler } from '../../utils/back-handler'
 import { impact, ImpactStyle } from '../../utils/haptics'
+import { useFocusTrap } from '../../composables/useFocusTrap'
 import SavingsModal from './SavingsModal.vue'
 
 /**
@@ -43,6 +44,11 @@ const emit = defineEmits<{
   finish: [date: Date, savings: string | null]
   cancel: []
 }>()
+
+// Focus trap: keyboard navigation stays inside the dialog while it is open,
+// and focus returns to the trigger element on close.
+const dialogRef = ref<HTMLElement | null>(null)
+useFocusTrap(computed(() => props.visible), dialogRef)
 
 type Step = 'datetime' | 'savings'
 const step = ref<Step>('datetime')
@@ -166,6 +172,7 @@ onUnmounted(() => {
   >
     <div
       v-if="visible"
+      ref="dialogRef"
       class="fixed inset-0 z-50 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
     >
       <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
