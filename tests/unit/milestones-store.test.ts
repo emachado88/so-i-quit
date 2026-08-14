@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   deleteMilestonesForHabit,
@@ -65,6 +65,17 @@ describe('utils/milestones-store', () => {
     expect(getMilestonesForHabit('h1')).toEqual([])
     saveMilestonesForHabit('h1', [makeMilestone()])
     expect(getMilestonesForHabit('h1')).toHaveLength(1)
+  })
+
+  it('filters invalid milestones out of a stored habit entry on read', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const valid = makeMilestone()
+    seedStorage('milestones-v1', JSON.stringify({
+      h1: [valid, { ...makeMilestone({ id: 'bad' }), amount: -3 }],
+    }))
+    expect(getMilestonesForHabit('h1')).toEqual([valid])
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
   })
 
   describe('ensureMilestonesForHabit', () => {

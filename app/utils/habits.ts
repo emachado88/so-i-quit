@@ -8,6 +8,7 @@
 
 import { STORAGE_KEYS, readRaw, writeJSON } from './storage'
 import type { Habit } from './types'
+import { isHabit } from './validators'
 
 const newHabitId = (): string =>
   `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
@@ -15,7 +16,17 @@ const newHabitId = (): string =>
 export const getHabits = (): Habit[] => {
   const raw = readRaw(STORAGE_KEYS.habits)
   // JSON.parse throws on corrupt JSON — intentional, screens surface it.
-  return raw ? (JSON.parse(raw) as Habit[]) : []
+  if (!raw) return []
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) {
+    console.warn('[habits] stored value is not an array; treating as empty')
+    return []
+  }
+  return parsed.filter((item): item is Habit => {
+    if (isHabit(item)) return true
+    console.warn('[habits] discarding invalid habit entry', item)
+    return false
+  })
 }
 
 export const saveHabits = (habits: Habit[]): void => {
