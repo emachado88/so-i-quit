@@ -100,6 +100,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   document.body.innerHTML = ''
   for (const w of wrappers.splice(0)) w.unmount()
 })
@@ -198,6 +199,40 @@ describe('pages/habits', () => {
     expect(getHabits()[0]).toMatchObject({ name: 'Coffee' })
     expect(getHabits()[0].key).toBeUndefined()
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
+  })
+
+  it('submits the custom habit with Enter and opens the wizard', async () => {
+    const wrapper = await mountPage()
+    await wrapper.find('[aria-label="Add custom habit"]').trigger('click')
+    const input = wrapper.find('input[type="text"]')
+    await input.setValue('coffee')
+    await input.trigger('keydown.enter')
+
+    expect(getHabits()[0]).toMatchObject({ name: 'Coffee' })
+    expect(wrapper.find('#wizard-date').exists()).toBe(true)
+  })
+
+  it('Enter with an empty name shows the enterName snackbar without adding', async () => {
+    const wrapper = await mountPage()
+    await wrapper.find('[aria-label="Add custom habit"]').trigger('click')
+    await wrapper.find('input[type="text"]').trigger('keydown.enter')
+
+    expect(wrapper.text()).toContain('Please enter a habit name')
+    expect(getHabits()).toHaveLength(0)
+  })
+
+  it('reopening the input cancels the pending blur close', async () => {
+    vi.useFakeTimers()
+    const wrapper = await mountPage()
+    await wrapper.find('[aria-label="Add custom habit"]').trigger('click')
+    const input = wrapper.find('input[type="text"]')
+    // Blur schedules a 100ms close…
+    await input.trigger('blur')
+    // …but reopening within the window must cancel the pending close.
+    await wrapper.find('[aria-label="Add custom habit"]').trigger('click')
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(wrapper.find('input[type="text"]').exists()).toBe(true)
   })
 
   it('edit date pre-fills the saved date and keeps savings', async () => {
