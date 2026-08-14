@@ -16,6 +16,9 @@
 #   ANDROID_KEYSTORE_PASSWORD  keystore (store) password
 #   ANDROID_KEY_ALIAS          key alias (e.g. "upload")
 #   ANDROID_KEY_PASSWORD       key password
+#   NUXT_PUBLIC_SENTRY_DSN     Sentry DSN (optional, public by design — baked
+#                              into the client bundle at generate time; unset
+#                              → sentry plugin is a no-op)
 #
 # Artifact names embed the app version read from package.json (keep it in
 # sync with android/app/build.gradle versionName + iOS MARKETING_VERSION).
@@ -59,6 +62,11 @@ jobs:
         run: npm ci
 
       - name: Generate web assets (SPA)
+        env:
+          # Sentry DSN is baked into the client bundle at generate time
+          # (runtimeConfig.public.sentryDsn). No secret set → empty → the
+          # sentry plugin stays a no-op.
+          NUXT_PUBLIC_SENTRY_DSN: ${{ secrets.NUXT_PUBLIC_SENTRY_DSN }}
         run: npx nuxt generate
 
       - name: Sync Capacitor
