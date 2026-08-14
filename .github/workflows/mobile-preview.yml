@@ -70,6 +70,11 @@ jobs:
         run: npm ci
 
       - name: Generate web assets (SPA)
+        env:
+          # Sentry DSN is baked into the client bundle at generate time
+          # (runtimeConfig.public.sentryDsn). No secret set → empty → the
+          # sentry plugin stays a no-op.
+          NUXT_PUBLIC_SENTRY_DSN: ${{ secrets.NUXT_PUBLIC_SENTRY_DSN }}
         run: npx nuxt generate
 
       - name: Sync Capacitor
@@ -113,6 +118,11 @@ jobs:
         run: npm ci
 
       - name: Generate web assets (SPA)
+        env:
+          # Sentry DSN is baked into the client bundle at generate time
+          # (runtimeConfig.public.sentryDsn). No secret set → empty → the
+          # sentry plugin stays a no-op.
+          NUXT_PUBLIC_SENTRY_DSN: ${{ secrets.NUXT_PUBLIC_SENTRY_DSN }}
         run: npx nuxt generate
 
       - name: Sync Capacitor

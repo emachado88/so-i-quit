@@ -70,7 +70,7 @@ vi.mock('../../app/utils/backup-platform', () => ({
 // from package.json); the real nuxt/app module needs the Nuxt build context,
 // so it's fully stubbed like in the other component tests.
 vi.mock('nuxt/app', () => ({
-  useRuntimeConfig: () => ({ public: { appVersion: '1.0.0' } }),
+  useRuntimeConfig: () => ({ public: { appVersion: '1.1.0' } }),
 }))
 
 installStorageMock()
@@ -173,7 +173,7 @@ describe('pages/settings', () => {
     expect(text).toContain('Currency')
     expect(text).toContain('Milestone notifications')
     expect(text).toContain('So I Quit')
-    expect(text).toContain('v1.0.0')
+    expect(text).toContain('v1.1.0')
   })
 
   it('switches the theme: saves + applies through the color-mode wrapper', async () => {
