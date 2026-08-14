@@ -1,8 +1,28 @@
 apply plugin: 'com.android.application'
 
+// Release signing. android/keystore.properties is gitignored — present only on
+// machines that should produce signed release builds (local release machines
+// and CI, where the workflow writes it from GitHub secrets). Without it, the
+// release variant stays unsigned (historical local behavior).
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.soiquit.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.soiquit.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,7 +40,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            // signingConfig signingConfigs.release  // once a production keystore exists
+            // Signed only when android/keystore.properties exists (see header).
+            // CI (mobile-release.yml) writes it from GitHub secrets; without it
+            // the APK/AAB is unsigned and must be signed manually (apksigner).
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             // Dev identity: installs as com.soiquit.app.dev with its own label,

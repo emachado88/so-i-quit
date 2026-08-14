@@ -83,11 +83,23 @@ npm run dev
 npm run mobile:apk
 # Preview APK (debug-keystore-signed — QA/sideload)
 npm run mobile:apk:preview
-# Release APK/AAB
-npm run mobile:apk:release   # then sign/align via the normal Android toolchain
+# Release APK/AAB (signed once android/keystore.properties exists — see below)
+npm run mobile:apk:release
 ```
 
 The `android/` and `ios/` projects are committed; build artifacts are gitignored.
+
+**Release signing:** `android/app/build.gradle` signs the `release` variant only when `android/keystore.properties` exists (gitignored; CI writes it from GitHub secrets). Without it the APK/AAB is **unsigned** — sideloading it fails with "package appears to be invalid" (use the `preview` variant for sideload QA). To sign locally, create the file next to your keystore:
+
+```properties
+# android/keystore.properties
+storeFile=so-i-quit-upload.jks
+storePassword=***
+keyAlias=upload
+keyPassword=***
+```
+
+with the `.jks` in `android/` (generated once via `keytool -genkeypair ... -validity 10000`; keep the original outside the repo — it is your publishing identity).
 
 ### CI preview installers
 
@@ -97,6 +109,10 @@ The `android/` and `ios/` projects are committed; build artifacts are gitignored
 - **iOS** — unsigned simulator `.app` (zipped; install via Xcode/simctl)
 
 Artifacts land in the run's Summary page. Signed iOS device builds need an Apple Developer account + certificates.
+
+### CI release installers
+
+`.github/workflows/mobile-release.yml` is also manual-only (`workflow_dispatch`): builds a **signed** `assembleRelease` APK + `bundleRelease` AAB for production. The keystore never enters the repo — the workflow decodes `ANDROID_KEYSTORE_B64` (plus password/alias secrets) into the ephemeral runner. Required secrets: `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Enable **Play App Signing** when publishing — the upload key is then recoverable if lost/compromised.
 
 ## Testing
 

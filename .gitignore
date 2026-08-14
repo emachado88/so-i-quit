@@ -41,3 +41,5 @@ android/.gradle/
 *.p12
 *.key
 *.mobileprovision
+# release signing material (CI writes this from GitHub secrets)
+android/keystore.properties
