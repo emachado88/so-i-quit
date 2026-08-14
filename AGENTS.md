@@ -15,7 +15,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 - **@nuxt/fonts** — Inter 400–900 from Google
 - **lucide-vue-next** — icons
 - **dayjs** — calendar math for milestone targets
-- **Capacitor 8** — `@capacitor/core|cli|android|ios|app|local-notifications|haptics|status-bar`; `android/` + `ios/` are committed; `dist/` (cloudflare_pages preset output) is the webDir. **iOS uses Swift Package Manager** (CapApp-SPM `Package.swift` references the plugins — no Podfile)
+- **Capacitor 8** — `@capacitor/core|cli|android|ios|app|local-notifications|haptics|status-bar|filesystem|share`; `android/` + `ios/` are committed; `dist/` (cloudflare_pages preset output) is the webDir. **iOS uses Swift Package Manager** (CapApp-SPM `Package.swift` references the plugins — no Podfile)
 - **@capacitor/assets** (devDep) — generates every icon/splash density from the `assets/` SVG masters via `npm run mobile:icons` (rsvg-convert renders the PNGs)
 - **@sentry/vue** — opt-in error tracking via `NUXT_PUBLIC_SENTRY_DSN` (no DSN → plugin is a no-op)
 - **Vitest 4 + @vue/test-utils + happy-dom** — unit tests in node env, component tests in happy-dom
@@ -32,7 +32,7 @@ app/
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
     habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, milestone opt-in
-    settings.vue           # Settings — theme, language, currency, milestone notifications
+    settings.vue           # Settings — theme, language, currency, milestone notifications, data backup (export/import)
   components/              # auto-imported (pathPrefix: false)
     ui/                    # TabBar, Snackbar, ConfirmDialog, ErrorBoundary
     habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, MilestoneOptInDialog, RelapseConfirm
@@ -43,6 +43,7 @@ app/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
     useLocaleSwitch.ts     # i18n locale switching
+    useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation (tab switch / locale navigation mid-import)
   plugins/
     i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe, see Pitfalls)
     sentry.client.ts       # @sentry/vue init — no-op unless NUXT_PUBLIC_SENTRY_DSN is set
@@ -60,7 +61,9 @@ app/
     haptics.ts             # Capacitor haptics wrapper (native guard; light tabs / medium confirms / success milestones)
     system-bars.ts         # SystemBars plugin wrapper — Android: SystemBarsPlugin.setTheme; iOS: StatusBar.setStyle (status text)
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
-  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 104 keys each
+    backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, settings}) — build/parse/import; never throws on hostile input
+    backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file"> (native picker in WebView); web export = download
+  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 117 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
   app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
@@ -210,6 +213,11 @@ npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-ic
 - App foreground is tracked via `App.addListener('appStateChange')` — DOM `visibilitychange` alone is unreliable in the WebView (the DOM visibility doesn't change when the app backgrounds)
 - Tap on a notification routes to Progress, including cold starts (the plugin retains the launch intent action until the JS listener registers)
 - Notification ids: deterministic djb2 hash → `reconcileHabitNotifications` can rebuild the expected id and check it against pending without storing a map
+
+### Backup / Export-Import (Settings → Data)
+- Export serializes `habits` + `milestones-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` in `app/utils/backup.ts`): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.json`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
+- Import is a hidden `<input type="file">` — the WebView opens the native system picker automatically, no plugin API needed (Filesystem has no `pickFiles` in v8); `parseBackup` never throws — any shape/version problem → `{ ok: false, error }` and nothing is written until the ConfirmDialog confirm
+- **After import:** pending notifications from the old dataset are cancelled; the imported notification settings are **re-validated against the OS** — permission not granted (fresh install `undetermined` or revoked) → re-ask, and **schedules are rebuilt only after the permission is confirmed** (no dead schedules); enabling notifications via the Settings toggle also reconciles immediately, not on the next Progress boot. Android 12+ exact-alarm access denied → `ExactAlarmDialog` re-asks (same pattern as the habit opt-in: plain `exactAlarmVisible` ref; Go-to-settings re-checks on foreground, Skip leaves the inexact schedules). The re-ask state lives in a module-level singleton (`useExactAlarmPrompt`) so a mid-chain page re-creation (tab switch / `setLocale` navigation) cannot lose it; a `sessionStorage` flag (`pending-exact-reask`) re-surfaces it after a WebView reload. Imported `settings.theme` is applied to color-mode (`themeMode.setTheme`) and `settings.language` to the URL locale — the selector alone reads the settings ref, the live theme/locale need the explicit sync
 
 ### Haptics & Sentry (Ticket 12)
 - `app/utils/haptics.ts` wraps `@capacitor/haptics` behind the same native guard as notifications (browser = silent no-op). Feedback map: **light** on tab presses (`pointerdown`), **medium** on primary confirmations (wizard confirm, savings save, opt-in Enable, exact-alarm Go-to-settings, ConfirmDialog confirm — delete/relapse, add-custom-habit, empty-state CTA), **success** notification feedback when a milestone celebration is queued (watcher on the queue in `app/pages/index.vue`)
