@@ -3,7 +3,13 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-defineProps<{ message: string | null }>()
+withDefaults(
+  defineProps<{
+    message: string | null
+    success?: boolean
+  }>(),
+  { success: false },
+)
 const emit = defineEmits<{ dismiss: [] }>()
 </script>
 
@@ -12,7 +18,8 @@ const emit = defineEmits<{ dismiss: [] }>()
     <div
       v-if="message"
       role="alert"
-      class="fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-100 -translate-x-1/2 rounded-xl bg-danger px-4 py-3 text-sm font-medium text-white shadow-lg"
+      class="fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-100 -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg"
+      :class="success ? 'bg-primary' : 'bg-danger'"
     >
       <div class="flex items-center justify-between gap-3">
         <p>{{ message }}</p>
