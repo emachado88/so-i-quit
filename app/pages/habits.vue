@@ -63,6 +63,8 @@ const pendingOptInHabitId = ref<string | null>(null)
 const exactAlarmVisible = ref(false)
 const customHabitInput = ref<HTMLInputElement | null>(null)
 
+let customInputHideTimer: ReturnType<typeof setTimeout> | null = null
+
 const settingsCurrency = computed(() => getSettings().currency)
 
 const hasAlcohol = computed(() =>
@@ -89,6 +91,10 @@ onMounted(loadHabits)
 
 const handleAddHabit = (type: 'alcohol' | 'tobacco' | 'Other'): void => {
   if (type === 'Other') {
+    if (customInputHideTimer) {
+      clearTimeout(customInputHideTimer)
+      customInputHideTimer = null
+    }
     showCustomInput.value = true
     nextTick(() => customHabitInput.value?.focus())
     return
@@ -116,6 +122,7 @@ const handleAddCustomHabit = (): void => {
     const created = addHabit({ name: normalized, date: null, savings: null })
     customHabitName.value = ''
     showCustomInput.value = false
+    customHabitInput.value?.blur()
     loadHabits()
     startWizard('new', created.id, null)
   }
@@ -344,7 +351,11 @@ onUnmounted(() => {
 })
 
 const handleCustomHabitInputBlur = (): void => {
-  setTimeout(() => {
+  if (customInputHideTimer) {
+    clearTimeout(customInputHideTimer)
+  }
+  customInputHideTimer = setTimeout(() => {
+    customInputHideTimer = null
     showCustomInput.value = false
   }, 100)
 }
@@ -401,6 +412,7 @@ const handleCustomHabitInputBlur = (): void => {
         :placeholder="t('habits.habitName')"
         class="flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
         @blur="handleCustomHabitInputBlur"
+        @keydown.enter="handleAddCustomHabit"
       >
       <button
         type="button"
