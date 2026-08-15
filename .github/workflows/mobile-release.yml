@@ -4,6 +4,8 @@
 #     upload keystore from GitHub secrets — never committed, masked in logs.
 #     The keystore/keystore.properties materialize only inside the ephemeral
 #     runner, inside android/ (gitignored) for the duration of the job.
+#     Release asset = APK only. The AAB is for Play Store upload only and is
+#     not made available as a download (AABs can't be sideloaded).
 #
 # Trigger: workflow_dispatch only — release builds are on-demand (same
 # rationale as mobile-preview.yml: `ci` already gates PRs, and nothing

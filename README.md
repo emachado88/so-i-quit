@@ -112,7 +112,7 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 
 ### CI release installers
 
-`.github/workflows/mobile-release.yml` is also manual-only (`workflow_dispatch`): builds a **signed** `assembleRelease` APK + `bundleRelease` AAB for production. The keystore never enters the repo — the workflow decodes `ANDROID_KEYSTORE_B64` (plus password/alias secrets) into the ephemeral runner. Required secrets: `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Enable **Play App Signing** when publishing — the upload key is then recoverable if lost/compromised.
+`.github/workflows/mobile-release.yml` is also manual-only (`workflow_dispatch`): builds a **signed** `assembleRelease` APK + `bundleRelease` AAB for production. The keystore never enters the repo — the workflow decodes `ANDROID_KEYSTORE_B64` (plus password/alias secrets) into the ephemeral runner. Required secrets: `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Enable **Play App Signing** when publishing — the upload key is then recoverable if lost/compromised. Release download = APK only; the AAB is for Play Store upload only, not made available (AABs can't be sideloaded).
 
 ## Testing
 
