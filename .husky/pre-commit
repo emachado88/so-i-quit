@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Fast checks on staged files only, then the full suite + coverage gate.
 # (Move `npm test` to a pre-push hook if commits feel heavy — CI gates it anyway.)
 npx lint-staged
