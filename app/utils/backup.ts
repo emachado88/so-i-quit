@@ -10,7 +10,14 @@ import { getHabits, saveHabits } from './habits'
 import {
   saveMilestonesForHabit,
 } from './milestones-store'
-import { getSettings, saveSettings } from './settings'
+import {
+  DEFAULT_SETTINGS,
+  detectLanguage,
+  getSettings,
+  saveSettings,
+  SUPPORTED_LANGUAGES,
+} from './settings'
+import { CURRENCY_SYMBOLS } from './currencies'
 import { readJSON, STORAGE_KEYS } from './storage'
 import type { AppSettings, Habit, Milestone } from './types'
 import { isAppSettings, isHabit, isMilestone } from './validators'
@@ -121,11 +128,52 @@ export const parseBackup = (
 export const exportToFile = (data: BackupFile): string =>
   JSON.stringify(data, null, 2)
 
+/**
+ * Drop unsafe / orphan milestone entries BEFORE they reach the store write.
+ *
+ * - Keys `__proto__`, `constructor`, `prototype` are prototype-pollution
+ *   sinks: `store[key] = value` on a fresh `{}` sets the object's prototype.
+ *   JSON.parse keeps them as own enumerable data props, so we strip them here.
+ * - Entries whose habitId does not match any imported habit are orphaned
+ *   (no UI can ever read them) and are dropped.
+ */
+const sanitizeMilestoneMap = (
+  milestones: Record<string, Milestone[]>,
+  habitIds: Set<string>,
+): Record<string, Milestone[]> => {
+  const safe = ['__proto__', 'constructor', 'prototype']
+  const result: Record<string, Milestone[]> = {}
+  for (const [habitId, value] of Object.entries(milestones)) {
+    if (safe.includes(habitId)) continue
+    if (!habitIds.has(habitId)) continue
+    result[habitId] = value
+  }
+  return result
+}
+
+/** Fall back to defaults rather than reject the whole backup. */
+const normalizeSettings = (settings: AppSettings): AppSettings => {
+  const language = (SUPPORTED_LANGUAGES as readonly string[]).includes(
+    settings.language,
+  )
+    ? settings.language
+    : detectLanguage()
+  const currency = Object.prototype.hasOwnProperty.call(
+    CURRENCY_SYMBOLS,
+    settings.currency,
+  )
+    ? settings.currency
+    : DEFAULT_SETTINGS.currency
+  return { ...settings, language, currency }
+}
+
 /** Replace habits, milestones and settings with the imported backup. */
 export const importBackup = (data: BackupFile): void => {
+  const habitIds = new Set(data.habits.map(h => h.id))
   saveHabits(data.habits)
-  for (const [habitId, milestones] of Object.entries(data.milestones)) {
-    saveMilestonesForHabit(habitId, milestones)
+  const milestones = sanitizeMilestoneMap(data.milestones, habitIds)
+  for (const [habitId, value] of Object.entries(milestones)) {
+    saveMilestonesForHabit(habitId, value)
   }
-  saveSettings(data.settings)
+  saveSettings(normalizeSettings(data.settings))
 }
