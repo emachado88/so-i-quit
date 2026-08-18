@@ -239,6 +239,23 @@ describe('addAppForegroundListener', () => {
     expect(mocks.appAddListener).not.toHaveBeenCalled()
     sub.remove() // must not throw
   })
+
+  it('removes the eventual handle even when remove() wins the race', async () => {
+    const handleRemove = vi.fn(() => Promise.resolve())
+    const handle = { remove: handleRemove }
+    let deferredResolve: (h: typeof handle) => void = () => {}
+    mocks.appAddListener.mockImplementationOnce(
+      () => new Promise((res) => { deferredResolve = res }),
+    )
+
+    const sub = notifications.addAppForegroundListener(() => {})
+    sub.remove()
+    deferredResolve(handle)
+    await flush()
+
+    expect(mocks.appAddListener).toHaveBeenCalledTimes(1)
+    expect(handleRemove).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('addNotificationTapListener', () => {
@@ -285,6 +302,23 @@ describe('addNotificationTapListener', () => {
     const sub = notifications.addNotificationTapListener(onTap)
     expect(mocks.addListener).not.toHaveBeenCalled()
     sub.remove() // must not throw
+  })
+
+  it('removes the eventual handle even when remove() wins the race', async () => {
+    const handleRemove = vi.fn(() => Promise.resolve())
+    const handle = { remove: handleRemove }
+    let deferredResolve: (h: typeof handle) => void = () => {}
+    mocks.addListener.mockImplementationOnce(
+      () => new Promise((res) => { deferredResolve = res }),
+    )
+
+    const sub = notifications.addNotificationTapListener(() => {})
+    sub.remove()
+    deferredResolve(handle)
+    await flush()
+
+    expect(mocks.addListener).toHaveBeenCalledTimes(1)
+    expect(handleRemove).toHaveBeenCalledTimes(1)
   })
 })
 

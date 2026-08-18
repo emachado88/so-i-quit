@@ -258,14 +258,17 @@ export const addAppForegroundListener = (
   if (!isNative()) return { remove: () => {} }
 
   let handle: { remove: () => Promise<void> } | null = null
+  let removed = false
   void App.addListener('appStateChange', ({ isActive }) => {
     if (isActive) onForeground()
   }).then((listenerHandle) => {
-    handle = listenerHandle
+    if (removed) void listenerHandle.remove()
+    else handle = listenerHandle
   })
 
   return {
     remove: () => {
+      removed = true
       void handle?.remove()
     },
   }
@@ -282,6 +285,7 @@ export const addNotificationTapListener = (
   if (!isNative()) return { remove: () => {} }
 
   let handle: { remove: () => Promise<void> } | null = null
+  let removed = false
   void LocalNotifications.addListener(
     'localNotificationActionPerformed',
     (action) => {
@@ -291,11 +295,13 @@ export const addNotificationTapListener = (
       if (extra?.habitId) onTap(extra.habitId)
     },
   ).then((listenerHandle) => {
-    handle = listenerHandle
+    if (removed) void listenerHandle.remove()
+    else handle = listenerHandle
   })
 
   return {
     remove: () => {
+      removed = true
       void handle?.remove()
     },
   }
