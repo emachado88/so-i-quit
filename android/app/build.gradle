@@ -27,8 +27,12 @@ android {
         applicationId "com.soiquit.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
         versionName "1.1.0"
+        // versionCode derived from versionName: X.Y.Z -> X*10000 + Y*100 + Z (1.1.0 -> 10100).
+        // Must monotonically increase per Google Play requirements; keep versionName in sync
+        // with package.json and iOS MARKETING_VERSION (see AGENTS.md). Evaluated after
+        // versionName above so the value is available at config time.
+        versionCode versionName.split('\\.').collect { it as int }.inject(0) { acc, v -> acc * 100 + v }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
