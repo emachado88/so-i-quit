@@ -7,11 +7,11 @@
  * (o capacitor.config.ts lê essa env var e aponta o WebView para o server).
  *
  * Uso:
- *   npm run mobile:run:live                  # telemóvel físico (mesma Wi-Fi)
- *   npm run mobile:run:live -- --emulator    # emulador (usa 10.0.2.2)
- *   npm run mobile:run:live -- --ip 192.168.1.42   # override explícito
+ *   npm run mobile:live                  # telemóvel físico (mesma Wi-Fi)
+ *   npm run mobile:live -- --emulator    # emulador (usa 10.0.2.2)
+ *   npm run mobile:live -- --ip 192.168.1.42   # override explícito
  *
- * Requisito: dev server a correr primeiro → npm run mobile:dev
+ * Requisito: dev server a correr primeiro → npm run dev
  */
 import { spawn, spawnSync } from 'node:child_process'
 import readline from 'node:readline/promises'
@@ -74,7 +74,7 @@ try {
 }
 catch {
   console.error(`\n⚠  Dev server não está a responder em ${url}`)
-  console.error('   Arranca primeiro:  npm run mobile:dev  (depois re-corre este script)')
+  console.error('   Arranca primeiro:  npm run dev  (depois re-corre este script)')
   process.exit(1)
 }
 

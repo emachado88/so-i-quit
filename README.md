@@ -50,8 +50,8 @@ npm run dev
 
 ### Android dev loop (live reload on the phone)
 
-- Terminal A: `npm run mobile:dev` (Nuxt/Vite dev server bound to `0.0.0.0`)
-- Terminal B: `npm run mobile:run:live` (resolves your LAN IP itself; `--emulator` uses `10.0.2.2`)
+- Terminal A: `npm run dev` (Nuxt/Vite dev server bound to all hosts via `--host`)
+- Terminal B: `npm run mobile:live` (resolves your LAN IP itself; `--emulator` uses `10.0.2.2`)
 - Phone on the **same Wi-Fi**; USB debugging for the first install
 - Every save → Vite HMR pushes to the WebView (no native rebuild)
 
@@ -72,8 +72,8 @@ npm run dev
 | `npm run mobile:apk`         | Gradle `assembleDebug`                                        |
 | `npm run mobile:apk:preview` | Gradle `assemblePreview` (debug-signed, sideload)             |
 | `npm run mobile:apk:release` | Gradle `assembleRelease`                                      |
-| `npm run mobile:dev`         | Dev server on `0.0.0.0` (phone dev loop)                      |
-| `npm run mobile:run:live`    | Live-reload loop (LAN IP + `cap run android`)                 |
+| `npm run dev`                | Dev server bound to all hosts (`--host`) — phone dev loop     |
+| `npm run mobile:live`        | Live-reload loop (LAN IP + `cap run android`)                 |
 | `npm run mobile:icons`       | Regenerate icon/splash densities (Android + iOS)              |
 
 ### Build
