@@ -63,9 +63,11 @@ watch(dashOffset, (value) => {
 </script>
 
 <template>
-  <!-- Wireframe ring: track + primary bar, fill eased via a CSS
-       stroke-dashoffset transition (no animation library). Mounts empty
-       and animates up to the current progress (see renderedOffset). -->
+  <!-- Wireframe ring: track + primary bar. The fill is driven by the Web
+       Animations API (see animateTo): the ring mounts empty and animates
+       from the current computed stroke-dashoffset up to the target; when
+       milestone data arrives it re-animates to the new progress using
+       el.animate with { duration: 1000, easing: 'ease-out' }. -->
   <svg
     :width="size"
     :height="size"
@@ -92,7 +94,7 @@ watch(dashOffset, (value) => {
       stroke-linecap="round"
       :stroke-dasharray="`${circumference} ${circumference}`"
       :stroke-dashoffset="renderedOffset"
-      class="stroke-primary-hover transition-[stroke-dashoffset] duration-1000 ease-out"
+      class="stroke-primary-hover"
     />
   </svg>
 </template>

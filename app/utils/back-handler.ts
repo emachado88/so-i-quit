@@ -57,14 +57,17 @@ export const addBackButtonListener = (
   if (!Capacitor.isNativePlatform()) return { remove: () => {} }
 
   let handle: { remove: () => Promise<void> } | null = null
+  let removed = false
   void App.addListener('backButton', ({ canGoBack }) => {
     onBack(canGoBack)
   }).then((listenerHandle) => {
-    handle = listenerHandle
+    if (removed) void listenerHandle.remove()
+    else handle = listenerHandle
   })
 
   return {
     remove: () => {
+      removed = true
       void handle?.remove()
     },
   }
