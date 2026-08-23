@@ -19,6 +19,7 @@ import {
 import { formatMilestoneLabel, isMilestoneReached } from '../utils/milestones'
 import {
   ensureMilestonesForHabit,
+  ensureMilestonesForHabits,
   saveMilestonesForHabit,
 } from '../utils/milestones-store'
 import {
@@ -122,22 +123,25 @@ const load = async (): Promise<void> => {
     habits.value = getHabits()
     const nowDate = now.value
     const newly: Celebration[] = []
-    const byHabit: Record<string, Milestone[]> = {}
-
-    for (const habit of datedHabits.value) {
-      // Roll reached targets forward and collect newly crossed milestones
-      // for the in-app celebration queue.
-      const result = ensureMilestonesForHabit(habit, nowDate)
-      byHabit[habit.id] = result.milestones
-      for (const milestone of result.newlyReached) {
-        newly.push({ habitId: habit.id, milestone })
-      }
-      // Extend the native schedule through the rolling horizon when
-      // notifications are enabled (new annuals get scheduled).
-      if (getSettings().milestoneNotificationsEnabled) {
+    // Single read + write of the milestone store across the whole habit
+    // list (previously one full serialize per habit).
+    const { byHabit, newlyReached } = ensureMilestonesForHabits(
+      datedHabits.value,
+      nowDate,
+    )
+    for (const milestone of newlyReached) {
+      newly.push({ habitId: milestone.habitId, milestone })
+    }
+    // Extend the native schedule through the rolling horizon when
+    // notifications are enabled (new annuals get scheduled). The reconcile
+    // is inherently per-habit; only the ensure step above is batched.
+    if (getSettings().milestoneNotificationsEnabled) {
+      for (const habit of datedHabits.value) {
+        const stored = byHabit[habit.id]
+        if (!stored) continue
         byHabit[habit.id] = await reconcileHabitNotifications(
           habit,
-          byHabit[habit.id] as Milestone[],
+          stored,
           t,
           nowDate,
         )
