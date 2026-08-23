@@ -141,6 +141,30 @@ const t = (key: string, params?: Record<string, unknown>): string => {
   return out
 }
 
+describe('notificationIdFor', () => {
+  it('derives a positive int32 notification id in [1, 0x7fffffff]', () => {
+    const id = notifications.notificationIdFor(makeMilestone())
+    expect(Number.isInteger(id)).toBe(true)
+    expect(id).toBeGreaterThan(0)
+    expect(id).toBeLessThanOrEqual(0x7fffffff)
+  })
+
+  it('never yields 0 — including when the djb2 hash lands on INT_MIN', () => {
+    // '1039201056' hashes to -2147483648 (INT_MIN), where the old guard
+    // (Math.abs(hash) || 1) & 0x7fffffff masked to 0 (id 0 collides with
+    // "no id" semantics). The unsigned-mod variant folds it to 1.
+    expect(notifications.notificationIdFor(makeMilestone({ id: '1039201056' }))).toBe(1)
+
+    // Broad sweep: arbitrary milestone ids never hash to 0.
+    for (let i = 0; i < 5_000; i += 1) {
+      const id = `probe-${i}-${Math.random().toString(36).slice(2, 10)}`
+      const hash = notifications.notificationIdFor(makeMilestone({ id }))
+      expect(hash).toBeGreaterThan(0)
+      expect(hash).toBeLessThanOrEqual(0x7fffffff)
+    }
+  })
+})
+
 describe('platform guard (browser)', () => {
   it('reports notifications unsupported in the browser', () => {
     mocks.isNative.mockReturnValue(false)
