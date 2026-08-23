@@ -8,6 +8,8 @@
 
 import { getHabits, saveHabits } from './habits'
 import {
+  isMilestoneMap,
+  parseMilestoneStore,
   saveMilestonesForHabit,
 } from './milestones-store'
 import {
@@ -20,7 +22,7 @@ import {
 import { CURRENCY_SYMBOLS } from './currencies'
 import { readJSON, STORAGE_KEYS } from './storage'
 import type { AppSettings, Habit, Milestone } from './types'
-import { isAppSettings, isHabit, isMilestone } from './validators'
+import { isAppSettings, isHabit } from './validators'
 
 export const BACKUP_VERSION = 1
 
@@ -32,49 +34,17 @@ export interface BackupFile {
   settings: AppSettings
 }
 
-/**
- * Read the milestone store exactly like milestones-store does — corrupt /
- * non-object JSON is tolerated and treated as empty (RN parity).
- */
-const readMilestoneStore = (): Record<string, Milestone[]> => {
-  const parsed: unknown = readJSON(STORAGE_KEYS.milestones, {})
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return {}
-  }
-  const store: Record<string, Milestone[]> = {}
-  for (const [habitId, value] of Object.entries(parsed)) {
-    if (!Array.isArray(value)) {
-      console.warn('[backup] discarding non-array milestone entry', habitId)
-      continue
-    }
-    store[habitId] = value.filter((m): m is Milestone => isMilestone(m))
-  }
-  return store
-}
-
 /** Snapshot the current habits, milestones and settings. */
 export const buildBackup = (): BackupFile => ({
   version: BACKUP_VERSION,
   exportedAt: new Date().toISOString(),
   habits: getHabits(),
-  milestones: readMilestoneStore(),
+  milestones: parseMilestoneStore(readJSON(STORAGE_KEYS.milestones, {})),
   settings: getSettings(),
 })
 
 const isISODateString = (value: unknown): value is string =>
   typeof value === 'string' && !Number.isNaN(Date.parse(value))
-
-const isMilestoneMap = (
-  value: unknown,
-): value is Record<string, Milestone[]> => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false
-  }
-  for (const entry of Object.values(value)) {
-    if (!Array.isArray(entry) || !entry.every(isMilestone)) return false
-  }
-  return true
-}
 
 /**
  * Parse + validate a backup file. Never throws — on any problem returns
