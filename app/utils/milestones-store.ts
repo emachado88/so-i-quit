@@ -13,13 +13,19 @@ import { isMilestone } from './validators'
 
 type MilestoneStore = Record<string, Milestone[]>
 
-const readStore = (): MilestoneStore => {
-  const parsed: unknown = readJSON(STORAGE_KEYS.milestones, {})
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+/**
+ * Validate + clean a raw parsed value into a milestone store. Corrupt /
+ * non-object values are tolerated and treated as empty (same as RN);
+ * malformed entries are discarded per-habit with a warning. Shared by every
+ * read path (localStorage reads and backup export) so validation lives in
+ * exactly one place.
+ */
+export const parseMilestoneStore = (raw: unknown): MilestoneStore => {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {}
   }
   const store: MilestoneStore = {}
-  for (const [habitId, value] of Object.entries(parsed)) {
+  for (const [habitId, value] of Object.entries(raw)) {
     if (!Array.isArray(value)) {
       console.warn('[milestones] discarding non-array entry for habit', habitId)
       continue
@@ -32,6 +38,25 @@ const readStore = (): MilestoneStore => {
   }
   return store
 }
+
+/**
+ * Strict whole-map guard: every entry must be a valid milestone array.
+ * Used to validate imported backup files — no partial tolerance there
+ * (a file with any malformed milestone is rejected outright).
+ */
+export const isMilestoneMap = (
+  value: unknown,
+): value is MilestoneStore => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+  return Object.values(value).every(
+    entry => Array.isArray(entry) && entry.every(isMilestone),
+  )
+}
+
+const readStore = (): MilestoneStore =>
+  parseMilestoneStore(readJSON(STORAGE_KEYS.milestones, {}))
 
 const writeStore = (store: MilestoneStore): void => {
   writeJSON(STORAGE_KEYS.milestones, store)
