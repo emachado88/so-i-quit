@@ -3,12 +3,33 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   deleteMilestonesForHabit,
   ensureMilestonesForHabit,
+  ensureMilestonesForHabits,
   getMilestonesForHabit,
   getMilestonesForHabits,
   saveMilestonesForHabit,
 } from '../../app/utils/milestones-store'
+import { STORAGE_KEYS } from '../../app/utils/storage'
 import type { Habit, Milestone } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
+
+// Count store reads/writes so the batched-I/O test can assert a single
+// pass through readJSON/writeJSON (module mock keeps the live bindings).
+const storageCalls = vi.hoisted(() => ({ reads: 0, writes: 0 }))
+
+vi.mock('../../app/utils/storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../app/utils/storage')>()
+  return {
+    ...actual,
+    readJSON: <T>(key: string, fallback: T): T => {
+      storageCalls.reads += 1
+      return actual.readJSON(key, fallback)
+    },
+    writeJSON: (key: string, value: unknown): void => {
+      storageCalls.writes += 1
+      actual.writeJSON(key, value)
+    },
+  }
+})
 
 installStorageMock()
 
@@ -142,6 +163,55 @@ describe('utils/milestones-store', () => {
       const byHabit = getMilestonesForHabits([h1, undated], new Date('2025-06-01T00:00:00Z'))
       expect(byHabit['h1'].length).toBeGreaterThan(0)
       expect(byHabit['undated']).toBeUndefined()
+    })
+  })
+
+  describe('ensureMilestonesForHabits', () => {
+    it('performs a single read and a single write of the store', () => {
+      storageCalls.reads = 0
+      storageCalls.writes = 0
+      seedStorage(
+        STORAGE_KEYS.milestones,
+        JSON.stringify({ h1: [makeMilestone()] }),
+      )
+
+      const h1 = habit('2025-01-01T00:00:00.000Z')
+      const h2: Habit = { ...habit('2024-01-01T00:00:00.000Z'), id: 'h2' }
+      const undated = { ...habit('2025-01-01'), id: 'undated', date: null }
+
+      const result = ensureMilestonesForHabits(
+        [h1, h2, undated],
+        new Date('2025-06-01T00:00:00Z'),
+      )
+
+      expect(storageCalls.reads).toBe(1)
+      expect(storageCalls.writes).toBe(1)
+      expect(result.byHabit['h1'].length).toBeGreaterThan(0)
+      expect(result.byHabit['h2'].length).toBeGreaterThan(0)
+      expect(result.byHabit['undated']).toBeUndefined()
+    })
+
+    it('matches the per-habit ensure semantics for an existing record', () => {
+      const h1 = habit('2025-01-01T00:00:00.000Z')
+      const now = new Date('2025-01-02T06:00:00Z')
+
+      // Per-habit call on the seeded store (writes it), then re-seed and run
+      // the batched call on the same original store — both must agree on
+      // milestones and on which targets are newly reached.
+      seedStorage(
+        STORAGE_KEYS.milestones,
+        JSON.stringify({ h1: [makeMilestone()] }),
+      )
+      const individual = ensureMilestonesForHabit(h1, now)
+
+      seedStorage(
+        STORAGE_KEYS.milestones,
+        JSON.stringify({ h1: [makeMilestone()] }),
+      )
+      const batched = ensureMilestonesForHabits([h1], now)
+
+      expect(batched.byHabit['h1']).toEqual(individual.milestones)
+      expect(batched.newlyReached).toEqual(individual.newlyReached)
     })
   })
 })
