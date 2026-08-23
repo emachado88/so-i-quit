@@ -21,6 +21,8 @@
     "mobile:dev": "npm run dev -- --host 0.0.0.0",
     "mobile:run:live": "node scripts/live-reload.mjs",
     "mobile:icons": "bash scripts/generate-icons.sh",
+    "version:bump": "node scripts/bump-version.mjs",
+    "version:check": "node scripts/bump-version.mjs check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
