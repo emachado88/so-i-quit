@@ -134,6 +134,77 @@ export const ensureMilestonesForHabit = (
 }
 
 /**
+ * Ensure milestone state for several dated habits in a single read + write
+ * of the store (Progress load path — previously one full serialize per
+ * habit). Semantics match ensureMilestonesForHabit exactly: first init is a
+ * silent backfill (newlyReached: []), later passes extend the rolling
+ * horizon and return targets crossed since the last check.
+ */
+export const ensureMilestonesForHabits = (
+  habits: Habit[],
+  now: Date,
+): { byHabit: Record<string, Milestone[]>, newlyReached: Milestone[] } => {
+  const store = readStore()
+  const byHabit: Record<string, Milestone[]> = {}
+  const newlyReached: Milestone[] = []
+
+  for (const habit of habits) {
+    if (!habit.date) continue
+
+    const stored = store[habit.id]
+
+    if (!stored || stored.length === 0) {
+      // Silent backfill: initialize without celebrating anything historical.
+      const milestones = generateMilestones(habit, now).map(milestone => ({
+        ...milestone,
+        reachedAt: isMilestoneReached(habit, milestone, now)
+          ? now.toISOString()
+          : null,
+      }))
+      byHabit[habit.id] = milestones
+      store[habit.id] = milestones
+      continue
+    }
+
+    // Extend an existing record through the current horizon and mark newly
+    // crossed targets. Only milestones crossed since the last check are
+    // returned as newly reached.
+    const existingById = new Map(stored.map(m => [m.id, m]))
+    const merged = generateMilestones(habit, now).map((milestone) => {
+      const existing = existingById.get(milestone.id)
+      if (!existing) {
+        const reached = isMilestoneReached(habit, milestone, now)
+        const fresh: Milestone = {
+          ...milestone,
+          reachedAt: reached ? now.toISOString() : null,
+        }
+        if (reached) newlyReached.push(fresh)
+        return fresh
+      }
+      // Roll forward: a stored milestone whose target has now passed gets
+      // reachedAt set and is enqueued for celebration exactly once.
+      if (
+        existing.reachedAt === null
+        && isMilestoneReached(habit, existing, now)
+      ) {
+        const updated: Milestone = {
+          ...existing,
+          reachedAt: now.toISOString(),
+        }
+        newlyReached.push(updated)
+        return updated
+      }
+      return existing
+    })
+    byHabit[habit.id] = merged
+    store[habit.id] = merged
+  }
+
+  writeStore(store)
+  return { byHabit, newlyReached }
+}
+
+/**
  * Load milestone state for every dated habit in one pass (avoids repeated
  * storage reads on the Progress screen). Also performs silent backfill for
  * habits without a record yet.
