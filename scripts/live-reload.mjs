@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Live reload dev loop — Android no telemóvel com HMR do Vite.
+ * Live reload dev loop — Android on the phone with Vite HMR.
  *
- * Resolve o IP LAN da máquina, verifica que o dev server do Nuxt está a
- * responder, e corre `npx cap run android` com CAP_LIVE_URL injetado
- * (o capacitor.config.ts lê essa env var e aponta o WebView para o server).
+ * Resolves the machine's LAN IP, checks that the Nuxt dev server is
+ * responding, and runs `npx cap run android` with CAP_LIVE_URL injected
+ * (capacitor.config.ts reads that env var and points the WebView at the server).
  *
- * Uso:
- *   npm run mobile:run:live                  # telemóvel físico (mesma Wi-Fi)
- *   npm run mobile:run:live -- --emulator    # emulador (usa 10.0.2.2)
- *   npm run mobile:run:live -- --ip 192.168.1.42   # override explícito
+ * Usage:
+ *   npm run mobile:live                  # physical phone (same Wi-Fi)
+ *   npm run mobile:live -- --emulator    # emulator (uses 10.0.2.2)
+ *   npm run mobile:live -- --ip 192.168.1.42   # explicit override
  *
- * Requisito: dev server a correr primeiro → npm run mobile:dev
+ * Requirement: start the dev server first → npm run dev
  */
 import { spawn, spawnSync } from 'node:child_process'
 import readline from 'node:readline/promises'
@@ -22,10 +22,10 @@ const IS_EMULATOR = args.includes('--emulator')
 const ipOverride = args.includes('--ip') ? args[args.indexOf('--ip') + 1] : null
 const EXTRA_ARGS = args.filter(a => a !== '--emulator' && a !== '--ip' && a !== ipOverride)
 
-/** Nomes típicos de interfaces virtuais que o telemóvel nunca alcança. */
+/** Typical names of virtual interfaces the phone can never reach. */
 const VIRTUAL = /^(lo|docker|veth|br-|virbr|tun|tap|wg|wireguard|tailscale|utun|ppp|zt|vpn|nord|mullvad|proton)/
 
-/** Lista de {iface, ip} IPv4 globais de interfaces físicas/LAN. */
+/** List of {iface, ip} global IPv4 addresses of physical/LAN interfaces. */
 function candidateIPs() {
   const out = spawnSync('ip', ['-4', '-o', 'addr', 'show']).stdout?.toString() ?? ''
   const addrs = []
@@ -44,19 +44,19 @@ async function lanIPv4() {
   const candidates = candidateIPs()
   if (candidates.length === 1) return candidates[0]
   if (candidates.length === 0) {
-    throw new Error('Não encontrei nenhuma interface LAN — verifica a ligação de rede.')
+    throw new Error('Could not find any LAN interface — check your network connection.')
   }
-  // stdin não-interativo (pipes/CI): sem como perguntar — usa a primeira.
+  // Non-interactive stdin (pipes/CI): nothing to ask — use the first one.
   if (!process.stdin.isTTY) {
-    console.log(`ℹ  Múltiplas interfaces (${candidates.map(c => `${c.ip} ${c.iface}`).join(', ')}) — a usar a primeira`)
+    console.log(`ℹ  Multiple interfaces (${candidates.map(c => `${c.ip} ${c.iface}`).join(', ')}) — using the first`)
     return candidates[0]
   }
-  // Várias interfaces reais (ex.: Ethernet + Wi-Fi): perguntar qual usar.
+  // Multiple real interfaces (e.g. Ethernet + Wi-Fi): ask which to use.
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  console.log('Várias interfaces LAN encontradas — qual deve o telemóvel usar?')
+  console.log('Multiple LAN interfaces found — which one should the phone use?')
   candidates.forEach((c, i) => console.log(`  ${i + 1}) ${c.ip}  (${c.iface})`))
   let pick = 1
-  const answer = (await rl.question(`Escolhe [1-${candidates.length}, default 1]: `)).trim()
+  const answer = (await rl.question(`Choose [1-${candidates.length}, default 1]: `)).trim()
   rl.close()
   const n = parseInt(answer, 10)
   if (Number.isInteger(n) && n >= 1 && n <= candidates.length) pick = n
@@ -67,14 +67,14 @@ const chosen = IS_EMULATOR ? { ip: '10.0.2.2', iface: 'emulator' } : await lanIP
 const url = `http://${chosen.ip}:${PORT}`
 console.log(`🔗 Live reload: ${url}${chosen.iface ? `  (${chosen.iface})` : ''}`)
 
-// Dev server pronto? Erro claro em vez de app apontada para um server morto.
+// Dev server ready? Clear error instead of an app pointed at a dead server.
 try {
   const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 catch {
-  console.error(`\n⚠  Dev server não está a responder em ${url}`)
-  console.error('   Arranca primeiro:  npm run mobile:dev  (depois re-corre este script)')
+  console.error(`\n⚠  Dev server is not responding at ${url}`)
+  console.error('   Start it first:  npm run dev  (then re-run this script)')
   process.exit(1)
 }
 
