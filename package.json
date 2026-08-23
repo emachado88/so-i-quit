@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -18,8 +18,7 @@
     "mobile:apk": "cd android && ./gradlew assembleDebug",
     "mobile:apk:preview": "cd android && ./gradlew assemblePreview",
     "mobile:apk:release": "cd android && ./gradlew assembleRelease",
-    "mobile:dev": "npm run dev -- --host 0.0.0.0",
-    "mobile:run:live": "node scripts/live-reload.mjs",
+    "mobile:live": "node scripts/live-reload.mjs",
     "mobile:icons": "bash scripts/generate-icons.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
