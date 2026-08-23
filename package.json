@@ -18,8 +18,10 @@
     "mobile:apk": "cd android && ./gradlew assembleDebug",
     "mobile:apk:preview": "cd android && ./gradlew assemblePreview",
     "mobile:apk:release": "cd android && ./gradlew assembleRelease",
-    "mobile:live": "node scripts/live-reload.mjs",
+    "mobile:live": "cap sync && node scripts/live-reload.mjs",
     "mobile:icons": "bash scripts/generate-icons.sh",
+    "version:bump": "node scripts/bump-version.mjs",
+    "version:check": "node scripts/bump-version.mjs check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
