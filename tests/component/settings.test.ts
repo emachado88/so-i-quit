@@ -208,6 +208,20 @@ describe('pages/settings', () => {
     ).toBe(false)
   })
 
+  it('opens the language picker when the row (not just the button) is tapped', async () => {
+    const wrapper = await mountPage()
+    // The whole row carries the click handler — tapping the label span
+    // (which bubbles to the row) must open the picker too.
+    const label = wrapper
+      .findAll('span')
+      .find(s => s.text().trim() === 'Language')!
+    await label.trigger('click')
+
+    expect(
+      wrapper.findAll('button').some(b => b.text().includes('Português')),
+    ).toBe(true)
+  })
+
   it('filters the currency picker by search', async () => {
     const wrapper = await mountPage()
     await buttonByLabel(wrapper, 'Open currency picker').trigger('click')
@@ -239,6 +253,25 @@ describe('pages/settings', () => {
   it('shows the denied hint when notification permission is refused', async () => {
     const wrapper = await mountPage()
     await wrapper.find('[role="switch"]').trigger('click')
+    await flushPromises()
+
+    expect(mocks.requestPermission).toHaveBeenCalledTimes(1)
+    expect(getSettings().milestoneNotificationsEnabled).toBe(false)
+    expect(wrapper.text()).toContain(
+      'Notifications are turned off in your system settings',
+    )
+  })
+
+  it('toggles notifications once when the row (not just the switch) is tapped', async () => {
+    const wrapper = await mountPage()
+    // The whole row carries the click handler. Tapping the label must
+    // fire the toggle exactly once — a regression where the switch's
+    // native click also bubbled to the row would toggle it twice (net
+    // no-op).
+    const label = wrapper
+      .findAll('span')
+      .find(s => s.text().trim() === 'Milestone notifications')!
+    await label.trigger('click')
     await flushPromises()
 
     expect(mocks.requestPermission).toHaveBeenCalledTimes(1)

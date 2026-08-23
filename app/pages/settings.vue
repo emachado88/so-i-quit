@@ -478,7 +478,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
         />
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="langPickerOpen = true"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.language') }}
         </span>
@@ -486,7 +489,6 @@ const handleNotificationsToggle = async (): Promise<void> => {
           type="button"
           :aria-label="t('settings.openLanguagePicker')"
           class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
-          @click="langPickerOpen = true"
         >
           {{ currentLanguageLabel }}
           <ChevronDown
@@ -496,7 +498,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
         </button>
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="currencyPickerOpen = true"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.currency') }}
         </span>
@@ -504,7 +509,6 @@ const handleNotificationsToggle = async (): Promise<void> => {
           type="button"
           :aria-label="t('settings.openCurrencyPicker')"
           class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
-          @click="currencyPickerOpen = true"
         >
           {{ currencyLabel }}
           <svg
@@ -518,14 +522,16 @@ const handleNotificationsToggle = async (): Promise<void> => {
         </button>
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="handleNotificationsToggle"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.milestoneNotifications') }}
         </span>
         <NotificationToggle
           class="ml-auto"
           :enabled="notificationsEnabled"
-          @toggle="handleNotificationsToggle"
         />
       </div>
       <p
