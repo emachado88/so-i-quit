@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ChevronDown } from 'lucide-vue-next'
 
 import { useLocaleSwitch } from '../composables/useLocaleSwitch'
 import { useExactAlarmPrompt } from '../composables/useExactAlarmPrompt'
@@ -488,14 +489,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
           @click="langPickerOpen = true"
         >
           {{ currentLanguageLabel }}
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          ><path d="m6 9 6 6 6-6" /></svg>
+          <ChevronDown
+            class="h-3.5 w-3.5"
+            :stroke-width="2.5"
+          />
         </button>
       </div>
 
