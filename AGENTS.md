@@ -164,8 +164,7 @@ npm run mobile:run:ios   # cap run ios (macOS + Xcode only)
 npm run mobile:apk       # gradlew assembleDebug
 npm run mobile:apk:preview  # gradlew assemblePreview — debug-keystore-signed, for QA/sideload
 npm run mobile:apk:release  # gradlew assembleRelease — signed only if android/keystore.properties exists (see CI section)
-npm run mobile:dev       # dev server on 0.0.0.0 (phone dev loop)
-npm run mobile:run:live  # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
+npm run mobile:live      # cap sync && scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
 npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-icons.sh → @capacitor/assets --android --ios)
 # Version sync (see Version sync section below)
 npm run version:bump <1.2.0|major|minor|patch> [--dry-run]  # bump package.json + lock + gradle + pbxproj in lockstep
@@ -219,7 +218,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - Notification ids: deterministic djb2 hash → `reconcileHabitNotifications` can rebuild the expected id and check it against pending without storing a map
 
 ### Backup / Export-Import (Settings → Data)
-- Export serializes `habits` + `milestones-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` in `app/utils/backup.ts`): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.json`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
+- Export serializes `habits` + `milestones-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` in `app/utils/backup.ts`): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.siqb`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
 - Import is a hidden `<input type="file">` — the WebView opens the native system picker automatically, no plugin API needed (Filesystem has no `pickFiles` in v8); `parseBackup` never throws — any shape/version problem → `{ ok: false, error }` and nothing is written until the ConfirmDialog confirm
 - **After import:** pending notifications from the old dataset are cancelled; the imported notification settings are **re-validated against the OS** — permission not granted (fresh install `undetermined` or revoked) → re-ask, and **schedules are rebuilt only after the permission is confirmed** (no dead schedules); enabling notifications via the Settings toggle also reconciles immediately, not on the next Progress boot. Android 12+ exact-alarm access denied → `ExactAlarmDialog` re-asks (same pattern as the habit opt-in: plain `exactAlarmVisible` ref; Go-to-settings re-checks on foreground, Skip leaves the inexact schedules). The re-ask state lives in a module-level singleton (`useExactAlarmPrompt`) so a mid-chain page re-creation (tab switch / `setLocale` navigation) cannot lose it; a `sessionStorage` flag (`pending-exact-reask`) re-surfaces it after a WebView reload. Imported `settings.theme` is applied to color-mode (`themeMode.setTheme`) and `settings.language` to the URL locale — the selector alone reads the settings ref, the live theme/locale need the explicit sync
 

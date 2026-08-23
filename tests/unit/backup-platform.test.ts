@@ -9,7 +9,7 @@ import {
 // Flip the native flag per test to exercise both sides of the bridge.
 const { native } = vi.hoisted(() => ({ native: { value: false } }))
 const { writeFile, share } = vi.hoisted(() => ({
-  writeFile: vi.fn(async () => ({ uri: 'file:///cache/so-i-quit-backup.json' })),
+  writeFile: vi.fn(async () => ({ uri: 'file:///cache/so-i-quit-backup' })),
   share: vi.fn(async () => {}),
 }))
 
@@ -37,7 +37,7 @@ describe('backup-platform', () => {
 
   it('backupFilename formats a local timestamp as YYYYMMDDHHMMSS', () => {
     const now = new Date(2026, 7, 14, 9, 5, 3) // Aug 14 2026 09:05:03
-    expect(backupFilename(now)).toBe('so-i-quit-backup-20260814090503.json')
+    expect(backupFilename(now)).toBe('so-i-quit-backup-20260814090503.siqb')
   })
 
   it('exportBackupNative writes the JSON to the cache dir and shares it', async () => {
@@ -45,16 +45,16 @@ describe('backup-platform', () => {
     await exportBackupNative('{"version":1}', 'Save or share your backup')
 
     expect(writeFile).toHaveBeenCalledWith({
-      path: expect.stringMatching(/^so-i-quit-backup-\d{14}\.json$/),
+      path: expect.stringMatching(/^so-i-quit-backup-\d{14}\.siqb$/),
       data: '{"version":1}',
       directory: 'CACHE',
       encoding: 'UTF8',
     })
     expect(share).toHaveBeenCalledWith({
-      url: 'file:///cache/so-i-quit-backup.json',
+      url: 'file:///cache/so-i-quit-backup',
       // Title carries the timestamped filename; dialog title is the
       // caller-provided (localized) string.
-      title: expect.stringMatching(/^so-i-quit-backup-\d{14}\.json$/),
+      title: expect.stringMatching(/^so-i-quit-backup-\d{14}\.siqb$/),
       dialogTitle: 'Save or share your backup',
     })
   })
