@@ -164,7 +164,7 @@ npm run mobile:run:ios   # cap run ios (macOS + Xcode only)
 npm run mobile:apk       # gradlew assembleDebug
 npm run mobile:apk:preview  # gradlew assemblePreview — debug-keystore-signed, for QA/sideload
 npm run mobile:apk:release  # gradlew assembleRelease — signed only if android/keystore.properties exists (see CI section)
-npm run mobile:live      # scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
+npm run mobile:live      # cap sync && scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
 npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-icons.sh → @capacitor/assets --android --ios)
 ```
 
