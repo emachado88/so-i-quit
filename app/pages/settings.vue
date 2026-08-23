@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ChevronDown } from 'lucide-vue-next'
 
 import { useLocaleSwitch } from '../composables/useLocaleSwitch'
-import { useExactAlarmPrompt } from '../composables/useExactAlarmPrompt'
+import { useMilestoneNotifications } from '../composables/useMilestoneNotifications'
 import { useThemeMode } from '../composables/useThemeMode'
 import CurrencyPicker from '../components/settings/CurrencyPicker.vue'
 import LangPicker from '../components/settings/LangPicker.vue'
@@ -33,7 +33,6 @@ import {
   cancelAllMilestoneNotifications,
   checkExactNotificationSetting,
   getNotificationPermissionStatus,
-  openExactNotificationSettings,
   reconcileAllHabitNotifications,
   requestNotificationPermission,
   type NotificationPermissionStatus,
@@ -43,7 +42,6 @@ import {
   LANGUAGE_NAMES,
   saveCurrency,
   saveLanguage,
-  saveMilestoneNotificationsEnabled,
   saveTheme,
   SUPPORTED_LANGUAGES,
   type SupportedLanguage,
@@ -56,6 +54,11 @@ const version = useRuntimeConfig().public.appVersion
 const themeMode = useThemeMode()
 const localeSwitch = useLocaleSwitch()
 
+// Shared notification orchestration (enable/disable/rebuild chains +
+// exact-alarm re-ask). The dialog state lives in the module singleton so a
+// page re-creation mid-import cannot lose a queued re-ask.
+const milestoneNotif = useMilestoneNotifications(t)
+
 // ── State ──
 
 const settings = ref<AppSettings>(getSettings())
@@ -66,10 +69,10 @@ const exactAlarmDenied = ref(false)
 /**
  * The exact-alarm re-ask dialog (Android 12+ special access). Same pattern
  * as the habit opt-in in habits.vue — but backed by a module-level
- * singleton (useExactAlarmPrompt) so a page re-creation mid-import cannot
- * lose the queued re-ask.
+ * singleton (useMilestoneNotifications) so a page re-creation mid-import
+ * cannot lose the queued re-ask.
  */
-const { visible: exactAlarmVisible } = useExactAlarmPrompt()
+const { visible: exactAlarmVisible } = milestoneNotif
 
 /**
  * The import chain is async (OS permission → reconcile → check) — if the
@@ -78,19 +81,6 @@ const { visible: exactAlarmVisible } = useExactAlarmPrompt()
  * the dead instance. A sessionStorage flag survives the remount so the
  * re-ask re-surfaces on the new page's mount.
  */
-const PENDING_EXACT_REASK = 'pending-exact-reask'
-
-const queueExactReask = async (): Promise<void> => {
-  if (!(await checkExactNotificationSetting())) {
-    exactAlarmVisible.value = true
-    sessionStorage.setItem(PENDING_EXACT_REASK, '1')
-  }
-}
-
-const clearExactReask = (): void => {
-  exactAlarmVisible.value = false
-  sessionStorage.removeItem(PENDING_EXACT_REASK)
-}
 const snackbarMessage = ref<string | null>(null)
 const snackbarSuccess = ref(false)
 
@@ -155,15 +145,7 @@ onMounted(async () => {
   void refreshOsPermission()
   // A re-ask queued by an import whose page was re-created mid-chain
   // (locale switch / navigation) — re-surface it now that we're mounted.
-  if (sessionStorage.getItem(PENDING_EXACT_REASK)) {
-    sessionStorage.removeItem(PENDING_EXACT_REASK)
-    if (
-      getSettings().milestoneNotificationsEnabled
-      && !(await checkExactNotificationSetting())
-    ) {
-      exactAlarmVisible.value = true
-    }
-  }
+  void milestoneNotif.refreshPendingExactReask()
   // Native app lifecycle: re-check the OS permission every time the app
   // returns to the foreground (e.g. the user toggled notifications in
   // system settings and came back). `visibilitychange` is unreliable in
@@ -323,20 +305,17 @@ const promptNotificationsAfterImport = async (): Promise<void> => {
   // Android 12+: exact alarms are a separate special access — surface the
   // re-ask right after enabling, exactly like the habit opt-in flow. The
   // sessionStorage flag survives a mid-chain page re-creation.
-  await queueExactReask()
+  await milestoneNotif.queueExactReask()
 }
 
 // ── Exact alarms (Android 12+ special access) ──
 
 const handleExactAlarmSkip = (): void => {
-  clearExactReask()
-  // Schedules already exist (inexact); the Settings hint remains as fallback.
+  milestoneNotif.clearExactReask()
 }
 
 const handleExactAlarmGoSettings = (): void => {
-  // Opens the system screen (ACTION_REQUEST_SCHEDULE_EXACT_ALARM); the
-  // dialog stays open — the foreground listener re-checks on return.
-  void openExactNotificationSettings()
+  milestoneNotif.goToExactSettings()
 }
 
 /**
@@ -346,17 +325,7 @@ const handleExactAlarmGoSettings = (): void => {
  * keep the dialog open so they can retry or skip.
  */
 const handleExactAlarmForeground = async (): Promise<void> => {
-  if (!exactAlarmVisible.value) return
-  try {
-    if (await checkExactNotificationSetting()) {
-      clearExactReask()
-      await cancelAllMilestoneNotifications()
-      await reconcileAllHabitNotifications(getHabits(), t, new Date())
-    }
-  }
-  catch {
-    // Permission API unavailable — leave the dialog open.
-  }
+  await milestoneNotif.onExactAlarmForeground()
 }
 
 // ── Appearance ──
@@ -432,20 +401,15 @@ const handleNotificationsToggle = async (): Promise<void> => {
   notificationsDenied.value = false
   try {
     if (next) {
-      const granted = await requestNotificationPermission()
+      const granted = await milestoneNotif.enableNotifications(null, false)
       if (!granted) {
         // Keep the preference disabled; the in-app celebration still works.
         notificationsDenied.value = true
         return
       }
-      saveMilestoneNotificationsEnabled(true)
-      // Schedule now that the permission is confirmed — without this the
-      // milestones would only be scheduled on the next Progress boot.
-      await reconcileAllHabitNotifications(getHabits(), t, new Date())
     }
     else {
-      await cancelAllMilestoneNotifications()
-      saveMilestoneNotificationsEnabled(false)
+      await milestoneNotif.disableNotifications()
       exactAlarmDenied.value = false
     }
     refresh()

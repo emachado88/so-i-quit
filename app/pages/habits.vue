@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useMilestoneNotifications } from '../composables/useMilestoneNotifications'
 import { getHabitName } from '../utils/domain'
 import { addHabit, deleteHabit, getHabits, updateHabit } from '../utils/habits'
 import { impact, ImpactStyle } from '../utils/haptics'
@@ -9,21 +10,13 @@ import {
   deleteMilestonesForHabit,
   ensureMilestonesForHabit,
   getMilestonesForHabit,
-  saveMilestonesForHabit,
 } from '../utils/milestones-store'
 import {
   addAppForegroundListener,
-  cancelAllMilestoneNotifications,
   cancelHabitNotifications,
-  checkExactNotificationSetting,
-  openExactNotificationSettings,
-  reconcileAllHabitNotifications,
-  reconcileHabitNotifications,
-  requestNotificationPermission,
 } from '../utils/notifications'
 import {
   getSettings,
-  saveMilestoneNotificationsEnabled,
   saveMilestoneNotificationsPrompted,
 } from '../utils/settings'
 import type { Habit } from '../utils/types'
@@ -37,6 +30,11 @@ import WizardModal from '../components/habits/WizardModal.vue'
 import ExactAlarmDialog from '../components/notifications/ExactAlarmDialog.vue'
 
 const { t } = useI18n()
+
+// Shared notification orchestration (enable/disable/rebuild chains +
+// exact-alarm re-ask). The dialog state lives in the module singleton so a
+// page re-creation mid-flow cannot lose a queued re-ask.
+const milestoneNotif = useMilestoneNotifications(t)
 
 // ── State ──
 
@@ -65,7 +63,7 @@ const deletePending = ref<Habit | null>(null)
 const relapsePending = ref<Habit | null>(null)
 const optInVisible = ref(false)
 const pendingOptInHabitId = ref<string | null>(null)
-const exactAlarmVisible = ref(false)
+const exactAlarmVisible = milestoneNotif.visible
 const customHabitInput = ref<HTMLInputElement | null>(null)
 
 let customInputHideTimer: ReturnType<typeof setTimeout> | null = null
@@ -205,19 +203,17 @@ const handleWizardFinish = async (
     }
     loadHabits()
 
-    // Initialize/refresh the current streak's milestones, then schedule
-    // future targets only when the user opted in.
+    // Initialize/refresh the current streak's milestones, then extend the
+    // native schedule through the rolling horizon when the user opted in.
     const habit = getHabits().find(h => h.id === habitId)
     if (habit?.date) {
       const now = new Date()
       ensureMilestonesForHabit(habit, now)
-      if (getSettings().milestoneNotificationsEnabled) {
-        const stored = getMilestonesForHabit(habit.id)
-        saveMilestonesForHabit(
-          habit.id,
-          await reconcileHabitNotifications(habit, stored, t, now),
-        )
-      }
+      await milestoneNotif.reconcileHabitSchedulesIfEnabled(
+        habit,
+        getMilestonesForHabit(habit.id),
+        now,
+      )
     }
 
     // First completed wizard: show the one-time opt-in prompt.
@@ -288,30 +284,15 @@ const handleOptInEnable = async (): Promise<void> => {
   optInVisible.value = false
   pendingOptInHabitId.value = null
 
-  const granted = await requestNotificationPermission()
-  if (!granted) return // keep preference disabled; in-app celebration still works
-
-  saveMilestoneNotificationsEnabled(true)
-  if (habitId) {
-    try {
-      const habit = getHabits().find(h => h.id === habitId)
-      if (habit?.date) {
-        const stored = getMilestonesForHabit(habit.id)
-        saveMilestonesForHabit(
-          habit.id,
-          await reconcileHabitNotifications(habit, stored, t, new Date()),
-        )
-      }
-    }
-    catch {
-      snackbarMessage.value = t('habits.failedToSave')
-    }
+  try {
+    // Request permission, persist the preference, schedule the habit and
+    // surface the exact-alarm re-ask when Android 12+ special access is
+    // still denied.
+    const granted = await milestoneNotif.enableNotifications(habitId)
+    if (!granted) return // keep preference disabled; in-app celebration still works
   }
-
-  // Android 12+: exact alarms are a separate special access. Surface it
-  // right after enabling — the Settings hint alone is easy to miss.
-  if (!(await checkExactNotificationSetting())) {
-    exactAlarmVisible.value = true
+  catch {
+    snackbarMessage.value = t('habits.failedToSave')
   }
 }
 
@@ -323,33 +304,26 @@ const handleOptInNotNow = (): void => {
 // ── Exact alarms (Android 12+ special access) ──
 
 const handleExactAlarmSkip = (): void => {
-  exactAlarmVisible.value = false
+  // Dismiss AND clear the queued re-ask flag: the opt-in flow may have
+  // queued one (enableNotifications → queueExactReask), and it must not
+  // re-surface on the settings page later.
+  milestoneNotif.clearExactReask()
 }
 
 const handleExactAlarmGoSettings = (): void => {
   // Opens the system screen (ACTION_REQUEST_SCHEDULE_EXACT_ALARM); the
   // dialog stays open — the foreground listener re-checks on return.
-  void openExactNotificationSettings()
+  milestoneNotif.goToExactSettings()
 }
 
 /**
  * Re-check after the user returns from system settings. Granted → dismiss
  * and rebuild every schedule (Android keeps already-scheduled alarms
  * inexact — cancel + reconcile re-creates them as exact). Still denied →
- * keep the dialog open so they can retry or skip.
+ * keep the dialog open so they can retry or open settings again.
  */
 const handleExactAlarmForeground = async (): Promise<void> => {
-  if (!exactAlarmVisible.value) return
-  try {
-    if (await checkExactNotificationSetting()) {
-      exactAlarmVisible.value = false
-      await cancelAllMilestoneNotifications()
-      await reconcileAllHabitNotifications(getHabits(), t, new Date())
-    }
-  }
-  catch {
-    // Permission API unavailable — leave the dialog open.
-  }
+  await milestoneNotif.onExactAlarmForeground()
 }
 
 onMounted(() => {

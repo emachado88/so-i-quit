@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import en from '../../app/i18n/locales/en.json'
 import HabitsPage from '../../app/pages/habits.vue'
 import { handleBackButton } from '../../app/utils/back-handler'
+import { resetExactAlarmPrompt } from '../../app/composables/useExactAlarmPrompt'
 import { getHabits, saveHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
 import * as notifications from '../../app/utils/notifications'
@@ -98,6 +99,7 @@ const completeWizard = async (
 
 beforeEach(() => {
   vi.clearAllMocks()
+  resetExactAlarmPrompt()
   vi.mocked(notifications.requestNotificationPermission).mockResolvedValue(false)
   vi.mocked(notifications.checkExactNotificationSetting).mockResolvedValue(true)
 })

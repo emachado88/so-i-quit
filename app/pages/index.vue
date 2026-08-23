@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { useMilestoneNotifications } from '../composables/useMilestoneNotifications'
 import { useNow } from '../composables/useNow'
 import CelebrationToast from '../components/progress/CelebrationToast.vue'
 import HabitProgressCard from '../components/progress/HabitProgressCard.vue'
@@ -20,12 +21,8 @@ import { formatMilestoneLabel, isMilestoneReached } from '../utils/milestones'
 import {
   ensureMilestonesForHabit,
   ensureMilestonesForHabits,
-  saveMilestonesForHabit,
 } from '../utils/milestones-store'
-import {
-  addAppForegroundListener,
-  reconcileHabitNotifications,
-} from '../utils/notifications'
+import { addAppForegroundListener } from '../utils/notifications'
 import { getSettings } from '../utils/settings'
 import type { Habit, Milestone } from '../utils/types'
 
@@ -37,6 +34,11 @@ interface Celebration {
 
 const { t, locale } = useI18n()
 const router = useRouter()
+
+// Shared notification orchestration — load() extends the native schedule
+// through the rolling horizon when notifications are enabled (new
+// annuals get scheduled on boot and on every foreground return).
+const milestoneNotif = useMilestoneNotifications(t)
 
 // ── State ──
 
@@ -133,19 +135,18 @@ const load = async (): Promise<void> => {
       newly.push({ habitId: milestone.habitId, milestone })
     }
     // Extend the native schedule through the rolling horizon when
-    // notifications are enabled (new annuals get scheduled). The reconcile
-    // is inherently per-habit; only the ensure step above is batched.
+    // notifications are enabled (new annuals get scheduled on boot and on
+    // every foreground return). The reconcile is inherently per-habit;
+    // only the ensure step above is batched.
     if (getSettings().milestoneNotificationsEnabled) {
       for (const habit of datedHabits.value) {
         const stored = byHabit[habit.id]
         if (!stored) continue
-        byHabit[habit.id] = await reconcileHabitNotifications(
+        byHabit[habit.id] = await milestoneNotif.reconcileHabitSchedulesIfEnabled(
           habit,
           stored,
-          t,
           nowDate,
         )
-        saveMilestonesForHabit(habit.id, byHabit[habit.id] as Milestone[])
       }
     }
     milestonesByHabit.value = byHabit
