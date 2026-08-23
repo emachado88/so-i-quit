@@ -568,7 +568,7 @@ const handleNotificationsToggle = async (): Promise<void> => {
         <input
           ref="fileInputRef"
           type="file"
-          accept="application/json,.json"
+          accept=".siqb"
           class="hidden"
           @change="handleFileChange"
         >

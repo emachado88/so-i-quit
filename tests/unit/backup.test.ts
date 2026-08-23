@@ -10,8 +10,8 @@ import {
 } from '../../app/utils/backup'
 import { getHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
-import { getSettings } from '../../app/utils/settings'
-import { STORAGE_KEYS } from '../../app/utils/storage'
+import { getSettings, SUPPORTED_LANGUAGES } from '../../app/utils/settings'
+import { readJSON, STORAGE_KEYS } from '../../app/utils/storage'
 import type { AppSettings, Habit, Milestone } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
 
@@ -217,5 +217,44 @@ describe('importBackup', () => {
       milestone({ id: 'm2', habitId: 'h2', unit: 'month', amount: 3 }),
     ])
     expect(getSettings()).toEqual(settings)
+  })
+
+  it('drops a __proto__ milestone key (prototype-pollution sink)', () => {
+    const milestones: Record<string, Milestone[]> = { h1: [milestone()] }
+    // simulate JSON.parse: __proto__ is an own enumerable data prop, not a setter
+    milestones['__proto__'] = [
+      { id: 'mx', habitId: 'h1', unit: 'week', amount: 1, reachedAt: null, notificationId: null },
+    ]
+
+    importBackup({ ...validBackup(), milestones })
+
+    expect(getMilestonesForHabit('h1')).toEqual([milestone()])
+    const store = readJSON(STORAGE_KEYS.milestones, {}) as Record<string, Milestone[]>
+    expect(Object.prototype.hasOwnProperty.call(store, '__proto__')).toBe(false)
+  })
+
+  it('drops an orphan milestone whose habitId has no matching habit', () => {
+    importBackup({
+      ...validBackup(),
+      milestones: {
+        h1: [milestone()],
+        h9: [milestone({ id: 'm9', habitId: 'h9' })],
+      },
+    })
+
+    expect(getMilestonesForHabit('h1')).toEqual([milestone()])
+    expect(getMilestonesForHabit('h9')).toEqual([])
+  })
+
+  it('normalizes out-of-allow-list language/currency to defaults', () => {
+    importBackup({
+      ...validBackup(),
+      settings: { ...settings, language: 'xx', currency: 'XYZ' },
+    })
+
+    const saved = getSettings()
+    expect(saved.language).not.toBe('xx')
+    expect(SUPPORTED_LANGUAGES).toContain(saved.language)
+    expect(saved.currency).toBe('EUR')
   })
 })

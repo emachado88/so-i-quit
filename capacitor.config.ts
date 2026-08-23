@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: liveUrl
     ? {
-        // Dev only (npm run mobile:run:live) — never committed with a URL.
+        // Dev only (npm run mobile:live) — never committed with a URL.
         url: liveUrl,
         cleartext: true,
       }
