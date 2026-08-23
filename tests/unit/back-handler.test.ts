@@ -107,6 +107,25 @@ describe('addBackButtonListener', () => {
     expect(mocks.appAddListener).not.toHaveBeenCalled()
     expect(sub.remove).toBeTypeOf('function')
   })
+
+  it('removes the eventual handle even when remove() wins the race', async () => {
+    // Make the appStateChange listener register deferred, so remove() can
+    // run before the plugin promise resolves (the leak scenario).
+    let resolveAdd!: (h: { remove: () => Promise<void> }) => void
+    mocks.appAddListener.mockImplementationOnce(
+      () => new Promise((res) => { resolveAdd = res }),
+    )
+    const handleRemove = vi.fn(() => Promise.resolve())
+    const deferredHandle = { remove: handleRemove }
+
+    const sub = backHandler.addBackButtonListener(vi.fn())
+    sub.remove()
+    resolveAdd(deferredHandle)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(handleRemove).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('exitApp', () => {

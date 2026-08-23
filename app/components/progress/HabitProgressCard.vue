@@ -108,7 +108,7 @@ onMounted(() => {
     <div
       class="absolute inset-y-0 left-0 w-1.25 bg-linear-to-b from-primary to-accent"
     />
-    <div class="flex items-center gap-3.5 p-4 pl-5">
+    <div class="flex items-start gap-3.5 p-4 pl-5">
       <div class="min-w-0 flex-1">
         <p
           class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-accent"
