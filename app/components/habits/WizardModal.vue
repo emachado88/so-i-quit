@@ -55,11 +55,11 @@ const step = ref<Step>('datetime')
 const dateStr = ref('')
 const timeStr = ref('')
 
-const today = new Date()
+const today = ref<Date>(new Date())
 const todayStr = computed(() => {
-  const y = today.getFullYear()
-  const m = String(today.getMonth() + 1).padStart(2, '0')
-  const d = String(today.getDate()).padStart(2, '0')
+  const y = today.value.getFullYear()
+  const m = String(today.value.getMonth() + 1).padStart(2, '0')
+  const d = String(today.value.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 })
 
@@ -95,6 +95,9 @@ watch(
   (visible) => {
     if (visible) {
       step.value = 'datetime'
+      // Refresh "today" so the date input's `max` stays pinned to the real
+      // current day even if the wizard was opened across a midnight boundary.
+      today.value = new Date()
       // Edit flow: pre-fill the current saved date so the user sees/tweaks
       // it instead of retyping from scratch. New/reset start blank.
       const initial

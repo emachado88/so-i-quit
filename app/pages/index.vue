@@ -18,7 +18,10 @@ import {
   NotificationType,
 } from '../utils/haptics'
 import { formatMilestoneLabel, isMilestoneReached } from '../utils/milestones'
-import { ensureMilestonesForHabit } from '../utils/milestones-store'
+import {
+  ensureMilestonesForHabit,
+  ensureMilestonesForHabits,
+} from '../utils/milestones-store'
 import { addAppForegroundListener } from '../utils/notifications'
 import { getSettings } from '../utils/settings'
 import type { Habit, Milestone } from '../utils/types'
@@ -122,24 +125,29 @@ const load = async (): Promise<void> => {
     habits.value = getHabits()
     const nowDate = now.value
     const newly: Celebration[] = []
-    const byHabit: Record<string, Milestone[]> = {}
-
-    for (const habit of datedHabits.value) {
-      // Roll reached targets forward and collect newly crossed milestones
-      // for the in-app celebration queue.
-      const result = ensureMilestonesForHabit(habit, nowDate)
-      byHabit[habit.id] = result.milestones
-      for (const milestone of result.newlyReached) {
-        newly.push({ habitId: habit.id, milestone })
+    // Single read + write of the milestone store across the whole habit
+    // list (previously one full serialize per habit).
+    const { byHabit, newlyReached } = ensureMilestonesForHabits(
+      datedHabits.value,
+      nowDate,
+    )
+    for (const milestone of newlyReached) {
+      newly.push({ habitId: milestone.habitId, milestone })
+    }
+    // Extend the native schedule through the rolling horizon when
+    // notifications are enabled (new annuals get scheduled on boot and on
+    // every foreground return). The reconcile is inherently per-habit;
+    // only the ensure step above is batched.
+    if (getSettings().milestoneNotificationsEnabled) {
+      for (const habit of datedHabits.value) {
+        const stored = byHabit[habit.id]
+        if (!stored) continue
+        byHabit[habit.id] = await milestoneNotif.reconcileHabitSchedulesIfEnabled(
+          habit,
+          stored,
+          nowDate,
+        )
       }
-      // Extend the native schedule through the rolling horizon when
-      // notifications are enabled (new annuals get scheduled on boot and
-      // on every foreground return).
-      byHabit[habit.id] = await milestoneNotif.reconcileHabitSchedulesIfEnabled(
-        habit,
-        byHabit[habit.id] as Milestone[],
-        nowDate,
-      )
     }
     milestonesByHabit.value = byHabit
 
