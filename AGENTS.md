@@ -43,6 +43,7 @@ app/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
     useLocaleSwitch.ts     # i18n locale switching
+    useFocusTrap.ts        # focus trap for modal dialogs (WizardModal) — Tab cycles within, restores focus on close
     useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation (tab switch / locale navigation mid-import)
   plugins/
     i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe, see Pitfalls)

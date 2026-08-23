@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ChevronDown } from 'lucide-vue-next'
 
 import { useLocaleSwitch } from '../composables/useLocaleSwitch'
 import { useExactAlarmPrompt } from '../composables/useExactAlarmPrompt'
@@ -477,7 +478,10 @@ const handleNotificationsToggle = async (): Promise<void> => {
         />
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="langPickerOpen = true"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.language') }}
         </span>
@@ -485,21 +489,19 @@ const handleNotificationsToggle = async (): Promise<void> => {
           type="button"
           :aria-label="t('settings.openLanguagePicker')"
           class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
-          @click="langPickerOpen = true"
         >
           {{ currentLanguageLabel }}
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          ><path d="m6 9 6 6 6-6" /></svg>
+          <ChevronDown
+            class="h-3.5 w-3.5"
+            :stroke-width="2.5"
+          />
         </button>
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="currencyPickerOpen = true"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.currency') }}
         </span>
@@ -507,7 +509,6 @@ const handleNotificationsToggle = async (): Promise<void> => {
           type="button"
           :aria-label="t('settings.openCurrencyPicker')"
           class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
-          @click="currencyPickerOpen = true"
         >
           {{ currencyLabel }}
           <svg
@@ -521,14 +522,16 @@ const handleNotificationsToggle = async (): Promise<void> => {
         </button>
       </div>
 
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+      <div
+        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+        @click="handleNotificationsToggle"
+      >
         <span class="text-sm font-semibold text-ink">
           {{ t('settings.milestoneNotifications') }}
         </span>
         <NotificationToggle
           class="ml-auto"
           :enabled="notificationsEnabled"
-          @toggle="handleNotificationsToggle"
         />
       </div>
       <p
