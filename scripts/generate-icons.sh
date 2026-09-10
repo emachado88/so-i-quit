@@ -7,6 +7,7 @@
 #   assets/icon-background.svg            — brand gradient, full square
 #   assets/icon-ios.svg                   — square, no rounded corners (App Store + favicon source)
 #   assets/splash.svg                     — 2732² splash
+#   assets/splash-logo.svg                — splash logo mark (Android launch art)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -27,6 +28,16 @@ rsvg-convert -w 2732 -h 2732 assets/splash-dark.svg -o assets/splash-dark.png
 
 echo "→ Rendering web apple-touch-icon (180²)..."
 rsvg-convert -w 180 -h 180 assets/icon-ios.svg -o public/apple-touch-icon.png
+
+echo "→ Rendering splash logo mark (Android launch art)..."
+if [ -d android ]; then
+  # 1024² raster source: the launch window background draws it at
+  # @dimen/splash_logo_size (240dp ≈ 660px at 2.75x), so this is plenty on any
+  # phone. drawable-nodpi keeps it out of the density buckets
+  # (@capacitor/assets does not manage this file).
+  mkdir -p android/app/src/main/res/drawable-nodpi
+  rsvg-convert -w 1024 -h 1024 assets/splash-logo.svg -o android/app/src/main/res/drawable-nodpi/splash_logo.png
+fi
 
 echo "→ Generating platform densities..."
 if [ -d android ]; then

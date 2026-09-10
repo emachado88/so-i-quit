@@ -137,9 +137,9 @@ app/
                            # backup-platform (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides
-assets/                    # Icon/splash SVG masters + rendered 1024²/2732² PNG sources
+assets/                    # Icon/splash SVG masters (incl. splash-logo.svg) + rendered PNG sources
 public/                    # Web favicon (icon.svg) + apple-touch-icon.png
-android/                   # Capacitor Android project (committed)
+android/                   # Capacitor Android project (committed) — SplashActivity = launch splash
 ios/                       # Capacitor iOS project (committed; Swift Package Manager)
 tests/                     # unit/ + component/ + helpers.ts + smoke.test.ts
 scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py, generate-icons.sh

@@ -20,13 +20,18 @@
         <!-- Android 12+ system splash: brand teal background, NO icon
              (windowSplashScreenAnimatedIcon transparent — HyperOS renders the
              icon duplicated on top of the window; hiding it makes the system
-             splash pure teal, seamless into the window image below). -->
+             splash pure teal, seamless into the window image below). It only
+             covers the pre-window gap; the window background below is what the
+             user sees from the first frame. -->
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
         <!-- NOTE: the core-splashscreen library overrides windowBackground with
              a solid color — must set android:windowBackground (not
-             android:background) AFTER the parent to show the splash image. -->
-        <item name="android:windowBackground">@drawable/splash</item>
+             android:background) AFTER the parent. @drawable/splash_screen is
+             the full launch art (gradient + logo), painted by the system from
+             the process's first frame: the logo is visible instantly, before
+             any Java runs. -->
+        <item name="android:windowBackground">@drawable/splash_screen</item>
         <!-- Belt & braces: kill any title/action bar (framework + AppCompat
              attr namespaces; some ROMs ignore windowActionBar alone) and pin
              the system bars to the brand color. -->
@@ -36,15 +41,10 @@
         <item name="windowNoTitle">true</item>
         <item name="android:statusBarColor">@color/splash_background</item>
         <item name="android:navigationBarColor">@color/splash_background</item>
-        <!-- Crossfade on activity transitions (splash → WebView window)
-             instead of the default slide/zoom. -->
-        <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
-    </style>
-
-    <style name="SplashWindowAnimation" parent="@android:style/Animation.Activity">
-        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
-        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
-        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
-        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
+        <!-- No activity transition: SplashActivity and MainActivity show the
+             same backdrop, so the default slide/zoom would only read as a
+             jump. SplashActivity also calls overrideActivityTransition(…, 0, 0)
+             for ROMs that ignore this attribute. -->
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>
