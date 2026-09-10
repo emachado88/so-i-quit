@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Brand splash background — the gradient layer of assets/splash.svg
+  (#22876f → #1a6b5c → #0f463f, top-left → bottom-right; <shape> gradients
+  snap to 45° steps, hence 315°).
+
+  Used as the launch window background of BOTH activities, so SplashActivity
+  and the MainActivity window show the same art — the hand-off has nothing
+  to jump.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:centerColor="#1A6B5C"
+        android:endColor="#0F463F"
+        android:startColor="#22876F"
+        android:type="linear" />
+</shape>

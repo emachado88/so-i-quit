@@ -25,8 +25,9 @@
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
-        <!-- @drawable/splash resolves to drawable-night/splash.png here. -->
-        <item name="android:windowBackground">@drawable/splash</item>
+        <!-- @drawable/splash_screen resolves to drawable-night/splash_bg.xml,
+             so the dark launch backdrop matches the app's dark shell. -->
+        <item name="android:windowBackground">@drawable/splash_screen</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
         <item name="windowActionBar">false</item>
@@ -38,7 +39,8 @@
              solid bars and any theme-derived scrim are dark too. -->
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
+        <!-- No activity transition (see values/styles.xml). -->
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 
 </resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Splash logo size for the launch window background (res/drawable/splash_screen.xml).
+
+      Sized as a dimension, not a fraction of the window width: a layer-list
+      item cannot express a percentage, and a fixed dp keeps the logo
+      proportional on every phone/tablet (portrait-locked app).
+      240dp ≈ 0.65 x the window width of a 360dp screen.
+    -->
+    <dimen name="splash_logo_size">240dp</dimen>
+</resources>

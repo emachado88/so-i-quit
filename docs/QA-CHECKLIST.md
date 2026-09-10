@@ -84,6 +84,11 @@
 | 6.3 | Hardware back at root exits the app (no phantom history entry) | ☐ |
 | 6.4 | Landscape/rotation doesn't break layout (acceptable = usable) | ☐ |
 | 6.5 | Haptics: medium on confirms (wizard, save, delete…), success on milestone celebration | ☐ |
+| 6.6 | Cold start: gradient + logo visible from the very first frame (launch-theme window background), then the app replaces it as soon as the WebView is ready | ☐ |
+| 6.7 | No slide/zoom between the splash window and the WebView window (identical backdrop, transitions disabled) | ☐ |
+| 6.8 | Splash art stays up for the whole boot — no blank/white window before the app paints, and no fade (the app just takes over) | ☐ |
+| 6.9 | Dark mode: splash uses the deeper teal (`drawable-night/splash_bg.xml`), matching the app's dark backdrop | ☐ |
+| 6.10 | Recents/task-switcher card shows the app name (SplashActivity keeps a non-empty `android:label`) | ☐ |
 
 ## 7. Cross-cutting
 
