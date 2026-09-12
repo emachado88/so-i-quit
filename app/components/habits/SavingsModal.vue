@@ -3,6 +3,7 @@ import { registerBackHandler } from '../../utils/back-handler'
 import { CURRENCY_SYMBOLS } from '../../utils/currencies'
 import { normalizeSavings } from '../../utils/domain'
 import { impact, ImpactStyle } from '../../utils/haptics'
+import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -27,6 +28,11 @@ const emit = defineEmits<{ save: [savings: string | null], dismiss: [] }>()
 
 const localValue = ref('')
 
+// Focus trap: keyboard navigation stays inside the dialog while it is open,
+// and focus returns to the trigger element on close.
+const dialogRef = ref<HTMLElement | null>(null)
+useFocusTrap(computed(() => props.visible), dialogRef)
+
 watch(
   () => props.visible,
   (visible) => {
@@ -40,6 +46,21 @@ const sanitize = (text: string): string =>
     .replace(/[^0-9.]/g, '')
     .replace(/(\..*)\./g, '$1')
     .replace(/(\.\d{2})\d+/g, '$1')
+
+/**
+ * The field is controlled by `:value="localValue"`, but Vue skips patching an
+ * unchanged value: a keystroke that sanitizes to the SAME string as the
+ * current state (typing "abc" into an empty field, or a 3rd decimal once the
+ * limit is reached) would leave the rejected characters on screen while the
+ * state holds something else. Write the sanitized text back to the element so
+ * the field can never show more than what Save will persist.
+ */
+const handleInput = (event: Event): void => {
+  const input = event.target as HTMLInputElement
+  const sanitized = sanitize(input.value)
+  if (input.value !== sanitized) input.value = sanitized
+  localValue.value = sanitized
+}
 
 const handleSave = (): void => {
   impact(ImpactStyle.Medium)
@@ -90,7 +111,8 @@ onUnmounted(() => {
   >
     <div
       v-if="visible"
-      class="fixed inset-0 z-[60] flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
+      ref="dialogRef"
+      class="fixed inset-0 z-60 flex items-center-safe justify-center bg-black/40 backdrop-blur p-4 sm:items-center"
     >
       <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
         <h3 class="text-lg font-bold text-ink">
@@ -120,9 +142,7 @@ onUnmounted(() => {
               :placeholder="'0.00'"
               :value="localValue"
               class="w-full bg-transparent px-2 py-2.5 text-sm text-ink outline-none"
-              @input="
-                localValue = sanitize(($event.target as HTMLInputElement).value)
-              "
+              @input="handleInput"
             >
           </div>
         </div>

@@ -118,7 +118,7 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler) + `tests/component/` (habits, name-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
 - **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/88/93/96. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
