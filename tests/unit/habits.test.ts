@@ -80,6 +80,17 @@ describe('utils/habits', () => {
       })
     })
 
+    it('renames without touching the other fields or the standard-habit key', () => {
+      const created = addHabit({
+        key: 'habits.alcohol',
+        name: 'Alcohol',
+        date: '2025-01-01T00:00:00.000Z',
+        savings: '3',
+      })
+      updateHabit(created.id, { name: 'Booze' })
+      expect(getHabits()).toEqual([{ ...created, name: 'Booze' }])
+    })
+
     it('is a no-op for unknown ids (no throw)', () => {
       expect(() => updateHabit('missing', { savings: '1' })).not.toThrow()
       expect(getHabits()).toEqual([])

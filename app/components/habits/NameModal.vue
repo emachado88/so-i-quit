@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { registerBackHandler } from '../../utils/back-handler'
-import { CURRENCY_SYMBOLS } from '../../utils/currencies'
-import { normalizeSavings } from '../../utils/domain'
 import { impact, ImpactStyle } from '../../utils/haptics'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useI18n } from 'vue-i18n'
@@ -12,8 +10,6 @@ const props = withDefaults(
   defineProps<{
     visible: boolean
     value: string | null
-    currency: string
-    optional?: boolean
     /**
      * Register a hardware-back handler that dismisses this modal. Only the
      * STANDALONE usage passes it (edit-savings on the habits screen) — the
@@ -22,14 +18,16 @@ const props = withDefaults(
      */
     handleBack?: boolean
   }>(),
-  { optional: false, handleBack: false },
+  { handleBack: false },
 )
-const emit = defineEmits<{ save: [savings: string | null], dismiss: [] }>()
+const emit = defineEmits<{ save: [name: string], dismiss: [] }>()
 
-const localValue = ref('')
+const localValue = ref(props.value ?? '')
 
 // Focus trap: keyboard navigation stays inside the dialog while it is open,
-// and focus returns to the trigger element on close.
+// and focus returns to the trigger element on close. The ref sits on the
+// dialog root (not the input) so Tab/Shift+Tab can cycle the buttons;
+// opening still lands focus on the name input (first focusable).
 const dialogRef = ref<HTMLElement | null>(null)
 useFocusTrap(computed(() => props.visible), dialogRef)
 
@@ -40,36 +38,19 @@ watch(
   },
 )
 
-/** Digits + one decimal separator + max two decimals (ported from RN). */
-const sanitize = (text: string): string =>
-  text
-    .replace(/[^0-9.]/g, '')
-    .replace(/(\..*)\./g, '$1')
-    .replace(/(\.\d{2})\d+/g, '$1')
-
-/**
- * The field is controlled by `:value="localValue"`, but Vue skips patching an
- * unchanged value: a keystroke that sanitizes to the SAME string as the
- * current state (typing "abc" into an empty field, or a 3rd decimal once the
- * limit is reached) would leave the rejected characters on screen while the
- * state holds something else. Write the sanitized text back to the element so
- * the field can never show more than what Save will persist.
- */
-const handleInput = (event: Event): void => {
-  const input = event.target as HTMLInputElement
-  const sanitized = sanitize(input.value)
-  if (input.value !== sanitized) input.value = sanitized
-  localValue.value = sanitized
-}
-
 const handleSave = (): void => {
+  const trimmed = localValue.value.trim()
+  if (!trimmed) {
+    impact(ImpactStyle.Light)
+    return
+  }
   impact(ImpactStyle.Medium)
-  emit('save', normalizeSavings(localValue.value))
+  emit('save', trimmed)
 }
 
-/** Skip keeps the previous value (wizard flow). */
-const handleSkip = (): void => {
-  emit('save', props.value)
+/** Cancel keeps the previous value (wizard flow). */
+const handleCancel = (): void => {
+  emit('dismiss')
 }
 
 // ── Hardware back (Android) ──
@@ -116,53 +97,50 @@ onUnmounted(() => {
     >
       <div class="w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
         <h3 class="text-lg font-bold text-ink">
-          {{ optional ? t("savings.titleOptional") : t("savings.title") }}
+          {{ t("name.title") }}
         </h3>
         <p class="mt-1 text-sm text-muted">
-          {{ t("savings.subtitle") }}
+          {{ t("name.subtitle", { habit: value }) }}
         </p>
 
         <div class="mt-4">
           <label
-            for="savings-amount"
+            for="name"
             class="mb-1 block text-xs font-semibold text-muted"
           >
-            {{ t("savings.amount") }}
+            {{ t("name.label") }}
           </label>
           <div
             class="flex items-center rounded-xl border border-border bg-bg px-3 transition-colors focus-within:border-primary"
           >
-            <span class="shrink-0 text-sm text-muted">
-              {{ CURRENCY_SYMBOLS[currency] ?? currency }}{{ t("common.perDay") }}
-            </span>
             <input
-              id="savings-amount"
+              id="name"
               type="text"
-              inputmode="decimal"
-              :placeholder="'0.00'"
+              :placeholder="t('name.hint')"
               :value="localValue"
               class="w-full bg-transparent px-2 py-2.5 text-sm text-ink outline-none"
-              @input="handleInput"
+              @input="
+                localValue = ($event.target as HTMLInputElement).value
+              "
             >
           </div>
         </div>
 
         <div class="mt-5 flex justify-end gap-2">
           <button
-            v-if="optional"
             type="button"
             class="rounded-lg px-4 py-2 text-sm font-semibold text-muted transition-colors hover:text-ink"
-            @click="handleSkip"
+            @click="handleCancel"
           >
-            {{ t("savings.skip") }}
+            {{ t("name.cancel") }}
           </button>
           <button
             type="button"
-            :disabled="optional && !localValue"
+            :disabled="!localValue || localValue === value"
             class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             @click="handleSave"
           >
-            {{ optional ? t("savings.save") : t("savings.confirm") }}
+            {{ t("name.confirm") }}
           </button>
         </div>
       </div>

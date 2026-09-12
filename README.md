@@ -21,6 +21,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 - **💾 Local Only** — All data stays on-device via localStorage (no account needed)
 - **📦 Backup & Restore** — Export everything (habits, milestones, settings) to a portable JSON — native share sheet on mobile, file download on web; import validates the file and replaces your data only after explicit confirmation (notification schedules are rebuilt from the restored data)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
+- **✏️ Rename Custom Habits** — Rename any custom habit from its card menu (actions: edit name / edit date / edit savings / delete); standard habits keep their localized names, so the menu only offers renaming where it applies
 
 ## Tech Stack
 
@@ -117,9 +118,9 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, notifications, backup, backup-platform) + `tests/component/` (habits, progress, settings) + `tests/smoke.test.ts` (i18n key-set guard).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
-- **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~93/87/93/95. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
+- **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/88/93/96. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
 
 ## Project Structure

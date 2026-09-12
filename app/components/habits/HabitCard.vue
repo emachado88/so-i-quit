@@ -10,6 +10,7 @@ const { t, locale } = useI18n()
 
 const props = defineProps<{ habit: Habit, currency: string }>()
 const emit = defineEmits<{
+  'edit-name': []
   'edit-date': []
   'edit-savings': []
   'delete': []
@@ -35,6 +36,8 @@ const savingsLabel = computed(() =>
       </h3>
       <HabitMenu
         :name="name"
+        :is-custom="!habit.key && Boolean(habit.name)"
+        @edit-name="emit('edit-name')"
         @edit-date="emit('edit-date')"
         @edit-savings="emit('edit-savings')"
         @delete="emit('delete')"

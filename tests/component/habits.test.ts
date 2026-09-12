@@ -354,6 +354,83 @@ describe('pages/habits', () => {
     expect(getHabits()[0].savings).toBe('7.50')
   })
 
+  // ── Edit name (custom habits only) ──
+
+  it('offers "Edit name" in the menu for a custom habit', async () => {
+    saveHabits([makeHabit({ name: 'Coffee' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+
+    expect(
+      wrapper.findAll('button').some(b => b.text().trim() === 'Edit name'),
+    ).toBe(true)
+  })
+
+  it('hides "Edit name" for a standard (keyed) habit', async () => {
+    saveHabits([makeHabit({ key: 'habits.alcohol', name: 'Alcohol' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+
+    // Other actions render — only renaming is restricted to custom habits.
+    expect(
+      wrapper.findAll('button').some(b => b.text().trim() === 'Edit date'),
+    ).toBe(true)
+    expect(
+      wrapper.findAll('button').some(b => b.text().trim() === 'Edit name'),
+    ).toBe(false)
+  })
+
+  it('edit name pre-fills the current name and persists the new one', async () => {
+    saveHabits([
+      makeHabit({ name: 'Coffee', date: '2025-05-31T10:00:00.000Z', savings: '3' }),
+    ])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit name')!.trigger('click')
+    await nextTick()
+
+    const input = wrapper.get('#name')
+    expect((input.element as HTMLInputElement).value).toBe('Coffee')
+    expect(wrapper.text()).toContain('change the name for Coffee')
+
+    await input.setValue('Tea')
+    await buttonByText(wrapper, 'Confirm')!.trigger('click')
+    await nextTick()
+
+    const [habit] = getHabits()
+    expect(habit).toMatchObject({
+      name: 'Tea',
+      date: '2025-05-31T10:00:00.000Z', // untouched
+      savings: '3', // untouched
+    })
+    // Custom habits stay keyless — `key` is reserved for standard habits.
+    expect(habit.key).toBeUndefined()
+    // Modal closed, card re-rendered with the new name.
+    expect(wrapper.find('#name').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Tea')
+  })
+
+  it('rename failure surfaces the snackbar and still closes the modal', async () => {
+    saveHabits([makeHabit({ name: 'Coffee' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit name')!.trigger('click')
+    await nextTick()
+
+    // Corrupt the store AFTER the page loaded: updateHabit -> getHabits throws.
+    seedStorage('habits', '{not json')
+    await wrapper.find('#name').setValue('Tea')
+    await buttonByText(wrapper, 'Confirm')!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Failed to update name')
+    expect(wrapper.find('#name').exists()).toBe(false)
+  })
+
   it('deletes a habit after confirmation (milestones dropped too)', async () => {
     saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
     seedStorage('milestones-v1', JSON.stringify({ h1: [] }))
@@ -594,6 +671,21 @@ describe('pages/habits', () => {
 
     expect(wrapper.find('#savings-amount').exists()).toBe(false)
     expect(getHabits()[0].savings).toBe('3') // untouched
+  })
+
+  it('hardware back dismisses the edit-name modal without saving', async () => {
+    saveHabits([makeHabit({ name: 'Coffee' })])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit name')!.trigger('click')
+    expect(wrapper.find('#name').exists()).toBe(true)
+
+    expect(handleBackButton()).toBe(true)
+    await nextTick()
+
+    expect(wrapper.find('#name').exists()).toBe(false)
+    expect(getHabits()[0].name).toBe('Coffee') // untouched
   })
 
   it('hardware back dismisses the milestone opt-in like "Not now"', async () => {

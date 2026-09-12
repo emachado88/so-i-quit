@@ -31,11 +31,11 @@ app/
   layouts/default.vue      # Shell: safe-area padding, TabBar fixed bottom (430px shell dropped in the portrait-lock commit)
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
-    habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, milestone opt-in
+    habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, rename (custom habits), milestone opt-in
     settings.vue           # Settings — theme, language, currency, milestone notifications, data backup (export/import)
   components/              # auto-imported (pathPrefix: false)
     ui/                    # TabBar, Snackbar, ConfirmDialog, ErrorBoundary
-    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, MilestoneOptInDialog, RelapseConfirm
+    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, NameModal (custom-habit rename), MilestoneOptInDialog, RelapseConfirm
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
     notifications/         # ExactAlarmHint, ExactAlarmDialog
@@ -43,7 +43,7 @@ app/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
     useLocaleSwitch.ts     # i18n locale switching
-    useFocusTrap.ts        # focus trap for modal dialogs (WizardModal) — Tab cycles within, restores focus on close
+    useFocusTrap.ts        # focus trap for modal dialogs (WizardModal, NameModal, SavingsModal) — Tab cycles within, restores focus on close
     useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation (tab switch / locale navigation mid-import)
     useMilestoneNotifications.ts # shared notification orchestration — enable/disable/rebuild chains + exact-alarm re-ask state (wraps the useExactAlarmPrompt singleton); pages are thin callers
   plugins/
@@ -65,7 +65,7 @@ app/
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
     backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, settings}) — build/parse/import; never throws on hostile input
     backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file"> (native picker in WebView); web export = download
-  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 117 keys each
+  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 125 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
   app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
@@ -83,9 +83,9 @@ ios/                       # Capacitor iOS project (committed; SPM — no Podfil
   App/CapApp-SPM/          # Swift Package Manager wrapper — plugin deps via Package.swift
 tests/
   helpers.ts               # installStorageMock() (localStorage stub via vi.stubGlobal) + seedStorage()
-  smoke.test.ts            # en.json key-set guard (≥80 keys, no {{ mustache }})
-  unit/                    # storage, habits, milestones, milestones-store, settings, currencies, domain, notifications
-  component/               # habits, progress, settings
+  smoke.test.ts            # en.json key-set guard (≥80 keys, no {{ mustache }}) + 8-locale key parity vs en.json
+  unit/                    # storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler
+  component/               # habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog
 scripts/
   live-reload.mjs          # LAN IP + CAP_LIVE_URL + cap run android (HMR dev loop)
   add-i18n-keys.py         # add new keys to all 8 locale JSONs
@@ -162,7 +162,7 @@ npm run lint             # ESLint (flat config, @nuxt/eslint) — 0 errors/warni
 npm run lint:fix         # ESLint --fix
 npx tsc --noEmit         # TypeScript check (strict)
 npm test                 # vitest run (unit + component) + coverage gate 80%
-npx vitest run --coverage  # coverage report (last ~94/89/92/95 stmts/lines/funcs/branches)
+npx vitest run --coverage  # coverage report (last ~94/88/93/96 stmts/lines/funcs/branches)
 # Mobile (Capacitor)
 npm run mobile:sync      # generate + cap sync (android + ios)
 npm run mobile:run       # cap run android
@@ -184,7 +184,8 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - **`tests/helpers.ts`:** `installStorageMock()` stubs a real `localStorage` global via `vi.stubGlobal` (no module mocking — the storage layer guards with `typeof localStorage === 'undefined'`); `seedStorage(key, value)` arranges raw values (corrupt JSON, edge cases)
 - **Component test boilerplate:** `createI18n({ legacy: false, locale: 'en', messages: { en } })` from `app/i18n/locales/en.json` + `createRouter` with `createMemoryHistory`; `vi.mock` for `useNow` (hoisted ref for clock control) and `notifications` (foreground handlers)
 - `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute', 'useRuntimeConfig'] }] })` — components get Vue auto-imports in tests, and the Nuxt composables they call inline resolve from the `nuxt/app` module; **mock that module per test file** (`vi.mock('nuxt/app', ...)` — the real module needs the Nuxt build context and cannot load in vitest, so full mocks are the norm) — other Nuxt APIs (`navigateTo`, …) are still NOT available in tests
-- Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~94/89/92/95). ESLint (10 + @nuxt/eslint) is configured; `npm run lint` must stay at 0 errors/warnings
+- **No Nuxt auto-imports in tests, so anything a component/page pulls in implicitly must be imported explicitly in the SFC** or it is `undefined` at mount: pages import their components with relative paths (a page that only referenced a new component via Nuxt auto-import mounts fine in the app but silently renders nothing in vitest), and composables like `useFocusTrap` are imported where used (as `WizardModal`/`NameModal`/`SavingsModal` do) — forgetting it in a modal breaks every page test that mounts the page, so the component test file that mounts the modal directly is the fastest way to find it
+- Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~94/88/93/96). ESLint (10 + @nuxt/eslint) is configured; `npm run lint` must stay at 0 errors/warnings
 
 ## Git Hooks & CI
 
@@ -248,8 +249,8 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 ### Hardware Back Button (Android)
 - Android-only: iOS has no hardware back button (`App.addListener('backButton')` never fires there — the listener is a safe no-op; the iOS system swipe-back gestures are handled by the WebView natively)
 - The WebView does **not** navigate history on back: without a `backButton` listener the OS default applies and the app is sent to the background even when the router can go back. A root listener in `app.vue` resolves every press: overlays first → `router.back()` → `App.exitApp()`
-- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→datetime→cancel), `ConfirmDialog` dismisses (covers delete + relapse), pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
-- `SavingsModal` takes a `handle-back` prop because the wizard renders it for its savings step and owns back handling itself (step back, not dismiss)
+- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→datetime→cancel), `ConfirmDialog` dismisses (covers delete + relapse), `NameModal`/`SavingsModal`/pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
+- `SavingsModal` and `NameModal` take a `handle-back` prop because the wizard renders `SavingsModal` for its savings step and owns back handling itself (step back, not dismiss); the always-mounted instances on the Habits screen pass it, so back dismisses them like Cancel
 - `canGoBack` comes from the native event (WebView history). Tab switches push history via `NuxtLink`, so back walks the tabs; at the root it exits
 - The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
 
@@ -295,10 +296,12 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - The component test `tests/component/settings.test.ts` mocks `appVersion: '1.1.0'` — update that literal only if you change the *expected displayed* string, not on every bump.
 
 ### Misc
-- **Overlay z-scale (single source):** `z-40` page-pinned content (pinned TotalSavingsCard) → `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it
+- **Overlay z-scale (single source):** `z-40` page-pinned content (pinned TotalSavingsCard) → `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, name, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it
 - **Wizard persists only on finish:** the new-habit wizard holds `key`/`name` in the wizard state and calls `addHabit` in `handleWizardFinish` — a cancelled, tab-switched, or app-killed wizard never leaves a dateless habit in localStorage. Reset/edit update the existing habit on finish only; Cancel is a pure close
 - **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
 - **Total savings card is pinned above the tab bar** (`fixed`), not part of the scroll
+- **Renaming is custom-habits only:** `HabitCard` passes `:is-custom="!habit.key && Boolean(habit.name)"` to `HabitMenu`, which renders the "Edit name" entry only then — a standard habit's label comes from its `key` (`habits.alcohol` via `getHabitName`), so renaming it would be overwritten on the next render. `NameModal` (i18n namespace `name.*`) mirrors `SavingsModal`: always-mounted + `visible` prop, `handle-back`, Confirm disabled until the text actually changes, save trims and refuses an empty name (light haptic), and the page persists it with `updateHabit(id, { name })` — `key` is never written, so a renamed custom habit stays keyless. A failed write surfaces `name.failedToUpdateName` in the Snackbar (same corrupt-JSON path as `getHabits`)
+- **Sanitized inputs must write back to the DOM element:** `SavingsModal` keeps the amount in `localValue` and renders `:value="localValue"`, but Vue skips patching an unchanged value — typing `abc` into an empty field (or a 3rd decimal once the limit is hit) sanitizes to the string the state already holds, so nothing re-renders and the rejected characters stay on screen while the state disagrees with the field. `handleInput` writes the sanitized text back to `event.target.value` before updating the ref. Any controlled input with a value transform needs that write-back
 - Milestone chips scroll fade uses a **pseudo-element** (`::after` gradient), not an overlay element
 - `capacitor.config.ts` reads `CAP_LIVE_URL` — dev-only; sets the dev appId/name, `server.url` + `cleartext: true`. Never commit a URL
 - Android build variants: `debug`, `preview` (debug-keystore-signed for sideload/QA), `release` — `mobile:apk:preview`/`mobile:apk:release` call gradle directly. `release` signs **only** when `android/keystore.properties` exists (gitignored, read by `build.gradle`; CI writes it from secrets in `mobile-release.yml`) — otherwise the APK/AAB is unsigned and sideload fails with "package appears to be invalid" (that's the preview variant's job). iOS has no variants: the CI builds an unsigned simulator `.app`; device/IPA builds need Apple signing (secrets) — see `mobile-preview.yml`

@@ -24,6 +24,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import Snackbar from '../components/ui/Snackbar.vue'
 import HabitCard from '../components/habits/HabitCard.vue'
 import MilestoneOptInDialog from '../components/habits/MilestoneOptInDialog.vue'
+import NameModal from '../components/habits/NameModal.vue'
 import RelapseConfirm from '../components/habits/RelapseConfirm.vue'
 import SavingsModal from '../components/habits/SavingsModal.vue'
 import WizardModal from '../components/habits/WizardModal.vue'
@@ -56,6 +57,10 @@ interface WizardState {
 }
 const wizard = ref<WizardState | null>(null)
 const editSavings = ref<{
+  habitId: string
+  currentValue: string | null
+} | null>(null)
+const editName = ref<{
   habitId: string
   currentValue: string | null
 } | null>(null)
@@ -230,6 +235,19 @@ const handleWizardFinish = async (
     snackbarMessage.value = t('habits.failedToSave')
   }
   wizard.value = null
+}
+
+const handleEditNameSave = (name: string): void => {
+  const target = editName.value
+  if (!target) return
+  try {
+    updateHabit(target.habitId, { name })
+    loadHabits()
+  }
+  catch {
+    snackbarMessage.value = t('name.failedToUpdateName')
+  }
+  editName.value = null
 }
 
 // ── Edit savings ──
@@ -435,6 +453,9 @@ const handleCustomHabitInputBlur = (): void => {
         :style="{ animationDelay: `${(index + 2) * 45}ms` }"
         :habit="habit"
         :currency="settingsCurrency"
+        @edit-name="
+          editName = { habitId: habit.id, currentValue: habit.name }
+        "
         @edit-date="startWizard({ flow: 'edit', habitId: habit.id, initialSavings: habit.savings, withSavings: false })"
         @edit-savings="
           editSavings = { habitId: habit.id, currentValue: habit.savings }
@@ -455,6 +476,15 @@ const handleCustomHabitInputBlur = (): void => {
       :with-savings="wizard?.withSavings ?? true"
       @finish="handleWizardFinish"
       @cancel="handleWizardCancel"
+    />
+
+    <!-- Edit name -->
+    <NameModal
+      :visible="!!editName"
+      :value="editName?.currentValue ?? null"
+      handle-back
+      @save="handleEditNameSave"
+      @dismiss="editName = null"
     />
 
     <!-- Edit savings -->

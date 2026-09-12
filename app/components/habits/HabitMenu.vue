@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { Clock3, Coins, MoreHorizontal, Trash2 } from 'lucide-vue-next'
+import { Clock3, Coins, MoreHorizontal, Pen, Trash2 } from 'lucide-vue-next'
 
 import { registerBackHandler } from '../../utils/back-handler'
 
 const { t } = useI18n()
 
-defineProps<{ name: string }>()
+defineProps<{ name: string, isCustom?: boolean }>()
 const emit = defineEmits<{
+  'edit-name': []
   'edit-date': []
   'edit-savings': []
   'delete': []
@@ -17,11 +17,12 @@ const emit = defineEmits<{
 
 const open = ref(false)
 
-type MenuAction = 'edit-date' | 'edit-savings' | 'delete'
+type MenuAction = 'edit-name' | 'edit-date' | 'edit-savings' | 'delete'
 
 // `emit()` is typed as one overload per event, so calling it with the union
 // variable would not match any overload — dispatch through literal calls.
 const emitAction: Record<MenuAction, () => void> = {
+  'edit-name': () => emit('edit-name'),
   'edit-date': () => emit('edit-date'),
   'edit-savings': () => emit('edit-savings'),
   'delete': () => emit('delete'),
@@ -72,7 +73,7 @@ onUnmounted(() => {
     <!-- click-outside catcher -->
     <div
       v-if="open"
-      class="fixed inset-0 z-[60]"
+      class="fixed inset-0 z-60"
       @click="open = false"
     />
 
@@ -88,8 +89,17 @@ onUnmounted(() => {
     >
       <div
         v-if="open"
-        class="absolute right-0 top-full z-[60] mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+        class="absolute right-0 top-full z-60 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
       >
+        <button
+          v-if="isCustom"
+          type="button"
+          class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
+          @click="action('edit-name')"
+        >
+          <Pen class="h-4 w-4 shrink-0 text-muted" />
+          {{ t('habits.editName') }}
+        </button>
         <button
           type="button"
           class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
