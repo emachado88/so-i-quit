@@ -36,6 +36,7 @@
 | 2.3 | Wizard `date → time → savings`: native Android date/time pickers open; date max = today | ☐ |
 | 2.4 | Wizard skip keeps the previous savings value; Save persists and closes | ☐ |
 | 2.5 | Card menu: edit date / edit savings / delete — each opens the right dialog with pre-filled values | ☐ |
+| 2.5b | Card menu shows **Edit name** only for custom habits (never for Alcohol/Tobacco); renaming pre-fills the current name, Confirm stays disabled until it changes, Save updates the card, Cancel/back leave it untouched | ☐ |
 | 2.6 | **Relapse** (Log relapse) resets date/savings; confirms before acting | ☐ |
 | 2.7 | **Delete** shows destructive ConfirmDialog; cancel keeps the card | ☐ |
 | 2.8 | After the 1st wizard → milestone **opt-in dialog** appears (Enable / Not now) | ☐ |
