@@ -582,6 +582,62 @@ describe('pages/habits', () => {
     expect(wrapper.text()).toContain('Failed to load habits')
   })
 
+  // ── Pinned header + scroll area ──
+  //
+  // The page shell never scrolls: the title and the add-actions sit outside
+  // the scroll area, so only the habit list moves.
+
+  it('pins the title and the add-chips outside the scroll area', async () => {
+    const wrapper = await mountPage()
+    const scroller = wrapper.get('[data-testid="page-scroller"]')
+
+    // Add-actions are the page's primary CTA — they stay put with the title…
+    const chips = wrapper.get('[aria-label="Add custom habit"]')
+    expect(scroller.element.contains(chips.element)).toBe(false)
+    // …while the list lives inside the scroll area.
+    expect(scroller.text()).toContain('No habits added yet.')
+  })
+
+  it('flips the habit menu above the trigger when the scroll area clips it', async () => {
+    // The scroll area clips an absolutely positioned menu, and the menu adds
+    // no scrollable height — so a card at the bottom edge must flip upward or
+    // the last entries are cut off (and untappable).
+    saveHabits([makeHabit({})])
+    const wrapper = await mountPage()
+    const trigger = wrapper.get('[aria-label^="Open menu"]')
+    const bottom = window.innerHeight
+    vi.spyOn(trigger.element, 'getBoundingClientRect').mockReturnValue({
+      top: bottom - 20,
+      bottom: bottom + 10,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: 30,
+      x: 0,
+      y: bottom - 20,
+      toJSON: () => ({}),
+    } as DOMRect)
+
+    await openMenu(wrapper)
+    await nextTick()
+    await flushPromises()
+
+    expect(wrapper.get('div.absolute.z-60').classes()).toContain('bottom-full')
+  })
+
+  it('keeps the menu below the trigger while it fits', async () => {
+    saveHabits([makeHabit({})])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await nextTick()
+    await flushPromises()
+
+    const menu = wrapper.get('div.absolute.z-60')
+    expect(menu.classes()).toContain('top-full')
+    expect(menu.classes()).not.toContain('bottom-full')
+  })
+
   // ── Hardware back (Android) ──
   //
   // handleBackButton() is the real util: the components register on

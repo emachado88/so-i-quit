@@ -101,6 +101,12 @@
 | 7.4 | Corrupt localStorage JSON → Snackbar error, app keeps working (habits) / falls back to defaults (settings) | ☐ |
 | 7.5 | Sentry: with `NUXT_PUBLIC_SENTRY_DSN` unset the app behaves identically (no network, no errors) | ☐ |
 | 7.6 | A render error in a child screen shows the branded ErrorBoundary fallback + reload works | ☐ |
+| 7.7 | Title (and the Habits add-chips) stay pinned while the list scrolls — only the content area scrolls, the document never does | ☐ |
+| 7.8 | A scroll shadow appears at the top edge as soon as content is out of view above, drawn **over the cards**, and disappears at the top of the scroll | ☐ |
+| 7.9 | The bottom scroll shadow appears while more content is below and is gone at the end of the scroll — including across the content's side padding | ☐ |
+| 7.10 | No shadow bleeds above or behind the pinned header (over the safe-area strip) | ☐ |
+| 7.11 | Switching tabs opens the new page at the top (no inherited scroll offset) | ☐ |
+| 7.12 | Habit card menu (⋮) near the bottom of the list opens upward instead of being clipped | ☐ |
 
 ## 8. Final
 

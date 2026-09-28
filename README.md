@@ -118,7 +118,7 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
 - **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/88/93/96. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
@@ -128,16 +128,16 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ```
 app/
   app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap → Progress
-  layouts/default.vue      # Shell: max-w-107.5 (430px), safe-area, TabBar fixed bottom
-  pages/                   # index (Progress), habits, settings
+  layouts/default.vue      # Shell: fixed-height column (safe-areas, TabBar); the document never scrolls
+  pages/                   # index (Progress), habits, settings — pinned header + own scroll area each
   components/              # ui/, habits/, progress/, settings/, notifications/
   composables/             # useNow (1s tick), useThemeMode, useLocaleSwitch
   plugins/                 # i18n-persist.client.ts (WebView-safe locale persistence)
   utils/                   # types, storage, habits, milestones, milestones-store,
                            # settings, currencies, domain, notifications, backup,
-                           # backup-platform (pure TS)
+                           # backup-platform, popover (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
-  assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides
+  assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides + scroll-shadow classes
 assets/                    # Icon/splash SVG masters (incl. splash-logo.svg) + rendered PNG sources
 public/                    # Web favicon (icon.svg) + apple-touch-icon.png
 android/                   # Capacitor Android project (committed) — SplashActivity = launch splash

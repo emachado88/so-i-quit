@@ -209,62 +209,88 @@ const dismissCelebration = (): void => {
 </script>
 
 <template>
-  <main
-    class="flex flex-col gap-4 px-4 py-6"
-    :class="{ 'pb-28': totalSavings > 0 }"
-  >
-    <!-- Empty state (wireframe): no habits yet → guide to the Habits tab -->
-    <div
-      v-if="habits.length === 0"
-      class="enter-rise flex flex-col items-center gap-3 px-6 py-16 text-center"
+  <main class="flex h-full flex-col">
+    <!-- Pinned page header: only the content below scrolls. -->
+    <header
+      v-if="habits.length > 0"
+      class="enter-rise shrink-0 px-4 pt-6 pb-1.5"
     >
-      <div
-        class="flex h-21 w-21 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,var(--color-primary-hover),var(--color-depth))] text-4xl shadow-md"
-        aria-hidden="true"
-      >
-        🚭
-      </div>
-      <h1 class="text-xl font-black tracking-tight text-ink">
-        {{ t("progress.readyToGetBetter") }}
+      <h1 class="text-2xl font-black tracking-tight text-ink">
+        {{ t("tabs.progress") }}
       </h1>
-      <p class="max-w-65 text-[13.5px] leading-relaxed text-muted">
-        {{ t("progress.emptyBody") }}
+      <p class="mt-0.5 text-[13px] text-muted">
+        {{ t("progress.doingGreat") }}
       </p>
-      <button
-        type="button"
-        class="mt-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        @click="goToHabits"
+    </header>
+
+    <!-- Top scroll shadow: bands the scroll area's first strip (the mask
+         inside the scroll area hides it while it sits flush at the top). -->
+    <div
+      v-if="habits.length > 0"
+      class="casts-scroll-shadow shrink-0"
+      aria-hidden="true"
+    />
+
+    <!-- Scroll area: pure-CSS scroll shadows (main.css) on both edges.
+         `*:shrink-0` — flex children shrink by default, so the cards would
+         squash to fit instead of overflowing (and the area would report
+         nothing to scroll). -->
+    <div
+      data-testid="page-scroller"
+      class="scroll-shadows flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain px-4 *:shrink-0"
+    >
+      <!-- Empty state (wireframe): no habits yet → guide to the Habits tab -->
+      <div
+        v-if="habits.length === 0"
+        class="enter-rise flex flex-col items-center gap-3 px-6 py-16 text-center"
       >
-        {{ t("progress.emptyCta") }}
-      </button>
+        <div
+          class="flex h-21 w-21 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,var(--color-primary-hover),var(--color-depth))] text-4xl shadow-md"
+          aria-hidden="true"
+        >
+          🚭
+        </div>
+        <h1 class="text-xl font-black tracking-tight text-ink">
+          {{ t("progress.readyToGetBetter") }}
+        </h1>
+        <p class="max-w-65 text-[13.5px] leading-relaxed text-muted">
+          {{ t("progress.emptyBody") }}
+        </p>
+        <button
+          type="button"
+          class="mt-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          @click="goToHabits"
+        >
+          {{ t("progress.emptyCta") }}
+        </button>
+      </div>
+
+      <template v-else>
+        <HabitProgressCard
+          v-for="(habit, index) in datedHabits"
+          :key="habit.id"
+          class="enter-rise"
+          :style="{ animationDelay: `${(index + 2) * 45}ms` }"
+          :habit="habit"
+          :milestones="milestonesByHabit[habit.id] ?? []"
+          :now="now"
+          :currency="currency"
+        />
+      </template>
     </div>
 
-    <template v-else>
-      <div class="enter-rise">
-        <h1 class="text-2xl font-black tracking-tight text-ink">
-          {{ t("tabs.progress") }}
-        </h1>
-        <p class="mt-0.5 text-[13px] text-muted">
-          {{ t("progress.doingGreat") }}
-        </p>
-      </div>
+    <!-- Bottom scroll shadow: overlaps the last 10px of the scroll area and
+         fades in over the cards; the scroller's ::after masks it at the end. -->
+    <div
+      class="casts-scroll-shadow-up shrink-0"
+      aria-hidden="true"
+    />
 
-      <HabitProgressCard
-        v-for="(habit, index) in datedHabits"
-        :key="habit.id"
-        class="enter-rise"
-        :style="{ animationDelay: `${(index + 2) * 45}ms` }"
-        :habit="habit"
-        :milestones="milestonesByHabit[habit.id] ?? []"
-        :now="now"
-        :currency="currency"
-      />
-    </template>
-
-    <!-- Pinned above the TabBar; the habit cards scroll behind it -->
+    <!-- Pinned above the TabBar — a flex item, not `fixed`: the scroll area
+         ends above it, so no card ever scrolls behind it. -->
     <div
       v-if="totalSavings > 0"
-      class="enter-rise fixed left-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 w-full py-3 px-4 backdrop-blur bg-linear-to-b from-transparent to-surface/85 border-t border-border"
+      class="enter-rise shrink-0 border-t border-border px-4 py-3"
       :style="{ animationDelay: '90ms' }"
     >
       <TotalSavingsCard

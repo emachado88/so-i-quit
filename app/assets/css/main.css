@@ -35,10 +35,15 @@
 
 :root {
   color-scheme: light;
+  /* Ink of the pure-CSS scroll shadows (.scroll-shadows) */
+  --scroll-shadow-ink: rgb(0 0 0 / 0.18);
+  /* Height of the shadow band — also the mask and the reserved strip */
+  --scroll-shadow-size: 10px;
 }
 
 html.dark {
   color-scheme: dark;
+  --scroll-shadow-ink: rgb(0 0 0 / 0.55);
   /* Dark surfaces — overriding the tokens re-themes the whole app */
   --color-bg: #0f0e0d;
   --color-surface: #1a1918;
@@ -71,6 +76,127 @@ body {
   /* Kill the double-tap-to-zoom gesture (pan stays, pinch is already
      disabled via the user-scalable=no viewport in nuxt.config.ts). */
   touch-action: manipulation;
+  /*
+   * Fixed-height shell: the document never scrolls. The layout is a
+   * 100%-height column and every page owns its scroll area, so the page
+   * title/chrome stays put and only the content moves. `overflow: hidden`
+   * is the belt to the height's braces (safe-area rounding can leave a
+   * stray pixel of overflow).
+   */
+  height: 100%;
+  overflow: hidden;
+}
+
+/*
+ * Nuxt's app wrapper (`html > body > #__nuxt`) has no height of its own, so
+ * the shell's `h-full` would resolve against an auto height and collapse to
+ * its content — the fixed-height layout depends on this link in the chain.
+ */
+#__nuxt {
+  height: 100%;
+}
+
+/*
+ * Scroll shadow — pure CSS, no scroll listeners and no state. Both edges.
+ *
+ * Each shadow is a band cast by the neighbouring stack position, so it paints
+ * OVER the content: the top band sits between the header and the scroll area
+ * (`.casts-scroll-shadow`, overlapping the scroll area's first strip via a
+ * negative bottom margin) and the bottom band right after it
+ * (`.casts-scroll-shadow-up`, overlapping its last strip). A shadow built from
+ * the scroll area's own background (the classic `background-attachment:
+ * local`/`scroll` recipe) can never cover opaque cards: backgrounds paint
+ * behind content, so it only showed through the gaps between them.
+ *
+ * A `box-shadow` on the header is NOT an option either: it bleeds above the
+ * header (over the shell's safe-area padding) and darkens the header's own
+ * transparent area. The band has hard edges of its own instead.
+ *
+ * Scroll-awareness comes from the masks. `::before` is an opaque strip of page
+ * background pinned to the top of the CONTENT (an absolutely positioned child
+ * of a scroll container scrolls with it) and `::after` is the same strip in
+ * flow at the END of the content, where it doubles as trailing breathing room.
+ * Both are stacked above the casts. Flush at an edge (scrollTop 0 / scrolled to
+ * the end) the mask covers that shadow exactly; the moment the content moves
+ * the mask slides under the clipped edge and the shadow shows over whatever is
+ * passing underneath.
+ *
+ * `padding-top` reserves the strip the top mask sits over so it never hides the
+ * top of the first card (keep the header's `pb-*` small so the gap is
+ * unchanged); the bottom mask only ever sits below the last card, and the flex
+ * `gap` above it is the trailing breathing room — so **no `pb-*`** on the
+ * scroll area, or the content would end short and the bottom shadow would leak
+ * out at the end of the scroll. The masks are full-bleed: `::before` spans the
+ * padding box and `::after` cancels the pages' `px-4` with a negative inline
+ * margin, otherwise the side padding strips stay un-masked and the bottom
+ * shadow survives there at the end of the scroll.
+ *
+ * Layer contract: masks `z-index: 20` > casts `z-index: 10` > the scroll area
+ * (`position: relative` with `z-index: auto` — deliberately NOT a stacking
+ * context, or the masks could not climb above the casts) > the cards.
+ */
+.scroll-shadows {
+  position: relative;
+  padding-top: var(--scroll-shadow-size);
+}
+
+.scroll-shadows::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  height: var(--scroll-shadow-size);
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+.scroll-shadows::after {
+  content: "";
+  position: relative;
+  z-index: 20;
+  display: block;
+  /* Grows into the free space when the content is shorter than the container,
+     so the mask still reaches its bottom edge (otherwise a short page — which
+     has nothing to scroll — would show the bottom shadow anyway). */
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: var(--scroll-shadow-size);
+  height: var(--scroll-shadow-size);
+  /* Cancel the scroll area's `px-4` so the mask spans the full width. */
+  margin-inline: -1rem;
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+/* Casts the scroll shadow downwards onto the scroll area below it. */
+.casts-scroll-shadow {
+  position: relative;
+  z-index: 10;
+  height: var(--scroll-shadow-size);
+  margin-bottom: calc(var(--scroll-shadow-size) * -1);
+  background: linear-gradient(to bottom, var(--scroll-shadow-ink), transparent);
+  pointer-events: none;
+}
+
+/*
+ * Casts the scroll shadow upwards onto the scroll area above it: a band that
+ * overlaps the scroll area's tail by exactly its own height (negative margin,
+ * so it costs no layout space), reaching full ink at the bottom edge so the
+ * shadow reads as flush against the next element (the savings card, or the
+ * bottom of the page).
+ *
+ * Not a `box-shadow` on a 0-height element: Chromium paints nothing for that
+ * degenerate shape (measured — the bottom edge stayed pure white).
+ */
+.casts-scroll-shadow-up {
+  position: relative;
+  z-index: 10;
+  height: var(--scroll-shadow-size);
+  margin-top: calc(var(--scroll-shadow-size) * -1);
+  background: linear-gradient(to bottom, transparent, var(--scroll-shadow-ink));
+  pointer-events: none;
 }
 
 *:not(input) {
