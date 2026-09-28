@@ -183,6 +183,23 @@ describe('pages/index', () => {
     expect(wrapper.findAll('article')).toHaveLength(0)
   })
 
+  it('keeps the title out of the scroll area and the savings card out of `fixed`', async () => {
+    seedStorage('settings-v1', JSON.stringify({ currency: 'EUR' }))
+    saveHabits([makeHabit({ id: 'h1', date: daysAgo(10), savings: '5' })])
+
+    const wrapper = await mountPage()
+    const scroller = wrapper.get('[data-testid="page-scroller"]')
+
+    // The title is pinned above the scroll area (only the cards move)…
+    expect(scroller.element.contains(wrapper.get('header h1').element)).toBe(false)
+    // …and the savings card is the last flex item of the column, so the
+    // scroll area ends above it — no `fixed` overlay to scroll behind.
+    const card = wrapper.findComponent(TotalSavingsCard)
+    const cardBox = card.element.parentElement as HTMLElement
+    expect(cardBox.className).toContain('shrink-0')
+    expect(cardBox.className).not.toContain('fixed')
+  })
+
   it('queues celebration toasts for newly reached milestones', async () => {
     const habit = makeHabit({ date: daysAgo(10) })
     saveHabits([habit])

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Clock3, Coins, MoreHorizontal, Pen, Trash2 } from 'lucide-vue-next'
 
 import { registerBackHandler } from '../../utils/back-handler'
+import { opensUpward } from '../../utils/popover'
 
 const { t } = useI18n()
 
@@ -16,6 +17,53 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
+const trigger = ref<HTMLButtonElement | null>(null)
+const menu = ref<HTMLElement | null>(null)
+/** Direction of the current opening: below the trigger, or flipped above. */
+const opensUp = ref(false)
+
+/**
+ * Nearest scrollable ancestor — the box that clips the dropdown. The page
+ * scroll area is `overflow-y: auto`, and an absolutely positioned menu
+ * cannot escape it (nor contribute scrollable height), so a card near the
+ * bottom edge would show a truncated, partly untappable menu.
+ */
+const findScrollArea = (el: HTMLElement | null): HTMLElement | null => {
+  let node = el?.parentElement ?? null
+  while (node) {
+    const { overflowY } = getComputedStyle(node)
+    if (overflowY === 'auto' || overflowY === 'scroll') return node
+    node = node.parentElement
+  }
+  return null
+}
+
+/**
+ * Toggle the menu. On open, measure once and pick the direction —
+ * `offsetHeight` reads the final layout size (the entrance transform does
+ * not affect it). Older browsers/happy-dom without a scroll ancestor fall
+ * back to the viewport, which keeps the familiar downward placement.
+ */
+const toggleMenu = async (): Promise<void> => {
+  if (open.value) {
+    open.value = false
+    return
+  }
+  open.value = true
+  await nextTick()
+  const triggerEl = trigger.value
+  const menuEl = menu.value
+  if (!triggerEl || !menuEl) return
+  const rect = triggerEl.getBoundingClientRect()
+  const area = findScrollArea(triggerEl)?.getBoundingClientRect()
+  opensUp.value = opensUpward({
+    triggerTop: rect.top,
+    triggerBottom: rect.bottom,
+    boundaryTop: area?.top ?? 0,
+    boundaryBottom: area?.bottom ?? window.innerHeight,
+    menuHeight: menuEl.offsetHeight,
+  })
+}
 
 type MenuAction = 'edit-name' | 'edit-date' | 'edit-savings' | 'delete'
 
@@ -40,6 +88,8 @@ let removeBackHandler: (() => void) | null = null
 watch(
   open,
   (isOpen) => {
+    // Reset the direction so the next opening measures fresh.
+    if (!isOpen) opensUp.value = false
     if (isOpen && !removeBackHandler) {
       removeBackHandler = registerBackHandler(() => {
         open.value = false
@@ -62,10 +112,11 @@ onUnmounted(() => {
 <template>
   <div class="relative">
     <button
+      ref="trigger"
       type="button"
       class="rounded-full p-1.5 text-muted transition hover:bg-card hover:text-ink"
       :aria-label="t('habits.openMenu', { name })"
-      @click="open = !open"
+      @click="toggleMenu"
     >
       <MoreHorizontal class="h-5 w-5" />
     </button>
@@ -89,7 +140,13 @@ onUnmounted(() => {
     >
       <div
         v-if="open"
-        class="absolute right-0 top-full z-60 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+        ref="menu"
+        class="absolute right-0 z-60 w-48 overflow-hidden rounded-xl border border-border bg-surface shadow-lg"
+        :class="
+          opensUp
+            ? 'bottom-full mb-1 origin-bottom-right'
+            : 'top-full mt-1 origin-top-right'
+        "
       >
         <button
           v-if="isCustom"

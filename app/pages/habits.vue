@@ -373,97 +373,120 @@ const handleCustomHabitInputBlur = (): void => {
 </script>
 
 <template>
-  <main class="flex flex-col gap-4 px-4 py-6">
-    <div class="enter-rise flex items-center justify-between">
+  <main class="flex h-full flex-col">
+    <!-- Pinned header: the title and the add-actions stay put; only the
+         habit list scrolls. -->
+    <header class="enter-rise shrink-0 px-4 pt-6 pb-1.5">
       <h1 class="text-2xl font-black tracking-tight text-ink">
         {{ t("tabs.habits") }}
       </h1>
+
+      <!-- Standard habits (hidden once added) + custom -->
+      <div
+        class="enter-rise mt-4 flex flex-wrap items-center gap-2"
+        :style="{ animationDelay: '45ms' }"
+      >
+        <button
+          v-if="!hasAlcohol"
+          type="button"
+          class="rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-card"
+          @click="handleAddHabit('alcohol')"
+        >
+          {{ t("habits.alcohol") }}
+        </button>
+        <button
+          v-if="!hasTobacco"
+          type="button"
+          class="rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-card"
+          @click="handleAddHabit('tobacco')"
+        >
+          {{ t("habits.tobacco") }}
+        </button>
+        <button
+          type="button"
+          class="rounded-full text-sm font-medium border border-dashed border-border align-middle bg-surface px-4 py-1.5 text-ink transition-colors hover:bg-card"
+          :aria-label="t('habits.addCustom')"
+          @click="handleAddHabit('Other')"
+        >
+          + {{ t("habits.addAnother") }}
+        </button>
+      </div>
+
+      <!-- Custom name input: pinned with the chips (it belongs to the
+           "+ Add another" action) so the keyboard never hides it. -->
+      <div
+        v-if="showCustomInput"
+        class="mt-2 flex items-center gap-2"
+      >
+        <input
+          ref="customHabitInput"
+          v-model="customHabitName"
+          type="text"
+          :placeholder="t('habits.habitName')"
+          class="flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+          @blur="handleCustomHabitInputBlur"
+          @keydown.enter="handleAddCustomHabit"
+        >
+        <button
+          type="button"
+          class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          @click="handleAddCustomHabit"
+        >
+          {{ t("habits.add") }}
+        </button>
+      </div>
+    </header>
+
+    <!-- Top scroll shadow: bands the scroll area's first strip (the mask
+         inside the scroll area hides it while it sits flush at the top). -->
+    <div
+      class="casts-scroll-shadow shrink-0"
+      aria-hidden="true"
+    />
+
+    <!-- Scroll area: pure-CSS scroll shadows (main.css) on both edges.
+         `[&>*]:shrink-0` — flex children shrink by default, so the cards would
+         squash to fit instead of overflowing (and the area would report
+         nothing to scroll). -->
+    <div
+      data-testid="page-scroller"
+      class="scroll-shadows flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain px-4 *:shrink-0"
+    >
+      <!-- List (newest first) -->
+      <div
+        v-if="habits.length === 0"
+        class="enter-rise py-10 text-center text-sm text-muted"
+        :style="{ animationDelay: '90ms' }"
+      >
+        {{ t("habits.noHabits") }}
+      </div>
+      <template v-else>
+        <HabitCard
+          v-for="(habit, index) in [...habits].reverse()"
+          :key="habit.id"
+          class="enter-rise"
+          :style="{ animationDelay: `${(index + 2) * 45}ms` }"
+          :habit="habit"
+          :currency="settingsCurrency"
+          @edit-name="
+            editName = { habitId: habit.id, currentValue: habit.name }
+          "
+          @edit-date="startWizard({ flow: 'edit', habitId: habit.id, initialSavings: habit.savings, withSavings: false })"
+          @edit-savings="
+            editSavings = { habitId: habit.id, currentValue: habit.savings }
+          "
+          @delete="deletePending = habit"
+          @reset="relapsePending = habit"
+        />
+      </template>
     </div>
 
-    <!-- Standard habits (hidden once added) + custom -->
+    <!-- Bottom scroll shadow: overlaps the last 10px of the scroll area and
+         fades in over the cards; the scroller's ::after masks it at the end. -->
     <div
-      class="enter-rise flex flex-wrap items-center gap-2"
-      :style="{ animationDelay: '45ms' }"
-    >
-      <button
-        v-if="!hasAlcohol"
-        type="button"
-        class="rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-card"
-        @click="handleAddHabit('alcohol')"
-      >
-        {{ t("habits.alcohol") }}
-      </button>
-      <button
-        v-if="!hasTobacco"
-        type="button"
-        class="rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-card"
-        @click="handleAddHabit('tobacco')"
-      >
-        {{ t("habits.tobacco") }}
-      </button>
-      <button
-        type="button"
-        class="rounded-full text-sm font-medium border border-dashed border-border align-middle bg-surface px-4 py-1.5 text-ink transition-colors hover:bg-card"
-        :aria-label="t('habits.addCustom')"
-        @click="handleAddHabit('Other')"
-      >
-        + {{ t("habits.addAnother") }}
-      </button>
-    </div>
-
-    <!-- Custom name input -->
-    <div
-      v-if="showCustomInput"
-      class="flex items-center gap-2"
-    >
-      <input
-        ref="customHabitInput"
-        v-model="customHabitName"
-        type="text"
-        :placeholder="t('habits.habitName')"
-        class="flex-1 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
-        @blur="handleCustomHabitInputBlur"
-        @keydown.enter="handleAddCustomHabit"
-      >
-      <button
-        type="button"
-        class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        @click="handleAddCustomHabit"
-      >
-        {{ t("habits.add") }}
-      </button>
-    </div>
-
-    <!-- List (newest first) -->
-    <div
-      v-if="habits.length === 0"
-      class="enter-rise py-10 text-center text-sm text-muted"
-      :style="{ animationDelay: '90ms' }"
-    >
-      {{ t("habits.noHabits") }}
-    </div>
-    <div
-      v-else
-      class="flex flex-col gap-3"
-    >
-      <HabitCard
-        v-for="(habit, index) in [...habits].reverse()"
-        :key="habit.id"
-        class="enter-rise"
-        :style="{ animationDelay: `${(index + 2) * 45}ms` }"
-        :habit="habit"
-        :currency="settingsCurrency"
-        @edit-name="
-          editName = { habitId: habit.id, currentValue: habit.name }
-        "
-        @edit-date="startWizard({ flow: 'edit', habitId: habit.id, initialSavings: habit.savings, withSavings: false })"
-        @edit-savings="
-          editSavings = { habitId: habit.id, currentValue: habit.savings }
-        "
-        @delete="deletePending = habit"
-        @reset="relapsePending = habit"
-      />
-    </div>
+      class="casts-scroll-shadow-up shrink-0"
+      aria-hidden="true"
+    />
 
     <!-- Wizard (new / reset / edit-date) -->
     <WizardModal

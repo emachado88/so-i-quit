@@ -422,140 +422,165 @@ const handleNotificationsToggle = async (): Promise<void> => {
 </script>
 
 <template>
-  <main class="flex flex-col gap-4 px-4 py-6">
-    <h1 class="enter-rise text-2xl font-black tracking-tight text-ink">
-      {{ t('tabs.settings') }}
-    </h1>
+  <main class="flex h-full flex-col">
+    <!-- Pinned header: only the sections below scroll. -->
+    <header class="enter-rise shrink-0 px-4 pt-6 pb-1.5">
+      <h1 class="text-2xl font-black tracking-tight text-ink">
+        {{ t('tabs.settings') }}
+      </h1>
+    </header>
 
-    <section
-      class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
-      :style="{ animationDelay: '45ms' }"
+    <!-- Top scroll shadow: bands the scroll area's first strip (the mask
+         inside the scroll area hides it while it sits flush at the top). -->
+    <div
+      class="casts-scroll-shadow shrink-0"
+      aria-hidden="true"
+    />
+
+    <!-- Scroll area: pure-CSS scroll shadows (main.css) on both edges.
+         `[&>*]:shrink-0` — flex children shrink by default, so the sections
+         would squash to fit instead of overflowing. -->
+    <div
+      data-testid="page-scroller"
+      class="scroll-shadows flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain px-4 *:shrink-0"
     >
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
-        <span class="text-sm font-semibold text-ink">
-          {{ t('settings.appearance') }}
-        </span>
-        <SegmentedTheme
-          class="ml-auto"
-          :value="theme"
-          @change="setTheme"
-        />
-      </div>
-
-      <div
-        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
-        @click="langPickerOpen = true"
+      <section
+        class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
+        :style="{ animationDelay: '45ms' }"
       >
-        <span class="text-sm font-semibold text-ink">
-          {{ t('settings.language') }}
-        </span>
-        <button
-          type="button"
-          :aria-label="t('settings.openLanguagePicker')"
-          class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
-        >
-          {{ currentLanguageLabel }}
-          <ChevronDown
-            class="h-3.5 w-3.5"
-            :stroke-width="2.5"
+        <div class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0">
+          <span class="text-sm font-semibold text-ink">
+            {{ t('settings.appearance') }}
+          </span>
+          <SegmentedTheme
+            class="ml-auto"
+            :value="theme"
+            @change="setTheme"
           />
-        </button>
-      </div>
+        </div>
 
-      <div
-        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
-        @click="currencyPickerOpen = true"
-      >
-        <span class="text-sm font-semibold text-ink">
-          {{ t('settings.currency') }}
-        </span>
-        <button
-          type="button"
-          :aria-label="t('settings.openCurrencyPicker')"
-          class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
+        <div
+          class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+          @click="langPickerOpen = true"
         >
-          {{ currencyLabel }}
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          ><path d="m6 9 6 6 6-6" /></svg>
-        </button>
-      </div>
+          <span class="text-sm font-semibold text-ink">
+            {{ t('settings.language') }}
+          </span>
+          <button
+            type="button"
+            :aria-label="t('settings.openLanguagePicker')"
+            class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
+          >
+            {{ currentLanguageLabel }}
+            <ChevronDown
+              class="h-3.5 w-3.5"
+              :stroke-width="2.5"
+            />
+          </button>
+        </div>
 
-      <div
-        class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
-        @click="handleNotificationsToggle"
-      >
-        <span class="text-sm font-semibold text-ink">
-          {{ t('settings.milestoneNotifications') }}
-        </span>
-        <NotificationToggle
-          class="ml-auto"
-          :enabled="notificationsEnabled"
-        />
-      </div>
-      <p
-        v-if="notificationsDenied"
-        class="border-t border-border px-4 pb-3.5 pt-3 text-xs leading-relaxed text-muted"
-      >
-        {{ t('settings.milestoneNotificationsDenied') }}
-      </p>
-      <ExactAlarmHint v-if="exactAlarmDenied" />
-    </section>
+        <div
+          class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+          @click="currencyPickerOpen = true"
+        >
+          <span class="text-sm font-semibold text-ink">
+            {{ t('settings.currency') }}
+          </span>
+          <button
+            type="button"
+            :aria-label="t('settings.openCurrencyPicker')"
+            class="ml-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted"
+          >
+            {{ currencyLabel }}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            ><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+        </div>
 
-    <section
-      class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
-      :style="{ animationDelay: '90ms' }"
-    >
-      <div class="flex items-center gap-3 border-b border-border px-4 py-3.5">
-        <span class="text-sm font-semibold text-ink">
-          {{ t('settings.data') }}
-        </span>
-      </div>
-      <div class="flex items-center gap-2 px-4 py-3.5">
-        <button
-          type="button"
-          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          @click="handleExport"
+        <div
+          class="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0"
+          @click="handleNotificationsToggle"
         >
-          {{ t('settings.exportData') }}
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-card"
-          @click="handleImportClick"
+          <span class="text-sm font-semibold text-ink">
+            {{ t('settings.milestoneNotifications') }}
+          </span>
+          <NotificationToggle
+            class="ml-auto"
+            :enabled="notificationsEnabled"
+          />
+        </div>
+        <p
+          v-if="notificationsDenied"
+          class="border-t border-border px-4 pb-3.5 pt-3 text-xs leading-relaxed text-muted"
         >
-          {{ t('settings.importData') }}
-        </button>
-        <!-- Opens the native system picker inside the WebView on mobile. -->
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".siqb"
-          class="hidden"
-          @change="handleFileChange"
-        >
-      </div>
-      <p
-        class="border-t border-border px-4 pb-3.5 pt-3 text-xs leading-relaxed text-muted"
-      >
-        {{ t('settings.dataDescription') }}
-      </p>
-    </section>
+          {{ t('settings.milestoneNotificationsDenied') }}
+        </p>
+        <ExactAlarmHint v-if="exactAlarmDenied" />
+      </section>
 
-    <section
-      class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
-      :style="{ animationDelay: '135ms' }"
-    >
-      <div class="flex items-center gap-3 px-4 py-3.5">
-        <span class="text-sm font-semibold text-ink">So I Quit</span>
-        <span class="ml-auto text-[13.5px] font-semibold text-muted">v{{ version }}</span>
-      </div>
-    </section>
+      <section
+        class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
+        :style="{ animationDelay: '90ms' }"
+      >
+        <div class="flex items-center gap-3 border-b border-border px-4 py-3.5">
+          <span class="text-sm font-semibold text-ink">
+            {{ t('settings.data') }}
+          </span>
+        </div>
+        <div class="flex items-center gap-2 px-4 py-3.5">
+          <button
+            type="button"
+            class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            @click="handleExport"
+          >
+            {{ t('settings.exportData') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-card"
+            @click="handleImportClick"
+          >
+            {{ t('settings.importData') }}
+          </button>
+          <!-- Opens the native system picker inside the WebView on mobile. -->
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept=".siqb"
+            class="hidden"
+            @change="handleFileChange"
+          >
+        </div>
+        <p
+          class="border-t border-border px-4 pb-3.5 pt-3 text-xs leading-relaxed text-muted"
+        >
+          {{ t('settings.dataDescription') }}
+        </p>
+      </section>
+
+      <section
+        class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
+        :style="{ animationDelay: '135ms' }"
+      >
+        <div class="flex items-center gap-3 px-4 py-3.5">
+          <span class="text-sm font-semibold text-ink">So I Quit</span>
+          <span class="ml-auto text-[13.5px] font-semibold text-muted">v{{ version }}</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom scroll shadow: overlaps the last 10px of the scroll area and
+         fades in over the sections; the scroller's ::after masks it at the end. -->
+    <div
+      class="casts-scroll-shadow-up shrink-0"
+      aria-hidden="true"
+    />
 
     <LangPicker
       :visible="langPickerOpen"
