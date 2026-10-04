@@ -28,7 +28,7 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 ```
 app/
   app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap listener
-  layouts/default.vue      # Shell: safe-area padding, TabBar fixed bottom (430px shell dropped in the portrait-lock commit)
+  layouts/default.vue      # Shell: safe-area top padding on the shell root (the banner sits above `main`), TabBar fixed bottom, UpdateBanner in-flow first item (430px shell dropped in the portrait-lock commit)
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
     habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, slips (log/manage), rename (custom habits), milestone opt-in
@@ -39,6 +39,7 @@ app/
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
     notifications/         # ExactAlarmHint, ExactAlarmDialog
+    updates/               # UpdateBanner (in-app "update available" banner, in-flow in the shell)
   composables/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
@@ -46,6 +47,7 @@ app/
     useFocusTrap.ts        # focus trap for modal dialogs (WizardModal, NameModal, SavingsModal) — Tab cycles within, restores focus on close
     useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation (tab switch / locale navigation mid-import)
     useMilestoneNotifications.ts # shared notification orchestration — enable/disable/rebuild chains + exact-alarm re-ask state (wraps the useExactAlarmPrompt singleton); pages are thin callers
+    useUpdateCheck.ts      # module-level singleton for the GitHub update check — check({force}) / download() / banner state, shared by the shell banner and the Settings section
   plugins/
     i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe, see Pitfalls)
     sentry.client.ts       # @sentry/vue init — no-op unless NUXT_PUBLIC_SENTRY_DSN is set
@@ -67,13 +69,17 @@ app/
     backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, slips, settings}) — build/parse/import; never throws on hostile input
     backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file"> (native picker in WebView); web export = download
     popover.ts             # Pure flip geometry for dropdowns near a clipped edge — opensUpward(trigger, panel, viewport) + POPOVER_GAP
-  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 139 keys each
+    version.ts             # Semver-ish compare (normalizeVersion/compareVersions/isNewerVersion) — dependency-free, no `semver` dep
+    updates.ts             # GitHub releases/latest fetch + release parsing (APK asset pick) + 24 h throttle (key "update-check-v1")
+    update-install.ts      # ApkInstaller plugin wrapper — native APK download + install intent (Android-only platform guard)
+  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 152 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes + scroll-shadow (`.scroll-shadows`, `.casts-scroll-shadow*`)
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
-  app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
+  app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS, +REQUEST_INSTALL_PACKAGES (in-app update); SplashActivity = launcher
   app/src/main/java/com/soiquit/app/SplashActivity.java  # OEM-proof launcher: brand gradient backdrop + logo → MainActivity, no hold, no fade
   app/src/main/java/com/soiquit/app/MainActivity.java     # registers the app-local plugins; keeps the launch theme (art) behind the WebView
   app/src/main/java/com/soiquit/app/SystemBarsPlugin.java # setTheme: status+nav bar icons/colors follow the in-app theme
+  app/src/main/java/com/soiquit/app/ApkInstallerPlugin.java # download: stream the release APK → app cache; install: FileProvider + ACTION_VIEW installer intent
   app/src/main/res/drawable/splash_bg.xml (+drawable-night/)  # launch gradient (night-aware), mirrors assets/splash.svg
   app/src/main/res/drawable/splash_screen.xml                 # window background: layer-list = splash_bg + logo at @dimen/splash_logo_size
   app/src/main/res/drawable-nodpi/splash_logo.png             # logo mark, rendered from assets/splash-logo.svg
@@ -86,8 +92,8 @@ ios/                       # Capacitor iOS project (committed; SPM — no Podfil
 tests/
   helpers.ts               # installStorageMock() (localStorage stub via vi.stubGlobal) + seedStorage()
   smoke.test.ts            # en.json key-set guard (≥80 keys, no {{ mustache }}) + 8-locale key parity vs en.json
-  unit/                    # storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler
-  component/               # habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog
+  unit/                    # storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, version, updates, update-install, use-update-check
+  component/               # habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog, update-banner
 scripts/
   live-reload.mjs          # LAN IP + CAP_LIVE_URL + cap run android (HMR dev loop)
   add-i18n-keys.py         # add new keys to all 8 locale JSONs
@@ -205,6 +211,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - `ssr: false` is fixed — no branches, no flags. The web exists only for dev
 - **localStorage, never cookies:** the Capacitor WebView resets cookies on restart; color-mode and i18n both persist to localStorage
 - `nitro: { preset: 'cloudflare_pages' }` emits `dist/` — that is what Capacitor uses as `webDir`
+- **The app makes exactly one outbound request:** the update check against the GitHub releases API (see Updates below). Everything else stays on-device — no accounts, no sync, no telemetry
 
 ### Shell & Page Scrolling
 - **The document never scrolls.** `layouts/default.vue` is a fixed-height column (`flex h-full flex-col overflow-hidden`) with `html, body { height: 100%; overflow: hidden }` and `#__nuxt { height: 100% }` — without the `#__nuxt` rule the shell falls back to `auto` and the pinned savings card floats mid-screen (measured). Each page owns its own scroll area instead, so the title never moves and switching tabs always opens at the top
@@ -308,8 +315,20 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - **`npm run version:check`** exits 1 if the four have drifted — wire it into CI (e.g. a step before `npm ci`) or a pre-commit guard so a missed platform can't ship.
 - The component test `tests/component/settings.test.ts` mocks `appVersion: '1.1.0'` — update that literal only if you change the *expected displayed* string, not on every bump.
 
+### Updates (GitHub releases)
+- **One outbound request:** `app/utils/updates.ts` reads `api.github.com/repos/emachado88/so-i-quit/releases/latest` (unauthenticated — 60 req/h/IP, hence the throttle). It is the app's only network call
+- **Throttle:** automatic (app-start) checks run at most once per 24 h, tracked in its own localStorage key `"update-check-v1"` (`{checkedAt}`) — deliberately **not** a field of `settings-v1`, so a check timestamp never travels inside a backup. **Only a successful response writes the timestamp**: an offline boot must not swallow the next 24 h of attempts. The Settings button calls `check(version, { force: true })`, which always runs a fresh check
+- **Dev skip:** `import.meta.dev` short-circuits the *automatic* check (dev server + `mobile:live`); the forced manual check still runs, so the flow stays exercisable in the dev loop
+- **Banner, not a system notification — on purpose:** an OS local notification would need `POST_NOTIFICATIONS`, which is only requested for milestone notifications, so a user who never enabled those could never be told about an update. The banner is the first item of the shell column (in-flow, **not** fixed): no z-index at all, so it can never tie with or cover the TabBar/snackbar scale
+- **Version compare is dependency-free** (`app/utils/version.ts`, no `semver`): releases are tagged `vX.Y.Z` while package.json holds `X.Y.Z`, so `normalizeVersion` bridges them; a prerelease ranks below its release; drafts/prereleases are never offered as updates
+- **Download + install are native** (`ApkInstallerPlugin`, registered in `MainActivity.onCreate` like `SystemBarsPlugin`): the APK is streamed from a background thread into `getContext().getCacheDir()` and the installer is fired through `FileProvider` (`${applicationId}.fileprovider`, already declared; the `cache-path` entry in `res/xml/file_paths.xml` covers the file). Doing it natively keeps a ~20 MB binary out of the bridge (no base64 round-trip) and avoids CORS — GitHub redirects release assets to a host that sends no `Access-Control-Allow-Origin`. JS only wraps it (`app/utils/update-install.ts`)
+- **`REQUEST_INSTALL_PACKAGES`** is in the manifest — Android 8+ prompts "allow installs from this source" the first time
+- **Android only:** iOS is out of scope (no sideloading — the App Store owns updates). Wherever `isApkInstallSupported()` is false (web dev loop, iOS) the Download action opens the release page instead
+- **Release assets:** the installable one is `so-i-quit-<version>-release.apk`; `pickApkAsset` prefers it over `-preview.apk` and ignores the simulator `.app.tar.gz`
+- **Failures never block:** offline / rate-limited / API error → `{ status: 'error' }` — the Settings section says so, the app-start check is silent. A failed download returns the state to `available`, so the banner stays on offer for a retry
+
 ### Misc
-- **Overlay z-scale (single source):** `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, name, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it. (The scroll-shadow mask/cast pair is a *separate* local scale, `z-20`/`z-10` inside the page flow — not part of the overlay scale)
+- **Overlay z-scale (single source):** `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, name, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it. (The scroll-shadow mask/cast pair is a *separate* local scale, `z-20`/`z-10` inside the page flow — not part of the overlay scale. The update banner is **in-flow** at the top of the shell, so it carries no z-index at all and can never tie with this scale)
 - **Wizard persists only on finish:** the new-habit wizard holds `key`/`name` in the wizard state and calls `addHabit` in `handleWizardFinish` — a cancelled, tab-switched, or app-killed wizard never leaves a dateless habit in localStorage. Reset/edit update the existing habit on finish only; Cancel is a pure close
 - **Slips are cleared by streak resets, never the reverse:** the reset (relapse) flow drops every slip for the habit, editing the quit date drops slips dated before the new date (`clearPastSlips`), and deleting a habit drops them with the milestones. A slip is a passive log — it never restarts the streak or re-schedules milestones. `HabitCard` shows `I slipped` (→ `SlipLogModal`, date-only) beside `Log relapse`; `HabitMenu` → `Manage slips` (→ `SlipsModal`, edit/delete with a confirm); the Progress card's red `<count> ⓘ` opens the same modal read-only
 - **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
@@ -343,6 +362,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 12. ✅ Haptics + Sentry + polish
 13. ✅ Test suite gates (80% coverage enforced in vitest.config) + ESLint + QA checklist + final docs
 14. ✅ Slips — one-time lapses (log/manage + Progress indicator), cleared on relapse / quit-date edit
+15. ✅ Update check — GitHub releases (24 h throttle + forced manual check in Settings), in-app banner, in-app APK download + install on Android
 
 ## Brand
 

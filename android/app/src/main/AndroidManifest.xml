@@ -49,4 +49,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- In-app update: fire the package-installer intent for the downloaded
+         APK (ApkInstallerPlugin). Android 8+ asks the user to allow installs
+         from this source the first time. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

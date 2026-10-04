@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import en from '../../app/i18n/locales/en.json'
 import { resetExactAlarmPrompt } from '../../app/composables/useExactAlarmPrompt'
+import { useUpdateCheck } from '../../app/composables/useUpdateCheck'
 import SettingsPage from '../../app/pages/settings.vue'
 import { BACKUP_VERSION, exportToFile } from '../../app/utils/backup'
 import { handleBackButton } from '../../app/utils/back-handler'
@@ -37,6 +38,12 @@ const mocks = vi.hoisted(() => {
     openExactSettings: vi.fn(async () => {}),
     foreground,
     foregroundCallback,
+    fetchLatestRelease: vi.fn(),
+    shouldCheck: vi.fn(() => true),
+    markChecked: vi.fn(),
+    isApkInstallSupported: vi.fn(() => false),
+    downloadApk: vi.fn(async () => '/cache/so-i-quit-1.2.0.apk'),
+    installApk: vi.fn(async () => {}),
   }
 })
 
@@ -66,6 +73,22 @@ vi.mock('../../app/utils/backup-platform', () => ({
   exportBackupNative: mocks.exportNative,
 }))
 
+// The update check hits GitHub over the network and the install goes through
+// a native plugin — both are stubbed; the throttle/parse logic has its own
+// unit tests.
+vi.mock('../../app/utils/updates', () => ({
+  fetchLatestRelease: mocks.fetchLatestRelease,
+  shouldCheck: mocks.shouldCheck,
+  markChecked: mocks.markChecked,
+  RELEASES_PAGE_URL: 'https://github.com/emachado88/so-i-quit/releases/latest',
+}))
+
+vi.mock('../../app/utils/update-install', () => ({
+  isApkInstallSupported: mocks.isApkInstallSupported,
+  downloadApk: mocks.downloadApk,
+  installApk: mocks.installApk,
+}))
+
 // settings.vue reads the app version via useRuntimeConfig (Nuxt injects it
 // from package.json); the real nuxt/app module needs the Nuxt build context,
 // so it's fully stubbed like in the other component tests.
@@ -83,6 +106,16 @@ beforeEach(() => {
   mocks.isNative.mockReturnValue(false)
   mocks.permissionStatus.mockResolvedValue('undetermined')
   mocks.exactAlarm.mockResolvedValue(true)
+  // Update check: the shared singleton is reset and the network stubbed.
+  useUpdateCheck().reset()
+  mocks.shouldCheck.mockReturnValue(true)
+  mocks.isApkInstallSupported.mockReturnValue(false)
+  mocks.fetchLatestRelease.mockResolvedValue({
+    status: 'up-to-date',
+    currentVersion: '1.1.0',
+  })
+  mocks.downloadApk.mockResolvedValue('/cache/so-i-quit-1.2.0.apk')
+  mocks.installApk.mockResolvedValue(undefined)
 })
 
 // Tracked so afterEach can unmount — the pickers register/unregister back
@@ -172,7 +205,7 @@ describe('pages/settings', () => {
     expect(text).toContain('English')
     expect(text).toContain('Currency')
     expect(text).toContain('Milestone notifications')
-    expect(text).toContain('So I Quit')
+    expect(text).toContain('Updates')
     expect(text).toContain('v1.1.0')
   })
 
@@ -705,6 +738,105 @@ describe('pages/settings', () => {
     expect(getHabits().map(h => h.id)).toEqual(['keep'])
     expect(mocks.cancelAll).not.toHaveBeenCalled()
     expect(mocks.reconcileAll).not.toHaveBeenCalled()
+  })
+
+  // ── Updates (GitHub releases) ──
+
+  const availableUpdate = {
+    status: 'available' as const,
+    currentVersion: '1.1.0',
+    update: {
+      version: '1.2.0',
+      downloadUrl: 'https://example.test/so-i-quit-1.2.0-release.apk',
+      releaseUrl: 'https://example.test/releases/v1.2.0',
+    },
+  }
+
+  it('renders the updates section with the installed version', async () => {
+    const wrapper = await mountPage()
+    const text = wrapper.text()
+    expect(text).toContain('Updates')
+    expect(text).toContain('v1.1.0')
+    expect(text).toContain('Check for updates')
+    expect(text).toContain('Check for a newer version of So I Quit and install it.')
+  })
+
+  it('reports an available update and offers the download', async () => {
+    mocks.fetchLatestRelease.mockResolvedValue(availableUpdate)
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Check for updates').trigger('click')
+    await flushPromises()
+
+    // The manual action forces the check (bypasses throttle + dev skip).
+    expect(mocks.fetchLatestRelease).toHaveBeenCalledWith('1.1.0')
+    expect(wrapper.text()).toContain('Version 1.2.0 is available.')
+    expect(buttonByText(wrapper, 'Download')).toBeTruthy()
+  })
+
+  it('reports when the app is already up to date', async () => {
+    mocks.fetchLatestRelease.mockResolvedValue({
+      status: 'up-to-date',
+      currentVersion: '1.1.0',
+    })
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Check for updates').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('You\'re on the latest version.')
+    expect(wrapper.findAll('button').some(b => b.text() === 'Download')).toBe(false)
+  })
+
+  it('surfaces a failed check in a snackbar', async () => {
+    mocks.fetchLatestRelease.mockResolvedValue({
+      status: 'error',
+      currentVersion: '1.1.0',
+    })
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Check for updates').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('Couldn\'t check for updates.')
+  })
+
+  it('downloads and installs the update in-app when the platform supports it', async () => {
+    mocks.isApkInstallSupported.mockReturnValue(true)
+    mocks.fetchLatestRelease.mockResolvedValue(availableUpdate)
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Check for updates').trigger('click')
+    await flushPromises()
+    await buttonByText(wrapper, 'Download').trigger('click')
+    await flushPromises()
+
+    expect(mocks.downloadApk).toHaveBeenCalledWith(
+      availableUpdate.update.downloadUrl,
+      '1.2.0',
+    )
+    expect(mocks.installApk).toHaveBeenCalledWith('/cache/so-i-quit-1.2.0.apk')
+    expect(wrapper.text()).toContain(
+      'Download complete. Follow the prompts to install.',
+    )
+  })
+
+  it('surfaces a failed download and keeps the update on offer', async () => {
+    mocks.isApkInstallSupported.mockReturnValue(true)
+    mocks.downloadApk.mockRejectedValueOnce(new Error('HTTP 500'))
+    mocks.fetchLatestRelease.mockResolvedValue(availableUpdate)
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Check for updates').trigger('click')
+    await flushPromises()
+    await buttonByText(wrapper, 'Download').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').text()).toContain(
+      'Download failed. Please try again.',
+    )
+    // The download is still on offer — the banner/state went back to available.
+    expect(buttonByText(wrapper, 'Download')).toBeTruthy()
   })
 
   // ── Hardware back (Android) ──

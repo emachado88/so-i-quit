@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-vue-next'
 import { useLocaleSwitch } from '../composables/useLocaleSwitch'
 import { useMilestoneNotifications } from '../composables/useMilestoneNotifications'
 import { useThemeMode } from '../composables/useThemeMode'
+import { useUpdateCheck } from '../composables/useUpdateCheck'
 import CurrencyPicker from '../components/settings/CurrencyPicker.vue'
 import LangPicker from '../components/settings/LangPicker.vue'
 import NotificationToggle from '../components/settings/NotificationToggle.vue'
@@ -382,6 +383,63 @@ const setCurrency = (code: string): void => {
   }
 }
 
+// ── Updates (GitHub releases) ──
+
+/**
+ * Shared singleton state — the same refs drive the shell banner, so a
+ * manual check here also surfaces the banner there (and vice versa).
+ * `force` bypasses the 24 h throttle and the dev skip: this is the
+ * explicit "I want to know now" action.
+ */
+const {
+  state: updateState,
+  error: updateError,
+  latestVersion: updateVersion,
+  check: checkForUpdates,
+  download: downloadUpdate,
+} = useUpdateCheck()
+
+const updateCheckLabel = computed(() =>
+  updateState.value === 'checking' ? t('updates.checking') : t('updates.check'),
+)
+const updateBusy = computed(
+  () => updateState.value === 'checking' || updateState.value === 'downloading',
+)
+/** The Download action appears only when a newer release is known. */
+const updateAvailable = computed(() => updateState.value === 'available')
+
+const updateStatusText = computed<string>(() => {
+  switch (updateState.value) {
+    case 'checking':
+      return t('updates.checking')
+    case 'up-to-date':
+      return t('updates.upToDate')
+    case 'available':
+      return t('updates.available', { version: updateVersion.value ?? '' })
+    case 'downloading':
+      return t('updates.downloading')
+    case 'installed':
+      return t('updates.installHint')
+    case 'error':
+      return updateError.value === 'download'
+        ? t('updates.downloadFailed')
+        : t('updates.failed')
+    default:
+      return t('updates.description')
+  }
+})
+
+const handleCheckForUpdates = async (): Promise<void> => {
+  const result = await checkForUpdates(version, { force: true })
+  if (result === 'error') showSnackbar(t('updates.failed'))
+}
+
+const handleDownloadUpdate = async (): Promise<void> => {
+  const result = await downloadUpdate()
+  if (result === 'error') showSnackbar(t('updates.downloadFailed'))
+  else if (result === 'installed') showSnackbar(t('updates.installHint'), true)
+}
+
 // ── Milestone notifications ──
 
 /**
@@ -568,10 +626,37 @@ const handleNotificationsToggle = async (): Promise<void> => {
         class="enter-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
         :style="{ animationDelay: '135ms' }"
       >
-        <div class="flex items-center gap-3 px-4 py-3.5">
-          <span class="text-sm font-semibold text-ink">So I Quit</span>
+        <div class="flex items-center gap-3 border-b border-border px-4 py-3.5">
+          <span class="text-sm font-semibold text-ink">
+            {{ t('updates.title') }}
+          </span>
           <span class="ml-auto text-[13.5px] font-semibold text-muted">v{{ version }}</span>
         </div>
+        <div class="flex items-center gap-2 px-4 py-3.5">
+          <button
+            type="button"
+            class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-card disabled:opacity-60"
+            :disabled="updateBusy"
+            @click="handleCheckForUpdates"
+          >
+            {{ updateCheckLabel }}
+          </button>
+          <button
+            v-if="updateAvailable"
+            type="button"
+            class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            :disabled="updateBusy"
+            @click="handleDownloadUpdate"
+          >
+            {{ t('updates.download') }}
+          </button>
+        </div>
+        <p
+          role="status"
+          class="border-t border-border px-4 pb-3.5 pt-3 text-xs leading-relaxed text-muted"
+        >
+          {{ updateStatusText }}
+        </p>
       </section>
     </div>
 
