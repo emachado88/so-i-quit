@@ -31,11 +31,11 @@ app/
   layouts/default.vue      # Shell: safe-area padding, TabBar fixed bottom (430px shell dropped in the portrait-lock commit)
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
-    habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, rename (custom habits), milestone opt-in
+    habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, slips (log/manage), rename (custom habits), milestone opt-in
     settings.vue           # Settings — theme, language, currency, milestone notifications, data backup (export/import)
   components/              # auto-imported (pathPrefix: false)
     ui/                    # TabBar, Snackbar, ConfirmDialog, ErrorBoundary
-    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, NameModal (custom-habit rename), MilestoneOptInDialog, RelapseConfirm
+    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, NameModal (custom-habit rename), MilestoneOptInDialog, RelapseConfirm, SlipLogModal, SlipsModal
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
     notifications/         # ExactAlarmHint, ExactAlarmDialog
@@ -51,11 +51,12 @@ app/
     sentry.client.ts       # @sentry/vue init — no-op unless NUXT_PUBLIC_SENTRY_DSN is set
     system-bars.client.ts  # resolved color-mode → native Android system bars (SystemBarsPlugin)
   utils/                   # pure TS, no Vue imports — keeps them node-testable
-    types.ts               # Habit, Milestone, AppSettings, Theme, MilestoneUnit
-    storage.ts             # localStorage readJSON/writeJSON composable; keys "habits", "milestones-v1", "settings-v1"
+    types.ts               # Habit, Milestone, Slip, AppSettings, Theme, MilestoneUnit
+    storage.ts             # localStorage readJSON/writeJSON composable; keys "habits", "milestones-v1", "slips-v1", "settings-v1"
     habits.ts              # Habit CRUD — corrupt JSON deliberately throws (screens surface it)
     milestones.ts          # Milestone calendar: BASE_MILESTONES, generateMilestones (10y horizon), ringProgress, labels
     milestones-store.ts    # Record<habitId, Milestone[]> persistence + roll-forward (returns newlyReached)
+    slips-store.ts         # Record<habitId, Slip[]> persistence (add/update/delete, clearPastSlips on quit-date edit)
     settings.ts            # Settings persistence + first-run language/currency detection
     currencies.ts          # CURRENCY_SYMBOLS + REGION_TO_CURRENCY
     domain.ts              # daysSince, breakdown, parseSavings, formatAmount (Intl), formatDate(Time), getHabitName
@@ -63,10 +64,10 @@ app/
     haptics.ts             # Capacitor haptics wrapper (native guard; light tabs / medium confirms / success milestones)
     system-bars.ts         # SystemBars plugin wrapper — Android: SystemBarsPlugin.setTheme; iOS: StatusBar.setStyle (status text)
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
-    backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, settings}) — build/parse/import; never throws on hostile input
+    backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, slips, settings}) — build/parse/import; never throws on hostile input
     backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file"> (native picker in WebView); web export = download
     popover.ts             # Pure flip geometry for dropdowns near a clipped edge — opensUpward(trigger, panel, viewport) + POPOVER_GAP
-  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 125 keys each
+  i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 139 keys each
   assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes + scroll-shadow (`.scroll-shadows`, `.casts-scroll-shadow*`)
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
   app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS; SplashActivity = launcher
@@ -133,10 +134,11 @@ vitest.config.ts           # vue + AutoImport plugins; node env; include tests/*
 
 ### Data Layer
 - localStorage only (WebView drops cookies) via `app/utils/storage.ts`
-- Keys: `"habits"`, `"milestones-v1"`, `"settings-v1"`
+- Keys: `"habits"`, `"milestones-v1"`, `"slips-v1"`, `"settings-v1"`
 - Error semantics: JSON-level problems (missing key, corrupt JSON, stored null) → absorbed, fall back to default; real storage errors (quota, privacy) → propagate, no silent throws. **Exception:** `habits.ts getHabits()` throws on corrupt JSON by design — screens catch and show the Snackbar
 - IDs: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
 - `Habit { id, key?, name, date, savings }` — `key` is the i18n key for standard habits (`habits.alcohol`), custom habits use `name`
+- `Slip { id, habitId, date }` — a one-time lapse, stored per habit in `slips-v1` (`slips-store.ts`). Date-only (local midnight ISO); it never touches the streak, milestones or savings. Cleared on relapse (all), on an edited quit date (those dated before it) and on habit deletion
 - Settings stored as **one object** under `settings-v1` (the RN app spread them across five keys — do not reintroduce)
 
 ### i18n
@@ -236,7 +238,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 - Notification ids: deterministic djb2 hash → `reconcileHabitNotifications` can rebuild the expected id and check it against pending without storing a map
 
 ### Backup / Export-Import (Settings → Data)
-- Export serializes `habits` + `milestones-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` in `app/utils/backup.ts`): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.siqb`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
+- Export serializes `habits` + `milestones-v1` + `slips-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` = 2 in `app/utils/backup.ts`; v1 files still import, their missing `slips` defaulting to empty): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.siqb`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
 - Import is a hidden `<input type="file">` — the WebView opens the native system picker automatically, no plugin API needed (Filesystem has no `pickFiles` in v8); `parseBackup` never throws — any shape/version problem → `{ ok: false, error }` and nothing is written until the ConfirmDialog confirm
 - **After import:** pending notifications from the old dataset are cancelled; the imported notification settings are **re-validated against the OS** — permission not granted (fresh install `undetermined` or revoked) → re-ask, and **schedules are rebuilt only after the permission is confirmed** (no dead schedules); enabling notifications via the Settings toggle also reconciles immediately, not on the next Progress boot. Android 12+ exact-alarm access denied → `ExactAlarmDialog` re-asks (same pattern as the habit opt-in: plain `exactAlarmVisible` ref; Go-to-settings re-checks on foreground, Skip leaves the inexact schedules). The re-ask state lives in a module-level singleton (`useExactAlarmPrompt`) so a mid-chain page re-creation (tab switch / `setLocale` navigation) cannot lose it; a `sessionStorage` flag (`pending-exact-reask`) re-surfaces it after a WebView reload. The enable/disable/rebuild chains and the re-ask state are shared via the `useMilestoneNotifications` composable — the three pages (habits, settings, progress) hold only their own UI state (snackbars, haptics, denied flags, OS-permission sync refs). Imported `settings.theme` is applied to color-mode (`themeMode.setTheme`) and `settings.language` to the URL locale — the selector alone reads the settings ref, the live theme/locale need the explicit sync
 
@@ -309,6 +311,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 ### Misc
 - **Overlay z-scale (single source):** `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, name, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it. (The scroll-shadow mask/cast pair is a *separate* local scale, `z-20`/`z-10` inside the page flow — not part of the overlay scale)
 - **Wizard persists only on finish:** the new-habit wizard holds `key`/`name` in the wizard state and calls `addHabit` in `handleWizardFinish` — a cancelled, tab-switched, or app-killed wizard never leaves a dateless habit in localStorage. Reset/edit update the existing habit on finish only; Cancel is a pure close
+- **Slips are cleared by streak resets, never the reverse:** the reset (relapse) flow drops every slip for the habit, editing the quit date drops slips dated before the new date (`clearPastSlips`), and deleting a habit drops them with the milestones. A slip is a passive log — it never restarts the streak or re-schedules milestones. `HabitCard` shows `I slipped` (→ `SlipLogModal`, date-only) beside `Log relapse`; `HabitMenu` → `Manage slips` (→ `SlipsModal`, edit/delete with a confirm); the Progress card's red `<count> ⓘ` opens the same modal read-only
 - **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
 - **Total savings card is pinned above the tab bar** — the last flex item of the page column (not `fixed`, no `z-40`), with the scroll area above it taking the remaining height; it lands flush on the TabBar thanks to the layout `main`'s bottom padding
 - **Renaming is custom-habits only:** `HabitCard` passes `:is-custom="!habit.key && Boolean(habit.name)"` to `HabitMenu`, which renders the "Edit name" entry only then — a standard habit's label comes from its `key` (`habits.alcohol` via `getHabitName`), so renaming it would be overwritten on the next render. `NameModal` (i18n namespace `name.*`) mirrors `SavingsModal`: always-mounted + `visible` prop, `handle-back`, Confirm disabled until the text actually changes, save trims and refuses an empty name (light haptic), and the page persists it with `updateHabit(id, { name })` — `key` is never written, so a renamed custom habit stays keyless. A failed write surfaces `name.failedToUpdateName` in the Snackbar (same corrupt-JSON path as `getHabits`)
@@ -339,6 +342,7 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 11. ✅ Local notifications (Capacitor)
 12. ✅ Haptics + Sentry + polish
 13. ✅ Test suite gates (80% coverage enforced in vitest.config) + ESLint + QA checklist + final docs
+14. ✅ Slips — one-time lapses (log/manage + Progress indicator), cleared on relapse / quit-date edit
 
 ## Brand
 

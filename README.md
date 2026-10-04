@@ -13,15 +13,16 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 - **⏱ Live Counters** — Track years, months, days, hours since quitting each habit (1s tick)
 - **💰 Savings Calculator** — Enter how much you spend per day and see total savings grow in real time
 - **🎉 Milestone Rings** — Daily/weekly/monthly/yearly celebration rings with opt-in local notifications (exact alarms on Android)
+- **🚩 Slips** — Log an occasional, one-time slip (date only) without restarting your streak; manage them from the card menu and see the count on Progress
 - **🎨 Theme Override** — System, Light, or Dark mode (persisted, WebView-safe)
 - **💱 Currency Picker** — Searchable currency selector with locale-based auto-detection on first run
 - **🌍 Locale-aware** — Device-language detection; Intl-based currency/date formatting
 - **🗣 Multi-language** — Zero-backend i18n via @nuxtjs/i18n: EN, PT, FR, ES, IT, ZH (Simplified), DE, NL
 - **📱 Mobile-first** — Capacitor 8 wrapper (Android + iOS); the same SPA runs in the browser for the dev loop
 - **💾 Local Only** — All data stays on-device via localStorage (no account needed)
-- **📦 Backup & Restore** — Export everything (habits, milestones, settings) to a portable JSON — native share sheet on mobile, file download on web; import validates the file and replaces your data only after explicit confirmation (notification schedules are rebuilt from the restored data)
+- **📦 Backup & Restore** — Export everything (habits, milestones, slips, settings) to a portable JSON — native share sheet on mobile, file download on web; import validates the file and replaces your data only after explicit confirmation (notification schedules are rebuilt from the restored data)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
-- **✏️ Rename Custom Habits** — Rename any custom habit from its card menu (actions: edit name / edit date / edit savings / delete); standard habits keep their localized names, so the menu only offers renaming where it applies
+- **✏️ Rename Custom Habits** — Rename any custom habit from its card menu (actions: edit name / edit date / edit savings / manage slips / delete); standard habits keep their localized names, so the menu only offers renaming where it applies
 
 ## Tech Stack
 
@@ -118,7 +119,7 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, slips-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
 - **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/88/93/96. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
@@ -134,8 +135,8 @@ app/
   composables/             # useNow (1s tick), useThemeMode, useLocaleSwitch
   plugins/                 # i18n-persist.client.ts (WebView-safe locale persistence)
   utils/                   # types, storage, habits, milestones, milestones-store,
-                           # settings, currencies, domain, notifications, backup,
-                           # backup-platform, popover (pure TS)
+                           # slips-store, settings, currencies, domain, notifications,
+                           # backup, backup-platform, popover (pure TS)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides + scroll-shadow classes
 assets/                    # Icon/splash SVG masters (incl. splash-logo.svg) + rendered PNG sources

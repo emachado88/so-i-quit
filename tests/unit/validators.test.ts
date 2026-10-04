@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isAppSettings, isHabit, isMilestone } from '../../app/utils/validators'
+import { isAppSettings, isHabit, isMilestone, isSlip } from '../../app/utils/validators'
 
 const validHabit = {
   id: 'h1',
@@ -24,6 +24,12 @@ const validSettings = {
   currency: 'EUR',
   milestoneNotificationsEnabled: true,
   milestoneNotificationsPrompted: false,
+}
+
+const validSlip = {
+  id: 's1',
+  habitId: 'h1',
+  date: '2026-01-01T00:00:00.000Z',
 }
 
 describe('utils/validators', () => {
@@ -78,6 +84,25 @@ describe('utils/validators', () => {
     it('rejects null and undefined', () => {
       expect(isMilestone(null)).toBe(false)
       expect(isMilestone(undefined)).toBe(false)
+    })
+  })
+
+  describe('isSlip', () => {
+    it('accepts a valid slip', () => {
+      expect(isSlip(validSlip)).toBe(true)
+    })
+
+    it('rejects a non-string habitId', () => {
+      expect(isSlip({ ...validSlip, habitId: undefined })).toBe(false)
+    })
+
+    it('rejects a numeric date', () => {
+      expect(isSlip({ ...validSlip, date: 1735689600000 })).toBe(false)
+    })
+
+    it('rejects null and undefined', () => {
+      expect(isSlip(null)).toBe(false)
+      expect(isSlip(undefined)).toBe(false)
     })
   })
 

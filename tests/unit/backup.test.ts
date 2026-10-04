@@ -10,9 +10,10 @@ import {
 } from '../../app/utils/backup'
 import { getHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
+import { getSlipsForHabit } from '../../app/utils/slips-store'
 import { getSettings, SUPPORTED_LANGUAGES } from '../../app/utils/settings'
 import { readJSON, STORAGE_KEYS } from '../../app/utils/storage'
-import type { AppSettings, Habit, Milestone } from '../../app/utils/types'
+import type { AppSettings, Habit, Milestone, Slip } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
 
 installStorageMock()
@@ -43,20 +44,32 @@ const settings: AppSettings = {
   milestoneNotificationsPrompted: true,
 }
 
+const slip = (overrides: Partial<Slip> = {}): Slip => ({
+  id: 's1',
+  habitId: 'h1',
+  date: '2026-08-01T00:00:00.000Z',
+  ...overrides,
+})
+
 const validBackup = (): BackupFile => ({
   version: BACKUP_VERSION,
   exportedAt: '2026-08-14T12:00:00.000Z',
   habits: [habit()],
   milestones: { h1: [milestone()] },
+  slips: { h1: [slip()] },
   settings,
 })
 
 describe('buildBackup', () => {
-  it('snapshots habits, milestones and settings', () => {
+  it('snapshots habits, milestones, slips and settings', () => {
     seedStorage(STORAGE_KEYS.habits, JSON.stringify([habit()]))
     seedStorage(
       STORAGE_KEYS.milestones,
       JSON.stringify({ h1: [milestone()], h2: [milestone({ id: 'm2', habitId: 'h2' })] }),
+    )
+    seedStorage(
+      STORAGE_KEYS.slips,
+      JSON.stringify({ h1: [slip()], h2: [slip({ id: 's2', habitId: 'h2' })] }),
     )
     seedStorage(STORAGE_KEYS.settings, JSON.stringify(settings))
 
@@ -69,15 +82,21 @@ describe('buildBackup', () => {
       h1: [milestone()],
       h2: [milestone({ id: 'm2', habitId: 'h2' })],
     })
+    expect(backup.slips).toEqual({
+      h1: [slip()],
+      h2: [slip({ id: 's2', habitId: 'h2' })],
+    })
     expect(backup.settings).toEqual(settings)
   })
 
-  it('tolerates a corrupt milestones store (treated as empty)', () => {
+  it('tolerates corrupt milestone and slip stores (treated as empty)', () => {
     seedStorage(STORAGE_KEYS.habits, JSON.stringify([habit()]))
     seedStorage(STORAGE_KEYS.milestones, 'not-json{{')
+    seedStorage(STORAGE_KEYS.slips, 'not-json{{')
     seedStorage(STORAGE_KEYS.settings, JSON.stringify(settings))
 
     expect(buildBackup().milestones).toEqual({})
+    expect(buildBackup().slips).toEqual({})
   })
 })
 
@@ -121,9 +140,41 @@ describe('parseBackup', () => {
 
   it('rejects a wrong version', () => {
     const parsed = parseBackup(
-      exportToFile({ ...validBackup(), version: 2 }),
+      exportToFile({ ...validBackup(), version: 3 }),
     )
     expect(parsed).toEqual({ ok: false, error: 'invalid-version' })
+  })
+
+  it('accepts a v1 file (predates slips) with an empty slip map', () => {
+    // A v1 backup has no `slips` field at all.
+    const parsed = parseBackup(
+      JSON.stringify({
+        version: 1,
+        exportedAt: '2026-08-14T12:00:00.000Z',
+        habits: [habit()],
+        milestones: { h1: [milestone()] },
+        settings,
+      }),
+    )
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) {
+      expect(parsed.data.version).toBe(BACKUP_VERSION)
+      expect(parsed.data.slips).toEqual({})
+    }
+  })
+
+  it('rejects invalid slips', () => {
+    const parsed = parseBackup(
+      JSON.stringify({ ...validBackup(), slips: { h1: [{ id: 'x' }] } }),
+    )
+    expect(parsed).toEqual({ ok: false, error: 'invalid-slips' })
+  })
+
+  it('rejects a slip map that is an array', () => {
+    const parsed = parseBackup(
+      JSON.stringify({ ...validBackup(), slips: [] }),
+    )
+    expect(parsed).toEqual({ ok: false, error: 'invalid-slips' })
   })
 
   it('rejects an invalid exportedAt', () => {
@@ -191,7 +242,7 @@ describe('parseBackup', () => {
 })
 
 describe('importBackup', () => {
-  it('replaces habits, milestones and settings', () => {
+  it('replaces habits, milestones, slips and settings', () => {
     seedStorage(STORAGE_KEYS.habits, JSON.stringify([habit({ id: 'old' })]))
     seedStorage(
       STORAGE_KEYS.milestones,
@@ -206,6 +257,10 @@ describe('importBackup', () => {
         h1: [milestone()],
         h2: [milestone({ id: 'm2', habitId: 'h2', unit: 'month', amount: 3 })],
       },
+      slips: {
+        h1: [slip()],
+        h2: [slip({ id: 's2', habitId: 'h2' })],
+      },
     })
 
     expect(getHabits()).toEqual([
@@ -216,7 +271,23 @@ describe('importBackup', () => {
     expect(getMilestonesForHabit('h2')).toEqual([
       milestone({ id: 'm2', habitId: 'h2', unit: 'month', amount: 3 }),
     ])
+    expect(getSlipsForHabit('h1')).toEqual([slip()])
+    expect(getSlipsForHabit('h2')).toEqual([slip({ id: 's2', habitId: 'h2' })])
     expect(getSettings()).toEqual(settings)
+  })
+
+  it('drops an orphan slip whose habitId has no matching habit', () => {
+    importBackup({
+      ...validBackup(),
+      milestones: {},
+      slips: {
+        h1: [slip()],
+        h9: [slip({ id: 's9', habitId: 'h9' })],
+      },
+    })
+
+    expect(getSlipsForHabit('h1')).toEqual([slip()])
+    expect(getSlipsForHabit('h9')).toEqual([])
   })
 
   it('drops a __proto__ milestone key (prototype-pollution sink)', () => {

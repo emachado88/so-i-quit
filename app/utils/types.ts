@@ -32,3 +32,11 @@ export interface Milestone {
   reachedAt: string | null
   notificationId: string | null
 }
+
+/** Occasional one-time lapse. Logged with a date; does not restart a streak. */
+export interface Slip {
+  id: string
+  habitId: string
+  /** ISO instant of the slip (the UI captures a date only). */
+  date: string
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
-import { Clock3, Coins, MoreHorizontal, Pen, Trash2 } from 'lucide-vue-next'
+import { Clock3, Coins, ListChecks, MoreHorizontal, Pen, Trash2 } from 'lucide-vue-next'
 
 import { registerBackHandler } from '../../utils/back-handler'
 import { opensUpward } from '../../utils/popover'
@@ -13,6 +13,7 @@ const emit = defineEmits<{
   'edit-name': []
   'edit-date': []
   'edit-savings': []
+  'manage-slips': []
   'delete': []
 }>()
 
@@ -65,7 +66,12 @@ const toggleMenu = async (): Promise<void> => {
   })
 }
 
-type MenuAction = 'edit-name' | 'edit-date' | 'edit-savings' | 'delete'
+type MenuAction
+  = | 'edit-name'
+    | 'edit-date'
+    | 'edit-savings'
+    | 'manage-slips'
+    | 'delete'
 
 // `emit()` is typed as one overload per event, so calling it with the union
 // variable would not match any overload — dispatch through literal calls.
@@ -73,6 +79,7 @@ const emitAction: Record<MenuAction, () => void> = {
   'edit-name': () => emit('edit-name'),
   'edit-date': () => emit('edit-date'),
   'edit-savings': () => emit('edit-savings'),
+  'manage-slips': () => emit('manage-slips'),
   'delete': () => emit('delete'),
 }
 
@@ -172,6 +179,14 @@ onUnmounted(() => {
         >
           <Coins class="h-4 w-4 shrink-0 text-muted" />
           {{ t('habits.editSavings') }}
+        </button>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-card"
+          @click="action('manage-slips')"
+        >
+          <ListChecks class="h-4 w-4 shrink-0 text-muted" />
+          {{ t('habits.manageSlips') }}
         </button>
         <button
           type="button"

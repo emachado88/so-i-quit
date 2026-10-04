@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Info } from 'lucide-vue-next'
 
 import {
   breakdown,
@@ -14,15 +15,18 @@ import {
   getNextMilestone,
   ringProgress,
 } from '../../utils/milestones'
-import type { Habit, Milestone } from '../../utils/types'
+import type { Habit, Milestone, Slip } from '../../utils/types'
 import MilestoneRing from './MilestoneRing.vue'
 
 const props = defineProps<{
   habit: Habit
   milestones: Milestone[]
+  slips: Slip[]
   now: Date
   currency: string
 }>()
+
+const emit = defineEmits<{ 'show-slips': [] }>()
 
 const { t } = useI18n()
 
@@ -133,6 +137,20 @@ onMounted(() => {
         <p class="mt-1 text-xs font-medium text-muted">
           {{ breakdownLabel }}
         </p>
+        <div
+          v-if="slips.length > 0"
+          class="mt-1 flex items-center gap-1 text-danger"
+        >
+          <span class="text-xs font-bold">{{ slips.length }}</span>
+          <button
+            type="button"
+            class="rounded-full transition-opacity hover:opacity-80"
+            :aria-label="t('slips.view')"
+            @click="emit('show-slips')"
+          >
+            <Info class="h-4 w-4" />
+          </button>
+        </div>
         <p
           v-if="saved > 0"
           class="mt-0.5 text-xs font-bold text-primary"

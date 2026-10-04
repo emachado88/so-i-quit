@@ -3,7 +3,7 @@
  * node-testable. Used by defensive reads and by the export/import ticket.
  */
 
-import type { AppSettings, Habit, Milestone } from './types'
+import type { AppSettings, Habit, Milestone, Slip } from './types'
 
 const isISODate = (value: unknown): value is string =>
   typeof value === 'string' && !Number.isNaN(Date.parse(value))
@@ -48,6 +48,18 @@ export const isMilestone = (value: unknown): value is Milestone => {
     && milestone.amount > 0
     && isNullableISODate(milestone.reachedAt)
     && isNullableString(milestone.notificationId)
+  )
+}
+
+export const isSlip = (value: unknown): value is Slip => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+  const slip = value as Record<string, unknown>
+  return (
+    typeof slip.id === 'string'
+    && typeof slip.habitId === 'string'
+    && isISODate(slip.date)
   )
 }
 

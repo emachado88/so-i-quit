@@ -8,9 +8,11 @@ import { useNow } from '../composables/useNow'
 import CelebrationToast from '../components/progress/CelebrationToast.vue'
 import HabitProgressCard from '../components/progress/HabitProgressCard.vue'
 import TotalSavingsCard from '../components/progress/TotalSavingsCard.vue'
+import SlipsModal from '../components/habits/SlipsModal.vue'
 import Snackbar from '../components/ui/Snackbar.vue'
 import { daysSince, getHabitName, parseSavings } from '../utils/domain'
 import { getHabits } from '../utils/habits'
+import { getSlipStore } from '../utils/slips-store'
 import {
   impact,
   ImpactStyle,
@@ -24,7 +26,7 @@ import {
 } from '../utils/milestones-store'
 import { addAppForegroundListener } from '../utils/notifications'
 import { getSettings } from '../utils/settings'
-import type { Habit, Milestone } from '../utils/types'
+import type { Habit, Milestone, Slip } from '../utils/types'
 
 /** Pending in-app celebration (newly crossed milestone). */
 interface Celebration {
@@ -44,6 +46,10 @@ const milestoneNotif = useMilestoneNotifications(t)
 
 const habits = ref<Habit[]>([])
 const milestonesByHabit = ref<Record<string, Milestone[]>>({})
+/** Slips per habit — drives the red indicator on each progress card. */
+const slipsByHabit = ref<Record<string, Slip[]>>({})
+/** Read-only slips viewer (opened from a card's indicator). */
+const slipsView = ref<{ name: string, slips: Slip[] } | null>(null)
 const celebrations = ref<Celebration[]>([])
 const snackbarMessage = ref<string | null>(null)
 const now = useNow()
@@ -123,6 +129,7 @@ const goToHabits = (): void => {
 const load = async (): Promise<void> => {
   try {
     habits.value = getHabits()
+    slipsByHabit.value = getSlipStore()
     const nowDate = now.value
     const newly: Celebration[] = []
     // Single read + write of the milestone store across the whole habit
@@ -206,6 +213,14 @@ const activeCelebrationText = computed(() => {
 const dismissCelebration = (): void => {
   celebrations.value = celebrations.value.slice(1)
 }
+
+/** Open the read-only slips viewer for a habit (card `ⓘ`). */
+const openSlips = (habit: Habit): void => {
+  slipsView.value = {
+    name: getHabitName(habit, t),
+    slips: slipsByHabit.value[habit.id] ?? [],
+  }
+}
 </script>
 
 <template>
@@ -273,8 +288,10 @@ const dismissCelebration = (): void => {
           :style="{ animationDelay: `${(index + 2) * 45}ms` }"
           :habit="habit"
           :milestones="milestonesByHabit[habit.id] ?? []"
+          :slips="slipsByHabit[habit.id] ?? []"
           :now="now"
           :currency="currency"
+          @show-slips="openSlips(habit)"
         />
       </template>
     </div>
@@ -303,6 +320,14 @@ const dismissCelebration = (): void => {
     <CelebrationToast
       :message="activeCelebrationText"
       @dismiss="dismissCelebration"
+    />
+    <!-- Read-only slips viewer (opened from a card's red ⓘ) -->
+    <SlipsModal
+      :visible="!!slipsView"
+      :habit-name="slipsView?.name ?? ''"
+      :slips="slipsView?.slips ?? []"
+      readonly
+      @dismiss="slipsView = null"
     />
     <Snackbar
       :message="snackbarMessage"

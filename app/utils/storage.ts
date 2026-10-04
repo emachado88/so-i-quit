@@ -16,6 +16,7 @@
 export const STORAGE_KEYS = {
   habits: 'habits',
   milestones: 'milestones-v1',
+  slips: 'slips-v1',
   settings: 'settings-v1',
 } as const
 

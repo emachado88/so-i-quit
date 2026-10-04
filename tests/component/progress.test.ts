@@ -15,7 +15,8 @@ import {
   isMilestoneReached,
 } from '../../app/utils/milestones'
 import { saveMilestonesForHabit } from '../../app/utils/milestones-store'
-import type { Habit, Milestone } from '../../app/utils/types'
+import { saveSlipsForHabit } from '../../app/utils/slips-store'
+import type { Habit, Milestone, Slip } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
 
 // Notification side effects are mocked (their logic has its own suite); the
@@ -200,6 +201,39 @@ describe('pages/index', () => {
     expect(cardBox.className).not.toContain('fixed')
   })
 
+  it('shows the slip indicator and opens the read-only slips viewer', async () => {
+    seedStorage('settings-v1', JSON.stringify({ currency: 'EUR' }))
+    const habit = makeHabit({ id: 'h1', date: daysAgo(10) })
+    saveHabits([habit])
+    saveSlipsForHabit('h1', [
+      { id: 's1', habitId: 'h1', date: daysAgo(2) },
+      { id: 's2', habitId: 'h1', date: daysAgo(5) },
+    ])
+
+    const wrapper = await mountPage()
+
+    // Red indicator on the card (count + dot + info icon).
+    const info = wrapper.get('button[aria-label="View slips"]')
+    expect(info.element.parentElement?.textContent).toContain('2')
+
+    await info.trigger('click')
+    await nextTick()
+
+    // Read-only viewer: the list shows but offers no edit / delete.
+    expect(wrapper.text()).toContain('Slips')
+    expect(wrapper.find('button[aria-label="Edit slip"]').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="Delete slip"]').exists()).toBe(false)
+  })
+
+  it('hides the slip indicator when the habit has no slips', async () => {
+    seedStorage('settings-v1', JSON.stringify({ currency: 'EUR' }))
+    const habit = makeHabit({ id: 'h1', date: daysAgo(10) })
+    saveHabits([habit])
+
+    const wrapper = await mountPage()
+    expect(wrapper.find('button[aria-label="View slips"]').exists()).toBe(false)
+  })
+
   it('queues celebration toasts for newly reached milestones', async () => {
     const habit = makeHabit({ date: daysAgo(10) })
     saveHabits([habit])
@@ -327,7 +361,7 @@ describe('components/progress/HabitProgressCard', () => {
     const milestones = makeMilestones(habit, NOW)
 
     const wrapper = mount(HabitProgressCard, {
-      props: { habit, milestones, now: NOW, currency: 'EUR' },
+      props: { habit, milestones, slips: [], now: NOW, currency: 'EUR' },
       global: { plugins: [i18n] },
     })
     const text = wrapper.text()
@@ -350,7 +384,7 @@ describe('components/progress/HabitProgressCard', () => {
     })
 
     const wrapper = mount(HabitProgressCard, {
-      props: { habit, milestones: [], now: NOW, currency: 'EUR' },
+      props: { habit, milestones: [], slips: [], now: NOW, currency: 'EUR' },
       global: { plugins: [i18n] },
     })
     expect(wrapper.text()).toContain('You\'ve started, keep going')
@@ -363,7 +397,7 @@ describe('components/progress/HabitProgressCard', () => {
     const habit = makeHabit({ date: atDaysAgo(40), savings: '5' })
 
     const wrapper = mount(HabitProgressCard, {
-      props: { habit, milestones: [], now: NOW, currency: 'EUR' },
+      props: { habit, milestones: [], slips: [], now: NOW, currency: 'EUR' },
       global: { plugins: [i18n] },
     })
 
@@ -373,6 +407,51 @@ describe('components/progress/HabitProgressCard', () => {
     expect(bar.attributes('stroke-dashoffset')).toBe(
       String(2 * Math.PI * ((74 - 7) / 2)),
     )
+  })
+
+  it('shows the red slip count and emits show-slips from the info icon', async () => {
+    const habit = makeHabit({ date: atDaysAgo(40), savings: '5' })
+    const slips: Slip[] = [
+      { id: 's1', habitId: 'h1', date: atDaysAgo(3) },
+      { id: 's2', habitId: 'h1', date: atDaysAgo(8) },
+    ]
+
+    const wrapper = mount(HabitProgressCard, {
+      props: {
+        habit,
+        milestones: makeMilestones(habit, NOW),
+        slips,
+        now: NOW,
+        currency: 'EUR',
+      },
+      global: { plugins: [i18n] },
+    })
+
+    const indicator = wrapper.get('button[aria-label="View slips"]')
+    // Text is the bare count next to the info icon (no "slips" word).
+    expect(indicator.element.parentElement?.textContent?.trim()).toBe('2')
+    // Only the info icon remains inside the indicator (the dot was dropped).
+    expect(indicator.element.parentElement?.querySelectorAll('svg').length).toBe(1)
+
+    await indicator.trigger('click')
+    expect(wrapper.emitted('show-slips')).toHaveLength(1)
+  })
+
+  it('renders no slip indicator when the list is empty', () => {
+    const habit = makeHabit({ date: atDaysAgo(40) })
+
+    const wrapper = mount(HabitProgressCard, {
+      props: {
+        habit,
+        milestones: makeMilestones(habit, NOW),
+        slips: [],
+        now: NOW,
+        currency: 'EUR',
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('button[aria-label="View slips"]').exists()).toBe(false)
   })
 })
 
