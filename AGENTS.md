@@ -1,10 +1,18 @@
 # AGENTS.md
 
+> Short contract for agents working in this repo. Deep reasoning and traps live in `docs/` —
+> see **Documentation** at the bottom. Read this file first; open the linked doc when you touch
+> that area.
+
 ## Project Overview
 
-A habit tracker that counts time since quitting and calculates accumulated savings. Local-only, no backend. **This branch (`rewrite-nuxt-cap`) is a full rewrite from React Native/Expo to Nuxt 4 SPA + Capacitor (Android + iOS)** — the RN app still lives on `master` until the rewrite lands. Visual contract: `docs/ui-sketch.html`. Work is executed ticket-by-ticket from `.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md` (Tickets 1–13 done).
+So I Quit — a habit tracker that counts time since quitting and calculates accumulated savings.
+Local-only, no backend. **Nuxt 4 SPA + Capacitor (Android + iOS).** The React Native/Expo app was
+the pre-rewrite stack and no longer exists in this repo; everything lands on `main` via PR.
 
-**Always mobile** (user decision — no `MOBILE_BUILD` flag): `ssr: false`, everything persisted in localStorage (the WebView drops cookies), domain logic as pure TS modules tested with Vitest. The web build exists only for the dev loop.
+**Always mobile** (user decision — no `MOBILE_BUILD` flag): `ssr: false`, everything persisted in
+localStorage (the WebView drops cookies), domain logic as pure TS modules tested with Vitest. The
+web build exists only for the dev loop.
 
 ## Tech Stack
 
@@ -28,14 +36,14 @@ A habit tracker that counts time since quitting and calculates accumulated savin
 ```
 app/
   app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap listener
-  layouts/default.vue      # Shell: safe-area top padding on the shell root (the banner sits above `main`), TabBar fixed bottom, UpdateBanner in-flow first item (430px shell dropped in the portrait-lock commit)
+  layouts/default.vue      # Shell: fixed-height column (the document never scrolls), safe-areas, TabBar, UpdateBanner in-flow
   pages/
     index.vue              # Progress — live counters, milestone rings, total savings card, celebration toast
     habits.vue             # Habits — CRUD, wizard (date+time→savings), relapse, slips (log/manage), rename (custom habits), milestone opt-in
-    settings.vue           # Settings — theme, language, currency, milestone notifications, data backup (export/import)
+    settings.vue           # Settings — theme, language, currency, milestone notifications, data backup (export/import), update check
   components/              # auto-imported (pathPrefix: false)
     ui/                    # TabBar, Snackbar, ConfirmDialog, ErrorBoundary
-    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, NameModal (custom-habit rename), MilestoneOptInDialog, RelapseConfirm, SlipLogModal, SlipsModal
+    habits/                # HabitCard, HabitMenu, WizardModal, SavingsModal, NameModal, MilestoneOptInDialog, RelapseConfirm, SlipLogModal, SlipsModal
     progress/              # HabitProgressCard, MilestoneRing, TotalSavingsCard, CelebrationToast
     settings/              # CurrencyPicker, LangPicker, NotificationToggle, SegmentedTheme
     notifications/         # ExactAlarmHint, ExactAlarmDialog
@@ -44,18 +52,20 @@ app/
     useNow.ts              # 1s ticking Date ref (live counters) — cleanup in onUnmounted
     useThemeMode.ts        # color-mode binding
     useLocaleSwitch.ts     # i18n locale switching
-    useFocusTrap.ts        # focus trap for modal dialogs (WizardModal, NameModal, SavingsModal) — Tab cycles within, restores focus on close
-    useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation (tab switch / locale navigation mid-import)
-    useMilestoneNotifications.ts # shared notification orchestration — enable/disable/rebuild chains + exact-alarm re-ask state (wraps the useExactAlarmPrompt singleton); pages are thin callers
-    useUpdateCheck.ts      # module-level singleton for the GitHub update check — check({force}) / download() / banner state, shared by the shell banner and the Settings section
+    useFocusTrap.ts        # focus trap for modal dialogs (WizardModal, NameModal, SavingsModal) — restores focus on close
+    useExactAlarmPrompt.ts # module-level singleton for the exact-alarm re-ask dialog — survives page re-creation
+    useMilestoneNotifications.ts # shared notification orchestration — enable/disable/rebuild chains + exact-alarm re-ask state
+    useUpdateCheck.ts      # module-level singleton for the GitHub update check — check({force}) / download() / banner state
   plugins/
-    i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe, see Pitfalls)
+    i18n-persist.client.ts # Locale ↔ localStorage mirror + boot redirect (WebView-safe)
     sentry.client.ts       # @sentry/vue init — no-op unless NUXT_PUBLIC_SENTRY_DSN is set
     system-bars.client.ts  # resolved color-mode → native Android system bars (SystemBarsPlugin)
   utils/                   # pure TS, no Vue imports — keeps them node-testable
     types.ts               # Habit, Milestone, Slip, AppSettings, Theme, MilestoneUnit
     storage.ts             # localStorage readJSON/writeJSON composable; keys "habits", "milestones-v1", "slips-v1", "settings-v1"
     habits.ts              # Habit CRUD — corrupt JSON deliberately throws (screens surface it)
+    validators.ts          # runtime guards for parsed/stored shapes (shared by stores + backup)
+    migrations.ts          # legacy stored-shape migrations (applied on read)
     milestones.ts          # Milestone calendar: BASE_MILESTONES, generateMilestones (10y horizon), ringProgress, labels
     milestones-store.ts    # Record<habitId, Milestone[]> persistence + roll-forward (returns newlyReached)
     slips-store.ts         # Record<habitId, Slip[]> persistence (add/update/delete, clearPastSlips on quit-date edit)
@@ -64,60 +74,50 @@ app/
     domain.ts              # daysSince, breakdown, parseSavings, formatAmount (Intl), formatDate(Time), getHabitName
     notifications.ts       # Capacitor local-notifications wrapper (native guard, exact alarms, reconcile, taps)
     haptics.ts             # Capacitor haptics wrapper (native guard; light tabs / medium confirms / success milestones)
-    system-bars.ts         # SystemBars plugin wrapper — Android: SystemBarsPlugin.setTheme; iOS: StatusBar.setStyle (status text)
+    system-bars.ts         # SystemBars plugin wrapper — Android: SystemBarsPlugin.setTheme; iOS: StatusBar.setStyle
     back-handler.ts        # Hardware-back: LIFO overlay handler stack + root backButton listener + exitApp
-    backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, slips, settings}) — build/parse/import; never throws on hostile input
-    backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file"> (native picker in WebView); web export = download
-    popover.ts             # Pure flip geometry for dropdowns near a clipped edge — opensUpward(trigger, panel, viewport) + POPOVER_GAP
-    version.ts             # Semver-ish compare (normalizeVersion/compareVersions/isNewerVersion) — dependency-free, no `semver` dep
-    updates.ts             # GitHub releases/latest fetch + release parsing (APK asset pick) + 24 h throttle (key "update-check-v1")
-    update-install.ts      # ApkInstaller plugin wrapper — native APK download + install intent (Android-only platform guard)
+    backup.ts              # Versioned backup file ({version, exportedAt, habits, milestones, slips, settings}) — build/parse/import; never throws
+    backup-platform.ts     # Platform bridge: native export = Filesystem cache + Share sheet; import = hidden <input type="file">; web export = download
+    popover.ts             # Pure flip geometry for dropdowns near a clipped edge — opensUpward(trigger, panel, viewport)
+    version.ts             # Semver-ish compare (normalizeVersion/compareVersions/isNewerVersion) — dependency-free
+    updates.ts             # GitHub releases/latest fetch + release parsing (APK asset pick) + 24 h throttle
+    update-install.ts      # ApkInstaller plugin wrapper — native APK download + install intent (Android-only guard)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON, 152 keys each
-  assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition & entrance-animation classes + scroll-shadow (`.scroll-shadows`, `.casts-scroll-shadow*`)
+  assets/css/main.css      # Tailwind import + @theme brand tokens + html.dark overrides + page-transition/entrance classes + scroll-shadow classes
 android/                   # Capacitor Android project (committed; build/ + .gradle/ gitignored)
-  app/src/main/AndroidManifest.xml  # +SCHEDULE_EXACT_ALARM, +POST_NOTIFICATIONS, +REQUEST_INSTALL_PACKAGES (in-app update); SplashActivity = launcher
-  app/src/main/java/com/soiquit/app/SplashActivity.java  # OEM-proof launcher: brand gradient backdrop + logo → MainActivity, no hold, no fade
-  app/src/main/java/com/soiquit/app/MainActivity.java     # registers the app-local plugins; keeps the launch theme (art) behind the WebView
-  app/src/main/java/com/soiquit/app/SystemBarsPlugin.java # setTheme: status+nav bar icons/colors follow the in-app theme
-  app/src/main/java/com/soiquit/app/ApkInstallerPlugin.java # download: stream the release APK → app cache; install: FileProvider + ACTION_VIEW installer intent
-  app/src/main/res/drawable/splash_bg.xml (+drawable-night/)  # launch gradient (night-aware), mirrors assets/splash.svg
-  app/src/main/res/drawable/splash_screen.xml                 # window background: layer-list = splash_bg + logo at @dimen/splash_logo_size
-  app/src/main/res/drawable-nodpi/splash_logo.png             # logo mark, rendered from assets/splash-logo.svg
-  app/src/main/res/values/dimens.xml                          # splash_logo_size — the logo size in the launch layer-list
-ios/                       # Capacitor iOS project (committed; SPM — no Podfile)
-  App/App/Assets.xcassets  # AppIcon + Splash (light/dark) generated by @capacitor/assets
-  App/App/Base.lproj/LaunchScreen.storyboard  # image="Splash" (scaleAspectFill), dark variant auto
-  App/App/Info.plist       # CFBundleDisplayName "So I Quit"; MARKETING_VERSION 1.1.0
-  App/CapApp-SPM/          # Swift Package Manager wrapper — plugin deps via Package.swift
+  app/src/main/java/com/soiquit/app/  # SplashActivity, MainActivity, SystemBarsPlugin, ApkInstallerPlugin
+ios/                       # Capacitor iOS project (committed; SPM via App/CapApp-SPM — no Podfile)
 tests/
   helpers.ts               # installStorageMock() (localStorage stub via vi.stubGlobal) + seedStorage()
   smoke.test.ts            # en.json key-set guard (≥80 keys, no {{ mustache }}) + 8-locale key parity vs en.json
-  unit/                    # storage, habits, milestones, milestones-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, version, updates, update-install, use-update-check
+  unit/                    # storage, habits, milestones, milestones-store, slips-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover, version, updates, update-install, use-update-check
   component/               # habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog, update-banner
 scripts/
   live-reload.mjs          # LAN IP + CAP_LIVE_URL + cap run android (HMR dev loop)
   add-i18n-keys.py         # add new keys to all 8 locale JSONs
-  convert-i18n.py          # RN .ts → JSON migration helper
+  convert-i18n.py          # RN .ts → JSON migration helper (legacy)
+  bump-version.mjs         # version:bump / version:check — keeps the four version sources in lockstep
   generate-icons.sh        # SVG masters → PNG sources → @capacitor/assets densities (+ Android splash logo)
 assets/                    # Icon/splash SVG masters (incl. splash-logo.svg) + rendered 1024²/2732² PNG sources
 public/                    # Web favicon (icon.svg) + apple-touch-icon.png (180²)
-docs/
-  ui-sketch.html           # Wireframe — visual contract for the rewrite
-  QA-CHECKLIST.md          # Manual QA checklist vs wireframe (screens + overlays)
+docs/                      # Architecture/UI/native/features/build docs + QA checklist (see Documentation)
+.github/workflows/         # ci.yml (PR gate), mobile-preview.yml, mobile-release.yml (both workflow_dispatch)
 capacitor.config.ts        # appId com.soiquit.app (dev: com.soiquit.dev), webDir dist, androidScheme https
 nuxt.config.ts             # modules, ssr:false, colorMode, i18n, fonts, cloudflare_pages preset
-vitest.config.ts           # vue + AutoImport plugins; node env; include tests/**
+vitest.config.ts           # vue + AutoImport plugins; node env; include tests/**; coverage gate 80%
+eslint.config.mjs          # flat config (@nuxt/eslint, stylistic)
+lint-staged.config.mjs     # eslint --fix on staged *.{ts,vue,mjs}
 ```
 
 ## Coding Conventions
 
 ### Imports
-- **Nuxt auto-imports — never import Nuxt or Vue APIs.** `ref`, `computed`, `watch`, `onMounted`, `onUnmounted` (Vue composition API), `useRoute`, `useRouter`, `navigateTo`, `defineNuxtPlugin`, `definePageMeta`, `useLocalePath`, `useSwitchLocalePath`, `markRaw`, the global `NuxtLink` component, etc. are available **without any import** in every SFC/plugin/composable — this is the project standard, do not clutter the top of the file with redundant imports (Nuxt generates `.nuxt/imports.d.ts` with all of them)
-- **`useI18n` is imported explicitly** from `'vue-i18n'` in every component/page — that's the current codebase pattern (it also works via @nuxtjs/i18n auto-import, but the existing code imports it; match the file you're editing)
-- **Relative imports only** for project modules — no `@/`/`~/` alias usage in app code (e.g. `../composables/useNow`, `./storage`)
-- Components are auto-imported (`pathPrefix: false`), but pages often import them explicitly with relative paths — either is fine; keep it consistent within a file
-- Group: Vue/Nuxt → i18n → project modules → local
-- **Tests are different:** Vitest has NO Nuxt auto-imports — only Vue ones (via `unplugin-auto-import` in `vitest.config.ts`). Nuxt APIs used INSIDE components under test (`useLocalePath`, `useRoute`) resolve from `nuxt/app` via the vitest AutoImport and are mocked per-file; composables used in pages are wrapped and mocked (see Testing)
+- **Nuxt auto-imports — never import Nuxt or Vue APIs.** `ref`, `computed`, `watch`, `onMounted`, `onUnmounted`, `useRoute`, `useRouter`, `navigateTo`, `defineNuxtPlugin`, `definePageMeta`, `useLocalePath`, `useSwitchLocalePath`, `markRaw`, the global `NuxtLink` component, etc. are available **without any import** in every SFC/plugin/composable — this is the project standard (Nuxt generates `.nuxt/imports.d.ts`).
+- **`useI18n` is imported explicitly** from `'vue-i18n'` in every component/page — match the file you're editing.
+- **Relative imports only** for project modules — no `@/`/`~/` alias usage in app code (e.g. `../composables/useNow`, `./storage`).
+- Components are auto-imported (`pathPrefix: false`), but pages often import them explicitly with relative paths — either is fine; keep it consistent within a file.
+- Group: Vue/Nuxt → i18n → project modules → local.
+- **Tests are different:** Vitest has NO Nuxt auto-imports — only Vue ones (via `unplugin-auto-import` in `vitest.config.ts`). Nuxt APIs used INSIDE components under test (`useLocalePath`, `useRoute`, `useRuntimeConfig`) are mocked per-file; composables used in pages are wrapped and mocked (see Testing).
 
 ### Formatting (mixed tree — match the file you're editing)
 - `app/utils/*.ts` (ported code): single quotes, no semicolons
@@ -134,32 +134,8 @@ vitest.config.ts           # vue + AutoImport plugins; node env; include tests/*
 - Dark mode is automatic: `html.dark` overrides the CSS variables; components use tokens and get both modes for free
 - Arbitrary values like `max-w-107.5` (= 430px) and `pb-[calc(5rem+env(safe-area-inset-bottom,0px))]` are normal here
 
-### State & Effects
-- `useNow()` composable for live counters (1s `setInterval`, cleanup in `onUnmounted`) — re-render only, no storage I/O on ticks
-- Data loads in `onMounted` (pages) — no polling; app-foreground tracking via `addAppForegroundListener` (native `appStateChange`), with `visibilitychange` as browser-dev fallback
-
-### Data Layer
-- localStorage only (WebView drops cookies) via `app/utils/storage.ts`
-- Keys: `"habits"`, `"milestones-v1"`, `"slips-v1"`, `"settings-v1"`
-- Error semantics: JSON-level problems (missing key, corrupt JSON, stored null) → absorbed, fall back to default; real storage errors (quota, privacy) → propagate, no silent throws. **Exception:** `habits.ts getHabits()` throws on corrupt JSON by design — screens catch and show the Snackbar
-- IDs: `` `${Date.now()}-${Math.random().toString(36).substring(2, 11)}` ``
-- `Habit { id, key?, name, date, savings }` — `key` is the i18n key for standard habits (`habits.alcohol`), custom habits use `name`
-- `Slip { id, habitId, date }` — a one-time lapse, stored per habit in `slips-v1` (`slips-store.ts`). Date-only (local midnight ISO); it never touches the streak, milestones or savings. Cleared on relapse (all), on an edited quit date (those dated before it) and on habit deletion
-- Settings stored as **one object** under `settings-v1` (the RN app spread them across five keys — do not reintroduce)
-
-### i18n
-- Locale JSONs in `app/i18n/locales/{en,pt,fr,es,it,zh,de,nl}.json` — **en.json is the base**; all 8 must carry the same key set (validate with `scripts/add-i18n-keys.py`)
-- Flat dot-separated keys, never nested objects
-- Access via `const { t, locale } = useI18n()` in script setup, `$t` in templates — never import locale files in components
-- Interpolation: `t('progress.freeFor', { name: habit.name })` replaces `{name}` — **`{{name}}` mustache is rejected by vue-i18n** (error code 9); the smoke test guards this
-- Localized links: `useLocalePath()` / `switchLocalePath()` (the locale lives in the URL prefix)
-- New locale = new JSON + entry in `nuxt.config.ts` `i18n.locales` (+ `SUPPORTED_LANGUAGES`/`LANGUAGE_NAMES` in `app/utils/settings.ts` if it should appear in the picker)
-
-### Notifications (Capacitor)
-- Every call is guarded by `Capacitor.isNativePlatform()` — browser/web builds are silent no-ops
-- Permission read uses `areEnabled()` (the real OS switch), **not** `checkPermissions()` alone (stays "granted" when the user turns all notifications off in system settings)
-- Deterministic int32 notification ids (djb2 hash of the milestone id) — reconcile works without a stored id map
-- **iOS caps pending local notifications at 64 per app** — `reconcileAllHabitNotifications` splits a 60-notification budget (`IOS_PENDING_BUDGET`) across dated habits (`reconcileHabitNotifications(..., maxPending)`); only the earliest milestones are scheduled and later boots/foregrounds fill the rest as earlier ones are reached. Android has no limit
+### Data, state, i18n & notifications
+Rules and rationale are in **`docs/architecture.md`** (data layer, storage keys & error semantics, state/effects, i18n model + locale persistence, notification scheduling). Keep that doc in sync when you change any of it.
 
 ## Commands
 
@@ -171,17 +147,17 @@ npm run lint             # ESLint (flat config, @nuxt/eslint) — 0 errors/warni
 npm run lint:fix         # ESLint --fix
 npx tsc --noEmit         # TypeScript check (strict)
 npm test                 # vitest run (unit + component) + coverage gate 80%
-npx vitest run --coverage  # coverage report (last ~94/88/93/96 stmts/lines/funcs/branches)
+npx vitest run --coverage  # coverage report (last ~93/95/92/86 stmts/lines/funcs/branches)
 # Mobile (Capacitor)
 npm run mobile:sync      # generate + cap sync (android + ios)
 npm run mobile:run       # cap run android
 npm run mobile:run:ios   # cap run ios (macOS + Xcode only)
 npm run mobile:apk       # gradlew assembleDebug
 npm run mobile:apk:preview  # gradlew assemblePreview — debug-keystore-signed, for QA/sideload
-npm run mobile:apk:release  # gradlew assembleRelease — signed only if android/keystore.properties exists (see CI section)
+npm run mobile:apk:release  # gradlew assembleRelease — signed only if android/keystore.properties exists
 npm run mobile:live      # cap sync && scripts/live-reload.mjs — LAN IP + CAP_LIVE_URL + cap run android
-npm run mobile:icons     # regenerate icon/splash densities (scripts/generate-icons.sh → @capacitor/assets --android --ios)
-# Version sync (see Version sync section below)
+npm run mobile:icons     # regenerate icon/splash densities
+# Version sync
 npm run version:bump <1.2.0|major|minor|patch> [--dry-run]  # bump package.json + lock + gradle + pbxproj in lockstep
 npm run version:check     # fail (exit 1) if the four version sources have drifted
 ```
@@ -189,162 +165,26 @@ npm run version:check     # fail (exit 1) if the four version sources have drift
 ## Testing
 
 - **Unit** (`tests/unit/`): pure utils, node environment — no setup needed beyond the storage stub
-- **Component** (`tests/component/`): `// @vitest-environment happy-dom` header + `mount` from `@vue/test-utils` (RTL is not used on this branch)
-- **`tests/helpers.ts`:** `installStorageMock()` stubs a real `localStorage` global via `vi.stubGlobal` (no module mocking — the storage layer guards with `typeof localStorage === 'undefined'`); `seedStorage(key, value)` arranges raw values (corrupt JSON, edge cases)
+- **Component** (`tests/component/`): `// @vitest-environment happy-dom` header + `mount` from `@vue/test-utils`
+- **`tests/helpers.ts`:** `installStorageMock()` stubs a real `localStorage` global via `vi.stubGlobal` (no module mocking); `seedStorage(key, value)` arranges raw values (corrupt JSON, edge cases)
 - **Component test boilerplate:** `createI18n({ legacy: false, locale: 'en', messages: { en } })` from `app/i18n/locales/en.json` + `createRouter` with `createMemoryHistory`; `vi.mock` for `useNow` (hoisted ref for clock control) and `notifications` (foreground handlers)
-- `vitest.config.ts` has `vue()` + `AutoImport({ imports: ['vue', { 'nuxt/app': ['useLocalePath', 'useRoute', 'useRuntimeConfig'] }] })` — components get Vue auto-imports in tests, and the Nuxt composables they call inline resolve from the `nuxt/app` module; **mock that module per test file** (`vi.mock('nuxt/app', ...)` — the real module needs the Nuxt build context and cannot load in vitest, so full mocks are the norm) — other Nuxt APIs (`navigateTo`, …) are still NOT available in tests
-- **No Nuxt auto-imports in tests, so anything a component/page pulls in implicitly must be imported explicitly in the SFC** or it is `undefined` at mount: pages import their components with relative paths (a page that only referenced a new component via Nuxt auto-import mounts fine in the app but silently renders nothing in vitest), and composables like `useFocusTrap` are imported where used (as `WizardModal`/`NameModal`/`SavingsModal` do) — forgetting it in a modal breaks every page test that mounts the page, so the component test file that mounts the modal directly is the fastest way to find it
-- Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~94/88/93/96). ESLint (10 + @nuxt/eslint) is configured; `npm run lint` must stay at 0 errors/warnings
+- **No Nuxt auto-imports in tests**, so anything a component/page pulls in implicitly must be imported explicitly in the SFC or it is `undefined` at mount — pages import their components with relative paths, and composables like `useFocusTrap` are imported where used; forgetting it in a modal breaks every page test that mounts the page
+- Coverage gate **enforced** at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it (last ~93/95/92/86). ESLint must stay at 0 errors/warnings
 
-## Git Hooks & CI
+## Docs Freshness: CHECK THIS ON EVERY TASK
 
-- **Pre-commit (`.husky/pre-commit`)**: `npx lint-staged` (eslint --fix on staged `*.{ts,vue,mjs}`; fails fast, no full-lint cost) → `npm test` (full suite + 80% coverage gate, enforced by vitest.config.ts). If commits feel heavy, the test line can move to a `pre-push` hook — CI gates merges regardless. Escape hatch: `git commit --no-verify` (rare)
-- **`.github/workflows/ci.yml`** — job **`ci`** on every PR (`pull_request`) + manual `workflow_dispatch`: `npm ci` (Node 26, npm cache) → `npm run lint` → `npx tsc --noEmit` → `npm test` → `npm run build`. No `push` trigger — everything lands via PR, so a branch push would only duplicate the PR run. `concurrency` cancels superseded runs on the same ref
-- **`.github/workflows/mobile-preview.yml`** — CD preview installers, `workflow_dispatch` only (previews are on-demand — `ci` already gates PRs and macOS runner minutes are expensive): **android** job (ubuntu) builds `assemblePreview` APK (debug-signed, sideloadable); **ios** job (macos-15) builds an unsigned simulator `.app`. A `platforms` input (android/ios/both) picks which jobs run. Artifacts are versioned from package.json (`so-i-quit-<version>-preview.apk` / `so-i-quit-<version>-simulator.app.tar.gz` — keep package.json in sync with `build.gradle` versionName + iOS `MARKETING_VERSION`). **iOS artifact is a single tar.gz, not a zip**: GitHub's download wrapper strips exec permissions (which breaks `.app` bundles), so the job ships `App.app` inside one tar.gz (`upload-artifact` v7 with `archive: false` keeps the raw archive — download → `tar -xzf so-i-quit-<v>-simulator.app.tar.gz` → `App.app`, permissions/symlinks intact). Signed iOS device/IPA builds need an Apple Developer account + certificate secrets (not yet wired)
-- **`.github/workflows/mobile-release.yml`** — CD signed release installers, `workflow_dispatch` only: **android** job (ubuntu) builds `assembleRelease` APK + `bundleRelease` AAB signed with the upload keystore, which materializes only inside the ephemeral runner from GitHub secrets (`ANDROID_KEYSTORE_B64` base64 + `ANDROID_KEYSTORE_PASSWORD`/`ANDROID_KEY_ALIAS`/`ANDROID_KEY_PASSWORD` → `android/so-i-quit-upload.jks` + gitignored `android/keystore.properties`, then `unset`). Never commit the keystore; keep the original outside the repo. Enable Play App Signing at publish time so the upload key stays recoverable. An iOS job (signed device IPA, Apple Developer account + certs) slots in here later. **Release asset = APK only** — the AAB is Play-Store-upload-only, never made available as a download (AABs can't be sideloaded)
-- **Branch protection on `master`** (PR merge target): required status check `ci`, strict (up-to-date before merge), enforced for admins — direct pushes to `master` are rejected, everything lands via PR
-- `prepare: "husky"` (package.json) re-installs the hooks on `npm install`; hooks live in `.husky/` (committed, `_/` gitignored)
+**At the end of every task that touches the codebase — structure, stack, conventions, features, scripts, tests, i18n, or roadmap — check whether these docs are stale and fix them in the same task/commit.** A new/renamed file or directory, a new dependency, a changed command or gate, a new locale, a changed convention, or a landed roadmap item all stale them. Stale docs cost more than the update. The files:
 
-## Key Decisions & Pitfalls
-
-### Always Mobile (the big one)
-- `ssr: false` is fixed — no branches, no flags. The web exists only for dev
-- **localStorage, never cookies:** the Capacitor WebView resets cookies on restart; color-mode and i18n both persist to localStorage
-- `nitro: { preset: 'cloudflare_pages' }` emits `dist/` — that is what Capacitor uses as `webDir`
-- **The app makes exactly one outbound request:** the update check against the GitHub releases API (see Updates below). Everything else stays on-device — no accounts, no sync, no telemetry
-
-### Shell & Page Scrolling
-- **The document never scrolls.** `layouts/default.vue` is a fixed-height column (`flex h-full flex-col overflow-hidden`) with `html, body { height: 100%; overflow: hidden }` and `#__nuxt { height: 100% }` — without the `#__nuxt` rule the shell falls back to `auto` and the pinned savings card floats mid-screen (measured). Each page owns its own scroll area instead, so the title never moves and switching tabs always opens at the top
-- Page skeleton: pinned `<header>` (+ the Habits add-chips) → top shadow band → scroll area → bottom shadow band → (Progress) the Total Savings card as the last flex item, landing exactly on the TabBar (`main` carries `pb-[calc(4rem+env(safe-area-inset-bottom,0px))]`, 4rem = the TabBar's height)
-- **`[&>*]:shrink-0` on every scroller is load-bearing:** flex children shrink by default, so 10 habits collapsed every `<article>` to 46 px and `scrollHeight === clientHeight` (measured — the "cut cards" bug). Keep it when adding a scroller
-- Scroller contract: `scroll-shadows min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4` + `data-testid="page-scroller"` (the structural-test hook). Never a trailing `pb-*`: padding is not content, so it would land outside the bottom mask and desync it — the trailing breathing room *is* the mask
-- **Scroll shadows are two layers, not the `background-attachment: local/scroll` recipe.** That recipe (CSS-Tricks classic, tried first) paints the shadow as a *background of the scroller*, i.e. **behind** the content — the demo reads well because its content is text, but over an opaque full-width card only a ~2 px sliver at the card's edge is visible (measured), i.e. "the shadow only shows over the page background". So the cover+shadow pair moved from backgrounds to elements: `.casts-scroll-shadow` (band between header and scroller) / `.casts-scroll-shadow-up` (band overlapping the scroller's tail through a negative top margin, so it costs no layout space) + `.scroll-shadows::before/::after` (opaque page-background masks stacked *above* them — `::before` absolute at the content's top, so it scrolls away; `::after` the last content item). No JS, no scroll listeners, no state
-- Mask (`z-20`) must stay above cast (`z-10`), both positioned. The `::after` mask also needs `flex-grow: 1`, so a page with nothing to scroll still masks the bottom band (without it Settings showed a phantom bottom shadow — measured)
-- Do not chase the end-of-scroll hairline with a `transform` on the mask: a transformed box extends the scrollable overflow, so the range grows by the same amount and the hairline moves with it (measured). Known limit: at the very end of the scroll the bottom band can leave a ~1 px hairline, because Chromium's integer scroll range can over-scroll by the fractional part of `scrollHeight`. Fading the band's tail hides it but then the shadow reads as stopping ~1 px short of the next element — flush against that element wins
-- `HabitMenu` flips upward near a clipped bottom edge: `app/utils/popover.ts` holds the pure geometry (`opensUpward(trigger, panel, viewport)`, `POPOVER_GAP`) and the component measures against its nearest scroll area (`findScrollArea()`)
-
-### Locale Persistence (i18n-persist plugin)
-- With `prefix_except_default` the active locale lives in the **URL**, and the WebView always boots at the root URL → without the plugin, language resets every launch
-- `app/plugins/i18n-persist.client.ts` mirrors locale to `settings-v1` and, on boot at `/`, redirects to the saved locale's prefix (`replace`, so the boot URL doesn't linger in history and the first hardware-back press exits instead of bouncing to `/`). The async plugin defers mount until the redirect lands — no flash of the default locale
-- `detectBrowserLanguage: false` in nuxt.config — the module's cookie-based detection is useless in the WebView
-
-### i18n Interpolation
-- `{name}` not `{{name}}` — vue-i18n rejects mustache as a nested placeholder (error code 9). The smoke test guards every locale file
-
-### Native Date/Time Inputs
-- `<input type="date">` / `<input type="time">` open the native pickers inside the WebView (Android and iOS) — the wizard is a stepper modal with native inputs, `max="today"` via the `max` attribute. The iOS-safe CSS in `main.css` hides Chromium-only spinner pseudo-elements (excluded on iOS via `@supports not (-webkit-touch-callout: none)`)
-- **iOS uses an overlay pattern, not CSS**: WKWebView renders temporal inputs from UA shadow-DOM rules that are NOT stylable — `::-webkit-datetime-edit*` pseudo-element rules are dead in the WebView (verified with colored probes: input-level rules apply, pseudo rules don't) and the intrinsic sizing differs per iOS version (18: tiny/date≠time widths; 26: oversized/overflowing). `WizardModal.vue` therefore renders, on iOS only (`Capacitor.getPlatform() === 'ios'`), an invisible native input (`absolute inset-0 opacity-0` — keeps the picker + v-model + max) stretched over a styled div that shows the value via `Intl` (2-digit pattern; components-built Date to avoid UTC day-shift). Android/browser keep the plain native input
-- **Never `appearance: none` on iOS** — it disables tap-to-open the picker
-
-### Notifications
-- Exact alarms: `SCHEDULE_EXACT_ALARM` in the manifest; Android 12+ special access checked via `checkExactNotificationSetting()`; if denied → hint component + inexact fallback
-- The exact-alarm prompt chains right after the milestone opt-in "Enable" (permission granted AND exact denied → `ExactAlarmDialog` with Skip / Go to settings — never when the OS permission was refused). "Go to settings" opens the OS screen; the dialog stays open and the foreground listener re-checks on return — granted → dismiss + cancel/reconcile all schedules (Android keeps already-scheduled alarms inexact, so they are rebuilt as exact). Skip never re-prompts; the Settings hint remains as fallback
-- OS permission revoked → cancel pending; restored → reconcile (same semantics as the RN app)
-- App foreground is tracked via `App.addListener('appStateChange')` — DOM `visibilitychange` alone is unreliable in the WebView (the DOM visibility doesn't change when the app backgrounds)
-- Tap on a notification routes to Progress, including cold starts (the plugin retains the launch intent action until the JS listener registers)
-- Notification ids: deterministic djb2 hash → `reconcileHabitNotifications` can rebuild the expected id and check it against pending without storing a map
-
-### Backup / Export-Import (Settings → Data)
-- Export serializes `habits` + `milestones-v1` + `slips-v1` + `settings-v1` into one **versioned** JSON (`BACKUP_VERSION` = 2 in `app/utils/backup.ts`; v1 files still import, their missing `slips` defaulting to empty): native = `Filesystem.writeFile` to Cache + Share sheet; web = Blob download. Filename is timestamped (`so-i-quit-backup-YYYYMMDDHHMMSS.siqb`, `backupFilename()`); the share dialog title is localized (`settings.exportShareDialog`)
-- Import is a hidden `<input type="file">` — the WebView opens the native system picker automatically, no plugin API needed (Filesystem has no `pickFiles` in v8); `parseBackup` never throws — any shape/version problem → `{ ok: false, error }` and nothing is written until the ConfirmDialog confirm
-- **After import:** pending notifications from the old dataset are cancelled; the imported notification settings are **re-validated against the OS** — permission not granted (fresh install `undetermined` or revoked) → re-ask, and **schedules are rebuilt only after the permission is confirmed** (no dead schedules); enabling notifications via the Settings toggle also reconciles immediately, not on the next Progress boot. Android 12+ exact-alarm access denied → `ExactAlarmDialog` re-asks (same pattern as the habit opt-in: plain `exactAlarmVisible` ref; Go-to-settings re-checks on foreground, Skip leaves the inexact schedules). The re-ask state lives in a module-level singleton (`useExactAlarmPrompt`) so a mid-chain page re-creation (tab switch / `setLocale` navigation) cannot lose it; a `sessionStorage` flag (`pending-exact-reask`) re-surfaces it after a WebView reload. The enable/disable/rebuild chains and the re-ask state are shared via the `useMilestoneNotifications` composable — the three pages (habits, settings, progress) hold only their own UI state (snackbars, haptics, denied flags, OS-permission sync refs). Imported `settings.theme` is applied to color-mode (`themeMode.setTheme`) and `settings.language` to the URL locale — the selector alone reads the settings ref, the live theme/locale need the explicit sync
-
-### Haptics & Sentry (Ticket 12)
-- `app/utils/haptics.ts` wraps `@capacitor/haptics` behind the same native guard as notifications (browser = silent no-op). Feedback map: **light** on tab presses (`pointerdown`), **medium** on primary confirmations (wizard confirm, savings save, opt-in Enable, exact-alarm Go-to-settings, ConfirmDialog confirm — delete/relapse, add-custom-habit, empty-state CTA), **success** notification feedback when a milestone celebration is queued (watcher on the queue in `app/pages/index.vue`)
-- Sentry is **opt-in**: `NUXT_PUBLIC_SENTRY_DSN` feeds `runtimeConfig.public.sentryDsn`; without a DSN `plugins/sentry.client.ts` returns early (no SDK init, no network). The Vue integration installs the global error handler; `components/ui/ErrorBoundary.vue` wraps `<NuxtPage />` in the layout — render crashes show a branded fallback (+ reload) and report once (`errorCaptured` returns `false` to stop bubbling). Note: the SDK still ships in the bundle without a DSN
-
-### Milestone Ring Animation
-- Fill is driven by the **Web Animations API** (`el.animate` on `strokeDashoffset`), not CSS transitions — Chromium starts SVG presentation-attribute transitions from 0 on insert ("shrink from 100%" flash), and they can be swallowed if the attribute lands before first paint
-- The ring mounts empty and animates up; data arriving later re-animates from the current offset (no full-ring flash)
-- Test selector for the fill bar: `circle.stroke-primary-hover` (the class is a token, `stroke-success` was renamed)
-
-### Page Transitions & Entrances (Combo A)
-- **Crossfade, `out-in`**: `app.vue` passes `<NuxtPage :transition="{ name: 'page', mode: 'out-in' }" />`; the `page-*` classes live in `main.css`. **Opacity-only on purpose** — a transform/filter on the page root would make it the containing block of fixed descendants, so the pinned TotalSavingsCard on Progress would jump mid-animation. `out-in` keeps one page mounted at a time (pages never stack), at the cost of a quick bg-colour blink between phases (invisible — pages are transparent over the shell bg)
-- **Staggered card entrance**: `.enter-rise` (rise-in keyframes: fade + 10px rise, 350ms `cubic-bezier(0.16,1,0.3,1)`, `backwards` fill so delayed cards stay hidden during their wait). Applied with an inline `animation-delay` of `index * 45ms` on page mounts: header 0ms → chips 45ms → cards 90ms+ → pinned savings card 90ms. Runs once per mount (CSS animations don't replay on re-render; keyed v-for keeps them inert on list edits). **Gotcha:** fill mode is `backwards`, never `both`/`forwards` — a finished fill-mode animation stays applied and keeps every card a permanent stacking context, which trapped the habit-menu dropdown (absolute z-50) behind the next card (a sibling stacking context later in DOM order)
-- **TabBar sliding pill**: a `w-1/3` track absolutely positioned in the fixed nav, `translateX(activeIndex * 100%)` with `transition-transform duration-300` — glides between tabs; the pill visual inside carries the `mx-2` margins so the translate stays cell-aligned. Boot always lands on tab 0 (root URL), so no initial slide
-- **HabitMenu dropdown**: same zoom language as the modals at smaller amplitude — `<Transition>` fade + `scale-95 → 100`, `origin-top-right` (grows from the ⋮ button), `duration-150 ease-out` enter / `duration-100 ease-in` leave, `motion-reduce:transition-none`
-- **Reduced motion**: `@media (prefers-reduced-motion: reduce)` in `main.css` kills the page transition and `enter-rise`; the pill uses `motion-reduce:transition-none` (Tailwind variant)
-- Locale switches on the same page (e.g. `/pt` → `/en` on Settings) reuse the page component — no remount, no transition (text updates in place); that is intentional
-
-### Hardware Back Button (Android)
-- Android-only: iOS has no hardware back button (`App.addListener('backButton')` never fires there — the listener is a safe no-op; the iOS system swipe-back gestures are handled by the WebView natively)
-- The WebView does **not** navigate history on back: without a `backButton` listener the OS default applies and the app is sent to the background even when the router can go back. A root listener in `app.vue` resolves every press: overlays first → `router.back()` → `App.exitApp()`
-- Overlays register a handler in a **LIFO stack** (`app/utils/back-handler.ts`, RN `BackHandler`-style) while visible: the wizard steps back (savings→datetime→cancel), `ConfirmDialog` dismisses (covers delete + relapse), `NameModal`/`SavingsModal`/pickers/opt-in/menu close. `handleBackButton()` is called by the root listener and by component tests
-- `SavingsModal` and `NameModal` take a `handle-back` prop because the wizard renders `SavingsModal` for its savings step and owns back handling itself (step back, not dismiss); the always-mounted instances on the Habits screen pass it, so back dismisses them like Cancel
-- `canGoBack` comes from the native event (WebView history). Tab switches push history via `NuxtLink`, so back walks the tabs; at the root it exits
-- The i18n boot redirect uses `navigateTo(..., { replace: true })` — a push would leave a phantom `/` entry making the first back press bounce instead of exit
-
-### Icons & Splash
-- Master art: `assets/icon.svg` (rounded, full-bleed). `assets/` holds the derived SVG variants + rendered 1024²/2732² PNG sources; `npm run mobile:icons` (`scripts/generate-icons.sh` → rsvg-convert → `@capacitor/assets generate --android --ios`) regenerates every density. Re-run it after editing any master. The script also renders `public/apple-touch-icon.png` (180², from icon-ios) and `assets/ios/icon.png`
-- **Adaptive foreground** = pulse line + dot only on transparent, baked into the center safe zone (`icon-foreground.svg` scales the line 0.82×); the tool wraps it in a 16.7% inset → final art ≈44% of the icon, safely inside the mask
-- **Gotcha:** the tool's generated `ic_launcher*.xml` insets the **background** 16.7% too — on squircle masks that leaves a launcher-default rim around the gradient. The committed XMLs drop the background inset (gradient fills the full 108dp layer); keep it that way when regenerating (the tool will re-add it — re-patch after `mobile:icons`)
-- **Gotcha:** `@capacitor/assets` also re-parses `AndroidManifest.xml` on every run and rewrites it cosmetically (self-closing tags, whitespace). Functionally identical — revert the manifest with `git checkout` after `mobile:icons` if you don't want that churn in the diff
-- **iOS variant** (`assets/icon-ios.svg`) is the square master with **no baked rounded corners** — Apple applies its own mask. It feeds `assets/ios/icon.png` (the @capacitor/assets iOS override — the root `icon-ios.png` is NOT consumed for the AppIcon, only for the web `apple-touch-icon`) and the web favicon `public/icon.svg`
-- **Splash:** `assets/splash.svg` (light) + `assets/splash-dark.svg` (dark-mode variant) → `splash.png`/`splash-dark.png` (2732²). iOS LaunchScreen.storyboard uses `scaleAspectFill` with the light image; the dark variant is registered in the `Splash.imageset` `Contents.json` under the `luminosity: dark` appearance so iOS picks it automatically in dark mode
-
-### Launch splash (no fixed duration, no fade)
-- **The splash is the launch theme's window background — nothing else.** `AppTheme.NoActionBarLaunch` sets `android:windowBackground = @drawable/splash_screen` — a `layer-list` of the brand gradient (`@drawable/splash_bg`, light + `drawable-night/`) with the pulse logo centred at `@dimen/splash_logo_size`. The **system paints that from the process's first frame**, i.e. before any Java runs, so the logo is on screen *instantly* and can never appear late. It is static art and the app window replaces it when it loads — a cut, on purpose (see below)
-- `SplashActivity` then hands off on its **first drawn frame** (`OnPreDrawListener` → post → `startActivity`): **no hold** (the old 1200 ms delay is gone). It keeps `noHistory`, the back-press exit, and the launch-intent (action + extras) forwarding to MainActivity so **notification cold-start taps keep working**
-- **No activity transition:** both windows show the same art, so the launch theme sets `android:windowAnimationStyle=@null` (values + values-night) and `SplashActivity` overrides it to nothing as well (`overrideActivityTransition(…, 0, 0)` on API 34+, `overridePendingTransition(0, 0)` below) — the default slide/zoom only reads as a jump when the art either side is identical
-- **No fade, no overlay — twice attempted, twice reverted.** (1) An overlay view above the WebView, first as a child of `android.R.id.content` then of the window decor: **never rendered on device** (the art that stayed on screen was always the static window background), so the logo beat and the fade-out on that view were invisible and all the user ever saw was art → app. (2) `WebView.setAlpha(0f)` + an alpha cross-fade over 260 ms driven by an app-local `AppSplash` plugin on the app's mount signal, gated on the WebView's first frame: correct in theory (the WebView *is* the app, so its alpha animation must be visible proof of the bug being fixed) but **invisible on device and then flaky** — one launch came up with no art at all. Both were removed; the WebView is opaque and replaces the art as soon as its window draws, which is the hand-off. **Do not reintroduce a splash view above the WebView, and do not gate the hand-off on a web signal**
-- **The splash logo is static art on purpose and cannot animate.** An entrance animation has to start invisible, but the logo is painted from frame 1 by the window background — so a fade/scale-in reads as the logo *arriving late*, which is the bug this whole design evolved from
-- **iOS has no overlay** — Apple dismisses the launch storyboard as soon as the app's first frame is ready (already duration-free) and its `Splash` imageset cannot animate. A fade there needs an app-local Swift overlay or `@capacitor/splash-screen` (`launchShowDuration: 0` + `fadeOutDuration`); neither is wired
-- **Recents/task-overview title:** the task title comes from the **root activity's** label — the launcher. SplashActivity must keep a non-empty `android:label` (`@string/app_name`); an empty `android:label=""` blanks the Recents card title (icon only) even after MainActivity takes over
-- `windowSplashScreenBackground` (`@color/splash_background`, `#1A6B5C`) still colors the Android 12+ system splash on devices where it renders (before SplashActivity) — it now only covers the pre-window gap; `windowSplashScreenAnimatedIcon` is **transparent** — HyperOS renders the splash icon duplicated on top of the window (the "3 copies" bug: 2 distorted icons in the header + the window image)
-- **Gotcha:** the core-splashscreen library (`Theme.SplashScreen`) **overrides `android:windowBackground` with a solid color** (`compat_splash_screen_no_icon_background`) — the Capacitor template's `android:background=@drawable/splash` is the wrong attribute and never renders. The launch theme must set `android:windowBackground` (after the parent) to show the splash art
-- `MainActivity` has no intent-filter (`exported=false`, `singleTask`) and keeps `AppTheme.NoActionBarLaunch`, so the branded backdrop stays behind the WebView while it loads (no flash, no blank window) and the web app paints over it as soon as it is ready
-- `@capacitor/splash-screen` was **tried and removed** — on Android 12+ its launch splash is still the system one (icon + color), which Xiaomi ignores in dark mode
-- **The generated `res/drawable*/splash.png` densities are no longer referenced on Android** (the backdrop is `@drawable/splash_bg`, the logo `splash_logo.png`; the composites still feed iOS). `npm run mobile:icons` keeps regenerating them and aapt still packages them (~2.6 MB — `shrinkResources` is off): delete them in the script or enable shrinking to reclaim it
-- **iOS launch screen:** Apple always shows the system launch screen (no OEM problem). The `LaunchScreen.storyboard` (generated by `cap add ios`) references the `Splash` imageset with `scaleAspectFill`; `@capacitor/assets generate --ios` fills it (light + dark from `splash.svg`/`splash-dark.svg`) and updates the `Contents.json`
-
-### System bars follow the in-app theme (status + navigation)
-- **The light-grey nav-bar band:** with `targetSdk 36` on Android 15+, edge-to-edge is **enforced** — `statusBarColor`/`navigationBarColor` are ignored and the bars render transparent over the page. What paints the light-grey band behind the gesture pill / 3-button keys is the system's **nav-bar contrast scrim** (`navigationBarContrastEnforced`) — and on Xiaomi/HyperOS (verified Android 16) it is a **fixed light band that ignores the icon appearance, the app theme, `theme-color` meta, and CSS `color-scheme`** (verified empirically: white icons + light band; a plain black WebView page still gets the band; even Rekup, another Capacitor app, shows it). The scrim sits on top of the app content (dark page + ~80% white scrim = the grey band).
-- **`@capacitor/status-bar` is NOT enough:** its `setStyle` only flips the **status** bar icons (`setAppearanceLightStatusBars` — verified in the capacitor-plugins source); the navigation bar keeps the theme-derived appearance. And on Android 16+ its `backgroundColor`/`overlaysWebView` are dead (edge-to-edge enforced).
-- **Fix:** app-local `SystemBarsPlugin` (`android/app/src/main/java/com/soiquit/app/`) with one `setTheme({ dark })` method — two independent levers:
-  - `WindowInsetsControllerCompat.setAppearanceLightStatusBars/NavigationBars(!dark)` — flips the **icon** color on both bars (the OS's own uiMode is irrelevant once this runs).
-  - `window.setNavigationBarContrastEnforced(false)` (API 29+) — kills the **scrim**, letting the app's own background show through (this is the actual band fix on Android 15+; without it the dark page keeps a light band no matter what the icons/theme do).
-  - `setStatusBarColor`/`setNavigationBarColor` to the app surfaces (`#0F0E0D`/`#F7F6F3`) **below Android 15** where solid bars still apply.
-- **Theme gotcha:** `BridgeActivity.onCreate` calls `setTheme(R.style.AppTheme_NoActionBar)` (Capacitor's own style — parent `Theme.AppCompat.NoActionBar`), overriding the manifest theme on MainActivity at runtime. `values-night/styles.xml` (dark `AppTheme.NoActionBarLaunch` + dark `windowBackground` via `drawable-night/splash_bg.xml`) therefore only affects `SplashActivity` (a plain Activity) — keep it for the dark launch backdrop, don't expect it to theme the WebView window.
-- **App-local plugins are NOT auto-discovered** (auto-discovery covers node_modules plugins via `assets/capacitor.plugins.json` generated by cap sync) — register explicitly in `MainActivity.onCreate` **before** `super.onCreate`: `registerPlugin(SystemBarsPlugin.class)`. No `cap sync` needed for app-local Java (compiled by gradle directly).
-- **Calling a custom plugin from JS:** v8 has no public `Capacitor.Plugins` — use `registerPlugin<SystemBars>('SystemBars')` from `@capacitor/core`. Guard with `Capacitor.isNativePlatform()` + `Capacitor.isPluginAvailable('SystemBars')` (false on iOS — the plugin isn't registered there, so the wrapper is an Android-only no-op). Wrapper: `app/utils/system-bars.ts`; watcher: `app/plugins/system-bars.client.ts` (client plugin watching `useColorMode().value`, applies on boot + every change).
-- **iOS: no band, but the status bar text needs the same sync.** iOS has no nav-bar contrast scrim — the home indicator auto-contrasts and the app content shows through behind it, so there is no "light-grey band" class of bug. The only lever is the **status bar text style**, which does NOT follow the in-app theme: a dark page keeps the default dark status text (unreadable). `applySystemBarTheme` branches on `Capacitor.getPlatform() === 'ios'` and calls `StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light })` via **@capacitor/status-bar** (works on iOS; on Android 15+ it's dead for the nav bar, which is why Android uses the app-local plugin). Keep the Info.plist `UIViewControllerBasedStatusBarAppearance = true` — that is what lets the plugin control the style. Re-run `npx cap sync` after touching the plugin list (StatusBar is a node_modules plugin, auto-discovered).
-
-### Version sync
-- **`package.json` `version` is the single source of truth.** The app shows it via `nuxt.config.ts` (`appVersion: pkg.version` → `useRuntimeConfig().public.appVersion`); `android/app/build.gradle` derives `versionCode` from `versionName` at config time; `ios/.../Info.plist` reads `$(MARKETING_VERSION)`. Never hand-edit the four in parallel — use the script.
-- **`npm run version:bump <new|major|minor|patch>`** writes `package.json` + `package-lock.json` (root + `packages[""]` — `npm ci` fails if these drift) + `android/app/build.gradle` `versionName` + `ios/.../project.pbxproj` `MARKETING_VERSION` (Debug + Release) in one shot. Add `--dry-run` to preview. It does **not** touch `CURRENT_PROJECT_VERSION` (the iOS store build counter) — bump that by hand when you actually upload.
-- **`npm run version:check`** exits 1 if the four have drifted — wire it into CI (e.g. a step before `npm ci`) or a pre-commit guard so a missed platform can't ship.
-- The component test `tests/component/settings.test.ts` mocks `appVersion: '1.1.0'` — update that literal only if you change the *expected displayed* string, not on every bump.
-
-### Updates (GitHub releases)
-- **One outbound request:** `app/utils/updates.ts` reads `api.github.com/repos/emachado88/so-i-quit/releases/latest` (unauthenticated — 60 req/h/IP, hence the throttle). It is the app's only network call
-- **Throttle:** automatic (app-start) checks run at most once per 24 h, tracked in its own localStorage key `"update-check-v1"` (`{checkedAt}`) — deliberately **not** a field of `settings-v1`, so a check timestamp never travels inside a backup. **Only a successful response writes the timestamp**: an offline boot must not swallow the next 24 h of attempts. The Settings button calls `check(version, { force: true })`, which always runs a fresh check
-- **Dev skip:** `import.meta.dev` short-circuits the *automatic* check (dev server + `mobile:live`); the forced manual check still runs, so the flow stays exercisable in the dev loop
-- **Banner, not a system notification — on purpose:** an OS local notification would need `POST_NOTIFICATIONS`, which is only requested for milestone notifications, so a user who never enabled those could never be told about an update. The banner is the first item of the shell column (in-flow, **not** fixed): no z-index at all, so it can never tie with or cover the TabBar/snackbar scale
-- **Version compare is dependency-free** (`app/utils/version.ts`, no `semver`): releases are tagged `vX.Y.Z` while package.json holds `X.Y.Z`, so `normalizeVersion` bridges them; a prerelease ranks below its release; drafts/prereleases are never offered as updates
-- **Download + install are native** (`ApkInstallerPlugin`, registered in `MainActivity.onCreate` like `SystemBarsPlugin`): the APK is streamed from a background thread into `getContext().getCacheDir()` and the installer is fired through `FileProvider` (`${applicationId}.fileprovider`, already declared; the `cache-path` entry in `res/xml/file_paths.xml` covers the file). Doing it natively keeps a ~20 MB binary out of the bridge (no base64 round-trip) and avoids CORS — GitHub redirects release assets to a host that sends no `Access-Control-Allow-Origin`. JS only wraps it (`app/utils/update-install.ts`)
-- **`REQUEST_INSTALL_PACKAGES`** is in the manifest — Android 8+ prompts "allow installs from this source" the first time
-- **Android only:** iOS is out of scope (no sideloading — the App Store owns updates). Wherever `isApkInstallSupported()` is false (web dev loop, iOS) the Download action opens the release page instead
-- **Release assets:** the installable one is `so-i-quit-<version>-release.apk`; `pickApkAsset` prefers it over `-preview.apk` and ignores the simulator `.app.tar.gz`
-- **Failures never block:** offline / rate-limited / API error → `{ status: 'error' }` — the Settings section says so, the app-start check is silent. A failed download returns the state to `available`, so the banner stays on offer for a retry
-
-### Misc
-- **Overlay z-scale (single source):** `z-50` TabBar → `z-[60]` modal layer (every `fixed inset-0` backdrop: wizard, savings, name, confirm/relapse, opt-in, exact-alarm, lang/currency pickers — plus the HabitMenu scrim + dropdown) → `z-[70]` transient feedback (Snackbar, CelebrationToast). Everything above the TabBar blocks it by design: a modal backdrop covers the tab strip, so the modal's own buttons are the only way out. Never add a new `z-50` overlay — it ties with the TabBar and, being earlier in DOM order, paints under it. (The scroll-shadow mask/cast pair is a *separate* local scale, `z-20`/`z-10` inside the page flow — not part of the overlay scale. The update banner is **in-flow** at the top of the shell, so it carries no z-index at all and can never tie with this scale)
-- **Wizard persists only on finish:** the new-habit wizard holds `key`/`name` in the wizard state and calls `addHabit` in `handleWizardFinish` — a cancelled, tab-switched, or app-killed wizard never leaves a dateless habit in localStorage. Reset/edit update the existing habit on finish only; Cancel is a pure close
-- **Slips are cleared by streak resets, never the reverse:** the reset (relapse) flow drops every slip for the habit, editing the quit date drops slips dated before the new date (`clearPastSlips`), and deleting a habit drops them with the milestones. A slip is a passive log — it never restarts the streak or re-schedules milestones. `HabitCard` shows `I slipped` (→ `SlipLogModal`, date-only) beside `Log relapse`; `HabitMenu` → `Manage slips` (→ `SlipsModal`, edit/delete with a confirm); the Progress card's red `<count> ⓘ` opens the same modal read-only
-- **Modals are always-mounted + `visible` prop** (never `v-if` at the call site — an unmounted component can't play its leave animation). Each modal owns a `<Transition>` around its backdrop root: enter `opacity-0 scale-105 → opacity-100 scale-100` (zoom out-in), leave the reverse (zoom in-out), `duration-200 ease-out` / `duration-150 ease-in` — Tailwind utilities, no CSS. `ConfirmDialog` follows the same pattern (`visible` prop + watch-based back handler). Note Tailwind v4 `scale-*` uses the CSS `scale` property — the `transition` utility covers it, arbitrary `transition-[…]` lists do not
-- **Total savings card is pinned above the tab bar** — the last flex item of the page column (not `fixed`, no `z-40`), with the scroll area above it taking the remaining height; it lands flush on the TabBar thanks to the layout `main`'s bottom padding
-- **Renaming is custom-habits only:** `HabitCard` passes `:is-custom="!habit.key && Boolean(habit.name)"` to `HabitMenu`, which renders the "Edit name" entry only then — a standard habit's label comes from its `key` (`habits.alcohol` via `getHabitName`), so renaming it would be overwritten on the next render. `NameModal` (i18n namespace `name.*`) mirrors `SavingsModal`: always-mounted + `visible` prop, `handle-back`, Confirm disabled until the text actually changes, save trims and refuses an empty name (light haptic), and the page persists it with `updateHabit(id, { name })` — `key` is never written, so a renamed custom habit stays keyless. A failed write surfaces `name.failedToUpdateName` in the Snackbar (same corrupt-JSON path as `getHabits`)
-- **Sanitized inputs must write back to the DOM element:** `SavingsModal` keeps the amount in `localValue` and renders `:value="localValue"`, but Vue skips patching an unchanged value — typing `abc` into an empty field (or a 3rd decimal once the limit is hit) sanitizes to the string the state already holds, so nothing re-renders and the rejected characters stay on screen while the state disagrees with the field. `handleInput` writes the sanitized text back to `event.target.value` before updating the ref. Any controlled input with a value transform needs that write-back
-- Milestone chips scroll fade uses a **pseudo-element** (`::after` gradient), not an overlay element
-- `capacitor.config.ts` reads `CAP_LIVE_URL` — dev-only; sets the dev appId/name, `server.url` + `cleartext: true`. Never commit a URL
-- Android build variants: `debug`, `preview` (debug-keystore-signed for sideload/QA), `release` — `mobile:apk:preview`/`mobile:apk:release` call gradle directly. `release` signs **only** when `android/keystore.properties` exists (gitignored, read by `build.gradle`; CI writes it from secrets in `mobile-release.yml`) — otherwise the APK/AAB is unsigned and sideload fails with "package appears to be invalid" (that's the preview variant's job). iOS has no variants: the CI builds an unsigned simulator `.app`; device/IPA builds need Apple signing (secrets) — see `mobile-preview.yml`
-- npm 11 blocks esbuild/sharp postinstall — `allowScripts` entries in package.json + `npm rebuild esbuild` after fresh installs (sharp needed by @capacitor/assets)
-- **WebView zoom is disabled on purpose** — the viewport in `nuxt.config.ts` carries `maximum-scale=1, user-scalable=no` + `touch-action: manipulation` in `main.css` (kills pinch AND double-tap zoom). Safari ignores `user-scalable=no` since iOS 10, but **WKWebView honors it** — do not remove these "because Safari ignores them", the WebView is the product
-- `appId com.soiquit.app` is a placeholder — confirm before Play Store / App Store release
-
-## Docs Freshness — CHECK THESE ON EVERY TASK
-
-**At the end of every task that touches the codebase — structure, stack, conventions, features, scripts, tests, i18n, or roadmap — check whether `AGENTS.md` and `README.md` need updating, and update them in the same task/commit if they do.** If the task adds/renames a file or directory, adds a dependency, changes a command, adds a locale, changes a convention, or lands a plan ticket, the docs are probably stale and must be fixed before the task is considered done. Stale docs cost more than the update. Keep the plan file (`.hermes/plans/2026-08-10_114400-rewrite-nuxt-cap.md`) `[DONE]` markers accurate too.
+| File | Audience | Covers |
+|---|---|---|
+| `README.md` | humans | features, stack, getting started, structure, license |
+| `AGENTS.md` | agents | the short contract — overview, stack, structure, conventions, commands, testing |
+| `docs/architecture.md` | agents | always-mobile, data layer, i18n, notifications |
+| `docs/ui-shell.md` | agents | shell & scrolling, transitions, modals/z-scale, back button, date inputs, ring animation |
+| `docs/features.md` | agents | slips, rename, backup/export-import, in-app updates |
+| `docs/android-native.md` | agents | launch splash, system bars, icons/splash, haptics, Sentry |
+| `docs/build-and-release.md` | agents | commands, hooks/CI, version sync, build variants, CD pipelines |
+| `docs/QA-CHECKLIST.md` | QA | manual checklist vs screens + overlays |
 
 ## Roadmap
 

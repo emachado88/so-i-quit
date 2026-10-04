@@ -1,7 +1,7 @@
-# QA Checklist — So I Quit (Nuxt 4 + Capacitor rewrite)
+# QA Checklist — So I Quit (Nuxt 4 + Capacitor)
 
-> Visual contract: `docs/ui-sketch.html` (screens `progress`, `progress-empty`, `habits`,
-> `settings`; overlays `wizard-date`, `savings`, `optin`, `delete`, `slip-log`, `slips`).
+> Screens `progress`, `progress-empty`, `habits`, `settings`; overlays `wizard-date`, `savings`,
+> `optin`, `delete`, `slip-log`, `slips`.
 > Run against the browser dev loop (`npm run dev`) and the Android APK
 > (`npm run mobile:apk:preview`). Mark **P**ass / **F**ail / **N**ot-applicable per row.
 > Every fix must re-run `npm test`, `npm run lint`, `npx tsc --noEmit` before re-testing.
