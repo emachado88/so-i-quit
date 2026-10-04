@@ -1,7 +1,7 @@
 # QA Checklist — So I Quit (Nuxt 4 + Capacitor rewrite)
 
 > Visual contract: `docs/ui-sketch.html` (screens `progress`, `progress-empty`, `habits`,
-> `settings`; overlays `wizard-date`, `savings`, `optin`, `delete`).
+> `settings`; overlays `wizard-date`, `savings`, `optin`, `delete`, `slip-log`, `slips`).
 > Run against the browser dev loop (`npm run dev`) and the Android APK
 > (`npm run mobile:apk:preview`). Mark **P**ass / **F**ail / **N**ot-applicable per row.
 > Every fix must re-run `npm test`, `npm run lint`, `npx tsc --noEmit` before re-testing.
@@ -38,6 +38,9 @@
 | 2.5 | Card menu: edit date / edit savings / delete — each opens the right dialog with pre-filled values | ☐ |
 | 2.5b | Card menu shows **Edit name** only for custom habits (never for Alcohol/Tobacco); renaming pre-fills the current name, Confirm stays disabled until it changes, Save updates the card, Cancel/back leave it untouched | ☐ |
 | 2.6 | **Relapse** (Log relapse) resets date/savings; confirms before acting | ☐ |
+| 2.6b | **I slipped** opens a date-only dialog (defaults to today, future blocked); logging adds a slip without touching the streak, date or savings | ☐ |
+| 2.6c | Card menu → **Manage slips**: lists slips (newest first), inline edit of the date persists, delete asks for confirmation | ☐ |
+| 2.6d | Logging a **relapse** clears the habit's slips; **editing the quit date** clears slips dated before it | ☐ |
 | 2.7 | **Delete** shows destructive ConfirmDialog; cancel keeps the card | ☐ |
 | 2.8 | After the 1st wizard → milestone **opt-in dialog** appears (Enable / Not now) | ☐ |
 | 2.9 | Hardware back steps: savings → datetime → close (wizard); dialogs dismiss on back | ☐ |
@@ -54,6 +57,7 @@
 | 3.5 | Crossing a milestone → celebration toast queues (in-app); multiple crossings queue in order | ☐ |
 | 3.6 | With no habits → redirect to Habits (or empty state) — never a blank screen | ☐ |
 | 3.7 | Toast gates on app foreground: no toast while backgrounded, toast on resume (if not notified) | ☐ |
+| 3.8 | A habit with slips shows a red `<count> ⓘ`; the ⓘ opens a read-only slips list (no edit/delete affordances) | ☐ |
 
 ## 4. Settings screen
 
@@ -107,6 +111,7 @@
 | 7.10 | No shadow bleeds above or behind the pinned header (over the safe-area strip) | ☐ |
 | 7.11 | Switching tabs opens the new page at the top (no inherited scroll offset) | ☐ |
 | 7.12 | Habit card menu (⋮) near the bottom of the list opens upward instead of being clipped | ☐ |
+| 7.13 | Export → import round-trips habits, milestones, slips and settings; importing a **v1** backup (no slips) still succeeds | ☐ |
 
 ## 8. Final
 

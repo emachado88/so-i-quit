@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useMilestoneNotifications } from '../composables/useMilestoneNotifications'
-import { getHabitName } from '../utils/domain'
+import { formatDate, getHabitName } from '../utils/domain'
 import { addHabit, deleteHabit, getHabits, updateHabit } from '../utils/habits'
 import { impact, ImpactStyle } from '../utils/haptics'
 import {
@@ -12,6 +12,14 @@ import {
   getMilestonesForHabit,
 } from '../utils/milestones-store'
 import {
+  addSlip,
+  clearPastSlips,
+  deleteSlip,
+  deleteSlipsForHabit,
+  getSlipsForHabit,
+  updateSlip,
+} from '../utils/slips-store'
+import {
   addAppForegroundListener,
   cancelHabitNotifications,
 } from '../utils/notifications'
@@ -19,7 +27,7 @@ import {
   getSettings,
   saveMilestoneNotificationsPrompted,
 } from '../utils/settings'
-import type { Habit } from '../utils/types'
+import type { Habit, Slip } from '../utils/types'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import Snackbar from '../components/ui/Snackbar.vue'
 import HabitCard from '../components/habits/HabitCard.vue'
@@ -27,10 +35,12 @@ import MilestoneOptInDialog from '../components/habits/MilestoneOptInDialog.vue'
 import NameModal from '../components/habits/NameModal.vue'
 import RelapseConfirm from '../components/habits/RelapseConfirm.vue'
 import SavingsModal from '../components/habits/SavingsModal.vue'
+import SlipLogModal from '../components/habits/SlipLogModal.vue'
+import SlipsModal from '../components/habits/SlipsModal.vue'
 import WizardModal from '../components/habits/WizardModal.vue'
 import ExactAlarmDialog from '../components/notifications/ExactAlarmDialog.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Shared notification orchestration (enable/disable/rebuild chains +
 // exact-alarm re-ask). The dialog state lives in the module singleton so a
@@ -66,6 +76,10 @@ const editName = ref<{
 } | null>(null)
 const deletePending = ref<Habit | null>(null)
 const relapsePending = ref<Habit | null>(null)
+const slipLogPending = ref<Habit | null>(null)
+const slipsPending = ref<{ habitId: string, name: string } | null>(null)
+const habitSlips = ref<Slip[]>([])
+const slipDeletePending = ref<Slip | null>(null)
 const optInVisible = ref(false)
 const pendingOptInHabitId = ref<string | null>(null)
 const exactAlarmVisible = milestoneNotif.visible
@@ -200,11 +214,16 @@ const handleWizardFinish = async (
       if (current.flow === 'reset') {
         await cancelHabitNotifications(getMilestonesForHabit(habitId))
         deleteMilestonesForHabit(habitId)
+        // A relapse wipes the habit's slips — they belonged to the streak.
+        deleteSlipsForHabit(habitId)
       }
 
       const updates: Partial<Habit> = { date: date.toISOString() }
       if (current.flow !== 'edit') updates.savings = savings
       updateHabit(habitId, updates)
+      // Editing the quit date moves the streak forward: slips that predate it
+      // are no longer part of the current streak and are cleared.
+      if (current.flow === 'edit') clearPastSlips(habitId, date.toISOString())
     }
     loadHabits()
 
@@ -275,6 +294,7 @@ const handleDeleteConfirm = async (): Promise<void> => {
     // ids can be retried (never silently lose ids).
     await cancelHabitNotifications(getMilestonesForHabit(habit.id))
     deleteMilestonesForHabit(habit.id)
+    deleteSlipsForHabit(habit.id)
     deleteHabit(habit.id)
     loadHabits()
   }
@@ -293,6 +313,63 @@ const handleRelapseConfirm = (): void => {
   if (!habit) return
   relapsePending.value = null
   startWizard({ flow: 'reset', habitId: habit.id, initialSavings: habit.savings })
+}
+
+// ── Slips ──
+
+/** Re-read the open habit's slips (called after every write). */
+const reloadHabitSlips = (): void => {
+  const target = slipsPending.value
+  if (!target) return
+  habitSlips.value = getSlipsForHabit(target.habitId)
+}
+
+const openSlips = (habit: Habit): void => {
+  slipsPending.value = { habitId: habit.id, name: getHabitName(habit, t) }
+  reloadHabitSlips()
+}
+
+const closeSlips = (): void => {
+  slipsPending.value = null
+  habitSlips.value = []
+}
+
+const handleSlipLogSave = (date: Date): void => {
+  const habit = slipLogPending.value
+  if (!habit) return
+  try {
+    addSlip(habit.id, date)
+  }
+  catch {
+    snackbarMessage.value = t('slips.failedToSave')
+  }
+  slipLogPending.value = null
+}
+
+const handleSlipUpdate = (slipId: string, date: Date): void => {
+  const target = slipsPending.value
+  if (!target) return
+  try {
+    updateSlip(target.habitId, slipId, date)
+    reloadHabitSlips()
+  }
+  catch {
+    snackbarMessage.value = t('slips.failedToSave')
+  }
+}
+
+const handleSlipDeleteConfirm = (): void => {
+  const target = slipsPending.value
+  const slip = slipDeletePending.value
+  slipDeletePending.value = null
+  if (!target || !slip) return
+  try {
+    deleteSlip(target.habitId, slip.id)
+    reloadHabitSlips()
+  }
+  catch {
+    snackbarMessage.value = t('slips.failedToDelete')
+  }
 }
 
 // ── Milestone opt-in ──
@@ -477,6 +554,8 @@ const handleCustomHabitInputBlur = (): void => {
           "
           @delete="deletePending = habit"
           @reset="relapsePending = habit"
+          @slip="slipLogPending = habit"
+          @manage-slips="openSlips(habit)"
         />
       </template>
     </div>
@@ -526,6 +605,41 @@ const handleCustomHabitInputBlur = (): void => {
       :name="relapsePending ? getHabitName(relapsePending, t) : ''"
       @confirm="handleRelapseConfirm"
       @cancel="relapsePending = null"
+    />
+
+    <!-- Log a slip (date only) -->
+    <SlipLogModal
+      :visible="!!slipLogPending"
+      :habit-name="slipLogPending ? getHabitName(slipLogPending, t) : ''"
+      @save="handleSlipLogSave"
+      @cancel="slipLogPending = null"
+    />
+
+    <!-- Manage slips (edit / delete) -->
+    <SlipsModal
+      :visible="!!slipsPending"
+      :habit-name="slipsPending?.name ?? ''"
+      :slips="habitSlips"
+      @update="handleSlipUpdate"
+      @delete-request="slipDeletePending = $event"
+      @dismiss="closeSlips"
+    />
+
+    <!-- Slip delete confirm -->
+    <ConfirmDialog
+      :visible="!!slipDeletePending"
+      :title="t('slips.deleteTitle')"
+      :message="
+        slipDeletePending
+          ? t('slips.deleteConfirm', {
+            date: formatDate(slipDeletePending.date, locale),
+          })
+          : ''
+      "
+      :confirm-label="t('slips.delete')"
+      destructive
+      @confirm="handleSlipDeleteConfirm"
+      @cancel="slipDeletePending = null"
     />
 
     <!-- Delete confirm -->

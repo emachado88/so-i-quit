@@ -18,6 +18,7 @@ const baseline = (): Migration => ({ from: 1, up: data => data })
 export const MIGRATIONS: Record<string, Migration[]> = {
   [STORAGE_KEYS.habits]: [baseline()],
   [STORAGE_KEYS.milestones]: [baseline()],
+  [STORAGE_KEYS.slips]: [baseline()],
   [STORAGE_KEYS.settings]: [baseline()],
 }
 

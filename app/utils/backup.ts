@@ -13,6 +13,11 @@ import {
   saveMilestonesForHabit,
 } from './milestones-store'
 import {
+  isSlipMap,
+  parseSlipStore,
+  saveSlipsForHabit,
+} from './slips-store'
+import {
   DEFAULT_SETTINGS,
   detectLanguage,
   getSettings,
@@ -21,25 +26,33 @@ import {
 } from './settings'
 import { CURRENCY_SYMBOLS } from './currencies'
 import { readJSON, STORAGE_KEYS } from './storage'
-import type { AppSettings, Habit, Milestone } from './types'
+import type { AppSettings, Habit, Milestone, Slip } from './types'
 import { isAppSettings, isHabit } from './validators'
 
-export const BACKUP_VERSION = 1
+/**
+ * Current backup format. Older versions still import: v1 predates slips, so
+ * its files carry none (their absence defaults to an empty map).
+ */
+export const BACKUP_VERSION = 2
+
+const SUPPORTED_VERSIONS: readonly number[] = [1, 2]
 
 export interface BackupFile {
   version: number
   exportedAt: string
   habits: Habit[]
   milestones: Record<string, Milestone[]>
+  slips: Record<string, Slip[]>
   settings: AppSettings
 }
 
-/** Snapshot the current habits, milestones and settings. */
+/** Snapshot the current habits, milestones, slips and settings. */
 export const buildBackup = (): BackupFile => ({
   version: BACKUP_VERSION,
   exportedAt: new Date().toISOString(),
   habits: getHabits(),
   milestones: parseMilestoneStore(readJSON(STORAGE_KEYS.milestones, {})),
+  slips: parseSlipStore(readJSON(STORAGE_KEYS.slips, {})),
   settings: getSettings(),
 })
 
@@ -66,7 +79,10 @@ export const parseBackup = (
   }
   const file = parsed as Record<string, unknown>
 
-  if (file.version !== BACKUP_VERSION) {
+  if (
+    typeof file.version !== 'number'
+    || !SUPPORTED_VERSIONS.includes(file.version)
+  ) {
     return { ok: false, error: 'invalid-version' }
   }
   if (!isISODateString(file.exportedAt)) {
@@ -77,6 +93,11 @@ export const parseBackup = (
   }
   if (!isMilestoneMap(file.milestones)) {
     return { ok: false, error: 'invalid-milestones' }
+  }
+  // Slips are absent in v1 files — default to an empty map in that case.
+  const slips = file.slips ?? {}
+  if (!isSlipMap(slips)) {
+    return { ok: false, error: 'invalid-slips' }
   }
   if (!isAppSettings(file.settings)) {
     return { ok: false, error: 'invalid-settings' }
@@ -89,6 +110,7 @@ export const parseBackup = (
       exportedAt: file.exportedAt,
       habits: file.habits,
       milestones: file.milestones,
+      slips,
       settings: file.settings,
     },
   }
@@ -99,21 +121,23 @@ export const exportToFile = (data: BackupFile): string =>
   JSON.stringify(data, null, 2)
 
 /**
- * Drop unsafe / orphan milestone entries BEFORE they reach the store write.
+ * Drop unsafe / orphan entries BEFORE they reach the store write.
  *
  * - Keys `__proto__`, `constructor`, `prototype` are prototype-pollution
  *   sinks: `store[key] = value` on a fresh `{}` sets the object's prototype.
  *   JSON.parse keeps them as own enumerable data props, so we strip them here.
  * - Entries whose habitId does not match any imported habit are orphaned
  *   (no UI can ever read them) and are dropped.
+ *
+ * Shared by the milestone and slip maps — both are Record<habitId, T[]>.
  */
-const sanitizeMilestoneMap = (
-  milestones: Record<string, Milestone[]>,
+const sanitizeHabitMap = <T>(
+  entries: Record<string, T[]>,
   habitIds: Set<string>,
-): Record<string, Milestone[]> => {
+): Record<string, T[]> => {
   const safe = ['__proto__', 'constructor', 'prototype']
-  const result: Record<string, Milestone[]> = {}
-  for (const [habitId, value] of Object.entries(milestones)) {
+  const result: Record<string, T[]> = {}
+  for (const [habitId, value] of Object.entries(entries)) {
     if (safe.includes(habitId)) continue
     if (!habitIds.has(habitId)) continue
     result[habitId] = value
@@ -137,13 +161,17 @@ const normalizeSettings = (settings: AppSettings): AppSettings => {
   return { ...settings, language, currency }
 }
 
-/** Replace habits, milestones and settings with the imported backup. */
+/** Replace habits, milestones, slips and settings with the imported backup. */
 export const importBackup = (data: BackupFile): void => {
   const habitIds = new Set(data.habits.map(h => h.id))
   saveHabits(data.habits)
-  const milestones = sanitizeMilestoneMap(data.milestones, habitIds)
+  const milestones = sanitizeHabitMap(data.milestones, habitIds)
   for (const [habitId, value] of Object.entries(milestones)) {
     saveMilestonesForHabit(habitId, value)
+  }
+  const slips = sanitizeHabitMap(data.slips, habitIds)
+  for (const [habitId, value] of Object.entries(slips)) {
+    saveSlipsForHabit(habitId, value)
   }
   saveSettings(normalizeSettings(data.settings))
 }

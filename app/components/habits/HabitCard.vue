@@ -15,6 +15,8 @@ const emit = defineEmits<{
   'edit-savings': []
   'delete': []
   'reset': []
+  'slip': []
+  'manage-slips': []
 }>()
 
 const name = computed(() => getHabitName(props.habit, t))
@@ -40,6 +42,7 @@ const savingsLabel = computed(() =>
         @edit-name="emit('edit-name')"
         @edit-date="emit('edit-date')"
         @edit-savings="emit('edit-savings')"
+        @manage-slips="emit('manage-slips')"
         @delete="emit('delete')"
       />
     </div>
@@ -59,12 +62,21 @@ const savingsLabel = computed(() =>
       </p>
     </div>
 
-    <button
-      type="button"
-      class="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-      @click="emit('reset')"
-    >
-      {{ t('habits.logRelapse') }}
-    </button>
+    <div class="mt-3 flex gap-2">
+      <button
+        type="button"
+        class="flex-1 rounded-xl border border-border bg-surface py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-card"
+        @click="emit('slip')"
+      >
+        {{ t('habits.iSlipped') }}
+      </button>
+      <button
+        type="button"
+        class="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        @click="emit('reset')"
+      >
+        {{ t('habits.logRelapse') }}
+      </button>
+    </div>
   </article>
 </template>

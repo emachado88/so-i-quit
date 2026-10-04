@@ -10,9 +10,10 @@ import { handleBackButton } from '../../app/utils/back-handler'
 import { resetExactAlarmPrompt } from '../../app/composables/useExactAlarmPrompt'
 import { getHabits, saveHabits } from '../../app/utils/habits'
 import { getMilestonesForHabit } from '../../app/utils/milestones-store'
+import { getSlipsForHabit, saveSlipsForHabit } from '../../app/utils/slips-store'
 import * as notifications from '../../app/utils/notifications'
 import { getSettings } from '../../app/utils/settings'
-import type { Habit } from '../../app/utils/types'
+import type { Habit, Slip } from '../../app/utils/types'
 import { installStorageMock, seedStorage } from '../helpers'
 
 // Notification side effects are mocked (their logic has its own suite); the
@@ -41,6 +42,13 @@ const makeHabit = (overrides: Partial<Habit> = {}): Habit => ({
   name: 'Alcohol',
   date: null,
   savings: null,
+  ...overrides,
+})
+
+const makeSlip = (overrides: Partial<Slip> = {}): Slip => ({
+  id: 's1',
+  habitId: 'h1',
+  date: new Date(2025, 4, 1).toISOString(),
   ...overrides,
 })
 
@@ -431,9 +439,10 @@ describe('pages/habits', () => {
     expect(wrapper.find('#name').exists()).toBe(false)
   })
 
-  it('deletes a habit after confirmation (milestones dropped too)', async () => {
+  it('deletes a habit after confirmation (milestones and slips dropped too)', async () => {
     saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
     seedStorage('milestones-v1', JSON.stringify({ h1: [] }))
+    saveSlipsForHabit('h1', [makeSlip()])
     const wrapper = await mountPage()
 
     await openMenu(wrapper)
@@ -446,6 +455,7 @@ describe('pages/habits', () => {
 
     expect(getHabits()).toEqual([])
     expect(getMilestonesForHabit('h1')).toEqual([])
+    expect(getSlipsForHabit('h1')).toEqual([])
     expect(notifications.cancelHabitNotifications).toHaveBeenCalled()
   })
 
@@ -461,6 +471,117 @@ describe('pages/habits', () => {
     await lastButtonByText(wrapper, 'Log relapse')!.trigger('click')
     await nextTick()
     expect(wrapper.find('#wizard-date').exists()).toBe(true)
+  })
+
+  // ── Slips ──
+
+  it('logs a slip from the card button with the chosen date', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'I slipped')!.trigger('click')
+    await nextTick()
+    expect(wrapper.find('#slip-date').exists()).toBe(true)
+
+    await wrapper.find('#slip-date').setValue('2025-05-02')
+    await buttonByText(wrapper, 'Log slip')!.trigger('click')
+    await nextTick()
+
+    const slips = getSlipsForHabit('h1')
+    expect(slips).toHaveLength(1)
+    expect(slips[0].date).toBe(new Date(2025, 4, 2).toISOString())
+  })
+
+  it('defaults the slip date to today', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'I slipped')!.trigger('click')
+    await nextTick()
+
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const todayInput = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const todayMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).toISOString()
+    expect(
+      (wrapper.find('#slip-date').element as HTMLInputElement).value,
+    ).toBe(todayInput)
+
+    await buttonByText(wrapper, 'Log slip')!.trigger('click')
+    await nextTick()
+    expect(getSlipsForHabit('h1')[0].date).toBe(todayMidnight)
+  })
+
+  it('manages slips: lists, edits inline and deletes after confirmation', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z' })])
+    saveSlipsForHabit('h1', [makeSlip()])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Manage slips')!.trigger('click')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Slips')
+    expect(wrapper.text()).toContain('May 1, 2025')
+
+    // Edit → inline date field → save.
+    await wrapper.find('button[aria-label="Edit slip"]').trigger('click')
+    await nextTick()
+    await wrapper.find('#slip-edit-s1').setValue('2025-04-10')
+    await wrapper.find('button[aria-label="Save"]').trigger('click')
+    await nextTick()
+    expect(getSlipsForHabit('h1')[0].date).toBe(
+      new Date(2025, 3, 10).toISOString(),
+    )
+    expect(wrapper.text()).toContain('Apr 10, 2025')
+
+    // Delete → confirmation dialog → removes (and shows the empty state).
+    await wrapper.find('button[aria-label="Delete slip"]').trigger('click')
+    await nextTick()
+    expect(wrapper.text()).toContain('Delete the slip from Apr 10, 2025?')
+
+    await lastButtonByText(wrapper, 'Delete slip')!.trigger('click')
+    await nextTick()
+
+    expect(getSlipsForHabit('h1')).toEqual([])
+    expect(wrapper.text()).toContain('No slips logged.')
+  })
+
+  it('clears slips when a relapse is logged', async () => {
+    saveHabits([makeHabit({ date: '2025-05-31T10:00:00.000Z', savings: '2' })])
+    saveSlipsForHabit('h1', [makeSlip()])
+    const wrapper = await mountPage()
+
+    await buttonByText(wrapper, 'Log relapse')!.trigger('click')
+    await nextTick()
+    await lastButtonByText(wrapper, 'Log relapse')!.trigger('click')
+    await nextTick()
+    await completeWizard(wrapper, { date: '2025-06-15', time: '09:30' })
+
+    expect(getSlipsForHabit('h1')).toEqual([])
+  })
+
+  it('clears slips that predate an edited quit date', async () => {
+    saveHabits([makeHabit({ date: '2025-01-01T00:00:00.000Z', savings: '3' })])
+    saveSlipsForHabit('h1', [
+      makeSlip({ id: 'old', date: new Date(2025, 0, 5).toISOString() }),
+      makeSlip({ id: 'keep', date: new Date(2025, 5, 20).toISOString() }),
+    ])
+    const wrapper = await mountPage()
+
+    await openMenu(wrapper)
+    await buttonByText(wrapper, 'Edit date')!.trigger('click')
+    await completeWizard(wrapper, {
+      date: '2025-06-01',
+      time: '09:00',
+      withSavings: false,
+    })
+
+    expect(getSlipsForHabit('h1').map(s => s.id)).toEqual(['keep'])
   })
 
   it('opt-in enable persists the preference when permission is granted', async () => {
