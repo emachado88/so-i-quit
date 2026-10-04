@@ -9,9 +9,12 @@ import {
   handleBackButton,
 } from './utils/back-handler'
 import { addNotificationTapListener } from './utils/notifications'
+import { useUpdateCheck } from './composables/useUpdateCheck'
 
 const router = useRouter()
 const { locale } = useI18n()
+// App version injected by Nuxt from package.json (single source of truth).
+const appVersion = useRuntimeConfig().public.appVersion
 
 useHead({
   link: [
@@ -45,6 +48,11 @@ onMounted(() => {
       void exitApp()
     }
   }).remove
+
+  // In-app update check (GitHub releases): throttled to once per 24 h and
+  // skipped in dev — see useUpdateCheck. The banner that surfaces an
+  // available update lives in the shell layout.
+  void useUpdateCheck().check(appVersion)
 })
 
 onUnmounted(() => {

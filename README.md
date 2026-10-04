@@ -23,6 +23,7 @@ So I Quit is a habit tracker that helps you quit habits — alcohol, tobacco, or
 - **📦 Backup & Restore** — Export everything (habits, milestones, slips, settings) to a portable JSON — native share sheet on mobile, file download on web; import validates the file and replaces your data only after explicit confirmation (notification schedules are rebuilt from the restored data)
 - **🎯 Multiple Habits** — Track alcohol, tobacco, custom habits simultaneously
 - **✏️ Rename Custom Habits** — Rename any custom habit from its card menu (actions: edit name / edit date / edit savings / manage slips / delete); standard habits keep their localized names, so the menu only offers renaming where it applies
+- **⬆️ In-app Updates** — Checks the GitHub releases for a newer version (once per 24 h at app start + a manual check in Settings) and shows an in-app banner; on Android the release APK is downloaded and installed from inside the app (no browser), then handed to the system installer
 
 ## Tech Stack
 
@@ -119,7 +120,7 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 ## Testing
 
 - **Stack:** Vitest 4 + @vue/test-utils + happy-dom. Pure logic (`app/utils/*`) runs in node; components run in happy-dom (`// @vitest-environment happy-dom`).
-- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, slips-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
+- **Layout:** `tests/unit/` (storage, habits, milestones, milestones-store, slips-store, settings, currencies, domain, validators, migrations, notifications, backup, backup-platform, haptics, system-bars, back-handler, popover, version, updates, update-install, use-update-check) + `tests/component/` (habits, name-modal, savings-modal, wizard-modal, progress, settings, tabbar, error-boundary, exact-alarm-dialog, update-banner) + `tests/smoke.test.ts` (i18n key-set guard + 8-locale key parity vs `en.json`).
 - **Helpers (`tests/helpers.ts`):** `installStorageMock()` stubs a real `localStorage` global (no module mocking) + `seedStorage()` for arranging raw values.
 - **Coverage:** gate enforced at 80% (statements/lines/functions/branches) in `vitest.config.ts` — `npm test` fails below it. Current ~94/88/93/96. ESLint (10 + @nuxt/eslint) is configured with `npm run lint` / `npm run lint:fix`.
 - **No React Native / jest-expo here** — that tooling belongs to the old app on `master`.
@@ -128,20 +129,22 @@ Artifacts land in the run's Summary page. Signed iOS device builds need an Apple
 
 ```
 app/
-  app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap → Progress
-  layouts/default.vue      # Shell: fixed-height column (safe-areas, TabBar); the document never scrolls
+  app.vue                  # Root — NuxtLayout + NuxtPage; notification-tap → Progress; update check on mount
+  layouts/default.vue      # Shell: fixed-height column (safe-areas, TabBar) + update banner; the document never scrolls
   pages/                   # index (Progress), habits, settings — pinned header + own scroll area each
-  components/              # ui/, habits/, progress/, settings/, notifications/
-  composables/             # useNow (1s tick), useThemeMode, useLocaleSwitch
+  components/              # ui/, habits/, progress/, settings/, notifications/, updates/
+  composables/             # useNow (1s tick), useThemeMode, useLocaleSwitch, useUpdateCheck
   plugins/                 # i18n-persist.client.ts (WebView-safe locale persistence)
   utils/                   # types, storage, habits, milestones, milestones-store,
                            # slips-store, settings, currencies, domain, notifications,
-                           # backup, backup-platform, popover (pure TS)
+                           # backup, backup-platform, popover, version, updates,
+                           # update-install (pure TS + the ApkInstaller plugin wrapper)
   i18n/locales/            # en (base), pt, fr, es, it, zh, de, nl — flat JSON
   assets/css/main.css      # Tailwind import + @theme brand tokens + dark overrides + scroll-shadow classes
 assets/                    # Icon/splash SVG masters (incl. splash-logo.svg) + rendered PNG sources
 public/                    # Web favicon (icon.svg) + apple-touch-icon.png
-android/                   # Capacitor Android project (committed) — SplashActivity = launch splash
+android/                   # Capacitor Android project (committed) — SplashActivity = launch splash;
+                           # app-local plugins: SystemBarsPlugin, ApkInstallerPlugin
 ios/                       # Capacitor iOS project (committed; Swift Package Manager)
 tests/                     # unit/ + component/ + helpers.ts + smoke.test.ts
 scripts/                   # live-reload.mjs, add-i18n-keys.py, convert-i18n.py, generate-icons.sh
